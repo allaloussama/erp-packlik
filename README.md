@@ -42,7 +42,10 @@ boutique / équipe, droits par rôle, conflit d'écriture, anti-doublon.
 | `api/carriers.php` | Sociétés de livraison : envoi, suivi, test des clés (Yalidine, EcoTrack dont DHD, Noest) |
 | `assets/app.js` | Interface : boutique, tableaux de bord, stock, achats, finance, équipe… |
 | `assets/backend.js` | Connexion, chargement des données, synchronisation avec l'API |
-| `assets/kando.js` | Commandes à confirmer et suivi des commandes (pastilles de statut, édition dans la ligne) |
+| `assets/kando.js` | Commandes à confirmer, copie de Kando : barre d'outils, filtres, pastilles, colonnes réglables, corbeille, statuts modifiables |
+| `assets/kando-form.js` | Formulaire « Ajouter / Modifier une commande » et sélecteur de produit présenté comme la fiche produit |
+| `assets/kando-track.js` | Suivi des commandes, copie de Kando : onglets Société de livraison / Livreur, notes de suivi, réclamations, annulation d'envoi |
+| `assets/meta.js` | Coût Meta (copie de Kando) : comptes Facebook, campagnes reliées aux produits, coût par résultat / confirmation / livraison |
 | `assets/tajer.js` | Formulaire de commande sur la fiche produit, fiche produit du back-office |
 | `assets/delivery.js` | Module livraison : catalogue de 114 sociétés, clés API, tarifs par wilaya |
 | `assets/catalog.js`, `assets/products/` | Catalogue réel repris de packlik.shop : photos, descriptions, prix des 91 produits |
@@ -80,4 +83,10 @@ Les comptes se créent dans **Équipe et accès** (e-mail + mot de passe de 8 ca
   d'achat sont masqués à l'écran pour gérant, manager et agent, mais présents dans les données qu'ils reçoivent.
 - **Volume** : toutes les commandes sont chargées en mémoire. Prévoir un archivage au-delà d'environ 20 000 commandes.
 - **Pixels Facebook / TikTok** : l'écran journalise les événements, il n'envoie rien aux plateformes.
+- **Coût Meta** : lit les campagnes dans l'API Marketing de Meta. Le plus simple est de coller un jeton
+  d'utilisateur système (Business Manager → Utilisateurs système, droit `ads_read`) : il n'expire pas. Un jeton
+  personnel expire au bout de quelques heures. La connexion « Ajouter un compte Facebook » demande une
+  application Meta dont l'App ID se saisit dans le module.
+- **Corbeille** : une commande supprimée est masquée partout et restaurable 30 jours ; elle reste en base
+  (marquée), elle n'est pas effacée physiquement. Les commandes livrées ou encaissées ne se suppriment pas.
 - **SMS / WhatsApp automatiques** : mentionnés dans l'historique, aucun message n'est réellement envoyé.

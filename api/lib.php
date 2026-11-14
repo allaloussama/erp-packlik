@@ -204,6 +204,9 @@ function out_doc(string $coll, array $d, ?array $u): ?array {
 			return null;
 		}
 	}
+	if ($coll === 'kv' && ($d['_key'] ?? '') === 'meta' && $role !== 'admin') {
+		return null; // jetons Meta : admin seulement
+	}
 	if ($role === 'public') {
 		if ($coll === 'products') {
 			if (in_array($d['status'] ?? '', ['masqué', 'archivé'], true)) {

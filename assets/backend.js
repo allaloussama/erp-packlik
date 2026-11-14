@@ -8,7 +8,9 @@ const COLLS = {products:PRODUCTS, orders:ORDERS, customers:CUSTOMERS, users:USER
   purchases:PURCHASES, sup_payments:SUP_PAYMENTS, dhd_payments:DHD_PAYMENTS, cashboxes:CASHBOXES, cash_moves:CASH_MOVES,
   advances:ADVANCES, expenses:EXPENSES, ad_spend:AD_SPEND, stock_moves:STOCK_MOVES, activity:ACTIVITY, notifs:NOTIFS,
   carriers:CARRIERS, couriers:COURIERS, pixels:PIXELS, wilayas:WILAYAS};
-const KV = {settings:SETTINGS, pixel_events:PIXEL_EVENTS};
+const META = {}; /* module Coût Meta : comptes Facebook et jetons, lisible par l'admin seul */
+const TRASHED = []; /* commandes à la corbeille : hors des listes et des chiffres de l'ERP */
+const KV = {settings:SETTINGS, pixel_events:PIXEL_EVENTS, meta:META};
 Object.entries(KV).forEach(([k,o])=>o._key=k);
 const NET = {csrf:null, rev:0, snap:{}, revs:{}, busy:false, again:false, quiet:new Set(), needSetup:false, needInit:false, pendingRender:false};
 Object.keys(COLLS).concat('kv').forEach(c=>{ NET.snap[c]=new Map(); NET.revs[c]=new Map(); });
@@ -50,16 +52,18 @@ function applyDocs(list, sent, force){
   for(const [c, id, rev, d] of list){
     if(c==='kv'){ const o=KV[id]; if(o && d){ const j=JSON.stringify(d); if(JSON.stringify(o)!==j){ Object.keys(o).forEach(k=>delete o[k]); Object.assign(o,d); changed=true; } NET.snap.kv.set(id,j); NET.revs.kv.set(id,rev); } continue; }
     const arr = COLLS[c]; if(!arr) continue;
-    const m = idx[c] || (idx[c] = new Map(arr.map(r=>[keyOf(r), r])));
+    const m = idx[c] || (idx[c] = new Map((c==='orders'? arr.concat(TRASHED) : arr).map(r=>[keyOf(r), r])));
     const cur = m.get(id);
-    if(d==null){ if(cur){ arr.splice(arr.indexOf(cur),1); m.delete(id); changed=true; } NET.snap[c].delete(id); NET.revs[c].delete(id); continue; }
+    const home = x => c==='orders' && x.trashedAt? TRASHED : arr;
+    if(d==null){ if(cur){ const h=[arr,TRASHED].find(l=>l.includes(cur)); h.splice(h.indexOf(cur),1); m.delete(id); changed=true; } NET.snap[c].delete(id); NET.revs[c].delete(id); continue; }
     normDoc(c, d); const j = JSON.stringify(d);
     NET.revs[c].set(id, rev);
     if(cur){
       const local = JSON.stringify(cur);
       const touched = !force && local!==(sent && sent.has(c+'/'+id)? sent.get(c+'/'+id) : NET.snap[c].get(id));
       if(!touched && local!==j){ Object.keys(cur).forEach(k=>delete cur[k]); Object.assign(cur, d); changed=true; }
-    } else { arr.push(d); m.set(id, d); changed=true; }
+      if(c==='orders'){ const from=[arr,TRASHED].find(l=>l.includes(cur)), to=home(cur); if(from!==to){ from.splice(from.indexOf(cur),1); to.push(cur); changed=true; } }
+    } else { home(d).push(d); m.set(id, d); changed=true; }
     NET.snap[c].set(id, j);
   }
   if(changed) reindex();
@@ -75,14 +79,14 @@ async function syncNow(){
     const up=[], del=[], sent=new Map();
     for(const [c, arr] of Object.entries(COLLS)){
       const seen = new Set();
-      for(const r of arr){
+      for(const r of (c==='orders'? arr.concat(TRASHED) : arr)){
         if(r.id==null && !r._id) r._id = uid();
         const id=keyOf(r), j=JSON.stringify(r); seen.add(id);
         if(NET.snap[c].get(id)!==j){ up.push({c, id, d:r, base:NET.revs[c].get(id)||0}); sent.set(c+'/'+id, j); }
       }
       for(const id of NET.snap[c].keys()) if(!seen.has(id)) del.push({c, id});
     }
-    for(const [id, o] of Object.entries(KV)){ const j=JSON.stringify(o); if(NET.snap.kv.get(id)!==j){ up.push({c:'kv', id, d:o, base:NET.revs.kv.get(id)||0}); sent.set('kv/'+id, j); } }
+    for(const [id, o] of Object.entries(KV)){ if(S.role!=='admin') continue; const j=JSON.stringify(o); if(NET.snap.kv.get(id)!==j){ up.push({c:'kv', id, d:o, base:NET.revs.kv.get(id)||0}); sent.set('kv/'+id, j); } }
     // garde-fou : une suppression massive est presque toujours un bug d'affichage, pas une intention
     if(del.length>200){ console.warn('PackLik : '+del.length+' suppressions ignorées'); del.length=0; }
     let rejected = [], remote = false;
@@ -157,9 +161,9 @@ A.initLoad = async(el)=>{
   WILAYAS.push(...take('wilayas'));
   PRODUCTS.push(...take('products').map(realCatalog).map(p=> demo? p : {...p, cost:0, stock:0, onDemand:true, sold30:0, lastSale:null, priceHistory:[], status:p.price? 'actif':'devis', variants:p.variants? p.variants.map(v=>({...v, cost:0, stock:0})):null}));
   CASHBOXES.push(...take('cashboxes').map(b=> demo? b : {...b, balance:0}));
-  const dhd = take('carriers').find(c=>c.id==='dhd'), own = take('carriers').find(c=>c.id==='own');
-  delete dhd.apiKey; delete dhd.apiUrl; delete dhd.lastSync; delete dhd.status; dhd.name='DHD Livraison'; dhd.family='ecotrack'; dhd.logo='dhd.png'; dhd.creds={};
-  CARRIERS.push(dhd, {...own, connected:demo});
+  const own = take('carriers').find(c=>c.id==='own');
+  CARRIERS.push({...own, connected:true, isDefault:false});
+  if(demo){ const dhd=take('carriers').find(c=>c.id==='dhd'); delete dhd.apiKey; delete dhd.apiUrl; delete dhd.lastSync; delete dhd.status; CARRIERS.push({...dhd, name:'DHD Livraison', family:'ecotrack', logo:'dhd.png', creds:{}, isDefault:false}); }
   if(demo){
     ['orders','customers','teams','suppliers','purchases','sup_payments','dhd_payments','cash_moves','advances','expenses','ad_spend','stock_moves','couriers'].forEach(c=>COLLS[c].push(...take(c)));
     USERS.push(...take('users').filter(u=>u.id!==S.uid).map(u=>({...u, email:'', online:u.role==='agent'})));
@@ -169,7 +173,7 @@ A.initLoad = async(el)=>{
     SUPPLIERS.push({id:1, name:'Fournisseur principal', contact:'', phone:'', email:'', address:'', terms:7, termsMax:10, ceiling:null, userId:null});
     Object.assign(SETTINGS, {rules:[], carrierRules:[]});
   }
-  Object.assign(SETTINGS, {dhdApiKey:'', waKey:'', pixelId:'', capiToken:'', catalogFilled:true, primary:'#FD6400'});
+  Object.assign(SETTINGS, {dhdApiKey:'', waKey:'', pixelId:'', capiToken:'', catalogFilled:true, noDefaultDhd:true, primary:'#FD6400'});
   reindex(); NET.needInit=false;
   await syncNow(); location.hash='#/erp'; render();
   toast(demo? t('Démonstration chargée (données fictives)') : t('Catalogue chargé'),'ok');
@@ -206,6 +210,11 @@ async function bootApp(){
   applyDocs(list, null, true); reindex();
   if(b.user){ S.uid=b.user.id; S.role=b.user.role; S.agentId=b.user.id; NET.needInit = b.empty && b.user.role==='admin'; }
   // base créée avant l'import des photos : on complète une seule fois les fiches sans photo ni description
+  if(S.role==='admin' && !SETTINGS.noDefaultDhd && CARRIERS.length){
+    const dhd=CRB.dhd; if(dhd){ dhd.isDefault=false; if(!(dhd.creds||{}).token && !ORDERS.concat(TRASHED).some(o=>o.carrier==='dhd')) CARRIERS.splice(CARRIERS.indexOf(dhd),1); }
+    ORDERS.filter(o=>o.carrier==='dhd' && !CRB.dhd && PRE_ST.includes(o.status)).forEach(o=>o.carrier='');
+    reindex(); SETTINGS.noDefaultDhd=true; queueSync();
+  }
   if(S.role==='admin' && PRODUCTS.length && !SETTINGS.catalogFilled){ PRODUCTS.forEach(realCatalog); SETTINGS.catalogFilled=true; queueSync(); }
   loadCart(); autoAssign(); render();
   // toute action de l'utilisateur déclenche l'envoi de ce qu'elle a modifié

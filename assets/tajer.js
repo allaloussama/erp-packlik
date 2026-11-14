@@ -79,13 +79,22 @@ SUB.cod = async(form)=>{
   if(Object.keys(co.err).length){ render(); toast(t('Merci de corriger le formulaire'),'bad'); const bad=document.querySelector('.tj-field.bad .tj-inp'); if(bad) bad.focus(); return; }
   const btn=form.querySelector('.tj-submit'); btn.disabled=true; btn.textContent=t('Envoi en cours…'); // pas de double commande au double clic
   try{
-    const r = await api('order', {name:co.name, phone:co.phone, wilaya:+co.wilaya, commune:co.commune, address:co.address, delivery:co.delivery, note:co.note||'', website:val('coHp'), items:items.map(i=>({pid:i.pid, v:i.v, q:i.q}))});
+    const r = await api('order', {name:co.name, phone:co.phone, wilaya:+co.wilaya, commune:co.commune, address:co.address, delivery:co.delivery, note:co.note||'', website:val('coHp'), platform:AD_PLATFORM, items:items.map(i=>({pid:i.pid, v:i.v, q:i.q}))});
     S.lastOrder = r.order; if(route().parts[0]!=='produit' || co.withCart){ S.cart=[]; saveCart(); }
     if(SETTINGS.purchaseOn==='order') fbq('Purchase', {value:orderTotal(r.order), ref:r.ref});
     location.hash = '#/confirmation/'+r.ref;
   }catch(e){ btn.disabled=false; btn.textContent=t('Commander maintenant'); toast(esc(e.message),'bad'); }
 };
 placeOrder = ()=>SUB.cod(document.getElementById('tjCod'));
+const AD_PLATFORM = (()=>{
+  try{
+    const q=new URLSearchParams(location.search), u=(q.get('utm_source')||'').toLowerCase();
+    const p = q.get('fbclid')? 'facebook' : q.get('ttclid')? 'tiktok' : q.get('gclid')? 'google' : q.get('sccid')? 'snapchat'
+      : /fb|facebook/.test(u)? 'facebook' : /ig|insta/.test(u)? 'instagram' : /tiktok/.test(u)? 'tiktok' : /google/.test(u)? 'google' : /snap/.test(u)? 'snapchat' : '';
+    if(p) sessionStorage.setItem('pk_plat', p);
+    return p || sessionStorage.getItem('pk_plat') || '';
+  }catch(e){ return ''; }
+})();
 
 /* ---------- fiche produit : galerie, offres par quantité, formulaire sur la page ---------- */
 viewProduct = function(id){

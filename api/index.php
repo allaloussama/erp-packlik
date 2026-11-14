@@ -375,6 +375,9 @@ function create_order(?array $u, array $in): array {
 			}
 		}
 		[$price, $cost] = unit_price($p, $v, $q);
+		if ($staff && isset($l['price']) && is_numeric($l['price']) && $l['price'] >= 0) {
+			$price = (int) round((float) $l['price']); // l'équipe peut négocier le prix au téléphone
+		}
 		$items[] = ['pid' => (int) $p['id'], 'v' => $v, 'q' => $q, 'price' => $price, 'cost' => $cost, 'up' => false];
 		$free = $free || ((int) ($p['freeShipQty'] ?? 0) > 0 && $q >= (int) $p['freeShipQty']);
 	}
@@ -383,8 +386,36 @@ function create_order(?array $u, array $in): array {
 	$address = mb_substr(trim((string) ($in['address'] ?? '')), 0, 200);
 	$note = mb_substr(trim((string) ($in['note'] ?? '')), 0, 500);
 	$fmt = substr($phone, 0, 4) . ' ' . substr($phone, 4, 2) . ' ' . substr($phone, 6, 2) . ' ' . substr($phone, 8, 2);
+	// plateforme d'acquisition (publicité Facebook, TikTok…) : liste fermée
+	$platform = in_array($in['platform'] ?? '', ['facebook', 'instagram', 'tiktok', 'google', 'snapchat', 'whatsapp', 'messenger'], true) ? $in['platform'] : '';
+	// champs du formulaire de l'équipe (façon Kando)
+	$extra = [];
+	if ($staff) {
+		$p2 = digits((string) ($in['phone2'] ?? ''));
+		if ($p2 !== '' && !preg_match('/^0[567]\d{8}$/', $p2)) {
+			fail(422, 'Téléphone 02 invalide : 05, 06 ou 07 suivi de 8 chiffres.');
+		}
+		$extra['phone2'] = $p2 === '' ? '' : substr($p2, 0, 4) . ' ' . substr($p2, 4, 2) . ' ' . substr($p2, 6, 2) . ' ' . substr($p2, 8, 2);
+		$disc = max(0, (float) ($in['discount'] ?? 0));
+		$extra['discountType'] = ($in['discountType'] ?? '') === 'amount' ? 'amount' : 'percent';
+		$extra['discount'] = $extra['discountType'] === 'percent' ? min(100, $disc) : $disc;
+		if (isset($in['fee']) && is_numeric($in['fee']) && $in['fee'] >= 0) {
+			$extra['feeFixed'] = (int) round((float) $in['fee']);
+		}
+		if (isset($in['weight']) && is_numeric($in['weight']) && $in['weight'] > 0) {
+			$extra['weightFixed'] = round((float) $in['weight'], 2);
+		}
+		if (!empty($in['exchange'])) {
+			$extra['exchange'] = true;
+			$extra['returnedProduct'] = mb_substr(trim((string) ($in['returnedProduct'] ?? '')), 0, 120);
+		}
+		$car = (string) ($in['carrier'] ?? '');
+		if ($car !== '' && rec_data('carriers', $car)) {
+			$extra['carrier'] = $car;
+		}
+	}
 
-	return tx(function (PDO $db) use ($u, $staff, $name, $phone, $fmt, $wid, $commune, $delivery, $items, $free, $source, $address, $note, $in) {
+	return tx(function (PDO $db) use ($u, $staff, $name, $phone, $fmt, $wid, $commune, $delivery, $items, $free, $source, $address, $note, $in, $platform, $extra) {
 		$rev = next_rev($db);
 		$now = (int) round(microtime(true) * 1000);
 		$st = $db->prepare("SELECT data FROM records WHERE coll='customers' AND k=? AND deleted=0");
@@ -392,6 +423,10 @@ function create_order(?array $u, array $in): array {
 		$c = json_decode((string) $st->fetchColumn(), true);
 		if (!$c) {
 			$c = ['id' => seq($db, 'customer_seq'), 'name' => $name, 'business' => mb_substr(trim((string) ($in['business'] ?? '')), 0, 80), 'phone' => $fmt, 'phone2' => '', 'wilaya' => $wid, 'commune' => $commune, 'address' => $address, 'pro' => false, 'hist' => ['created' => 0, 'delivered' => 0, 'returned' => 0, 'spent' => 0], 'since' => $now, 'notes' => ''];
+			rec_put($db, 'customers', (string) $c['id'], $c, $rev);
+		}
+		if (!empty($extra['phone2']) && ($c['phone2'] ?? '') !== $extra['phone2']) {
+			$c['phone2'] = $extra['phone2'];
 			rec_put($db, 'customers', (string) $c['id'], $c, $rev);
 		}
 		$id = seq($db, 'order_seq');
@@ -417,6 +452,14 @@ function create_order(?array $u, array $in): array {
 		if ($free) {
 			$o['freeShip'] = true;
 		}
+		if ($platform !== '') {
+			$o['platform'] = $platform;
+		}
+		unset($extra['phone2']);
+		$o = array_merge($o, $extra);
+		// la commande telle qu'elle est arrivée, avant toute modification (colonne « Origine »)
+		$o['original'] = ['at' => $now, 'name' => $name, 'phone' => $fmt, 'address' => $address, 'wilaya' => $wid, 'commune' => $commune, 'delivery' => $delivery, 'note' => $note,
+			'discount' => $o['discount'], 'discountType' => $o['discountType'] ?? 'percent', 'items' => array_map(fn($i) => ['pid' => $i['pid'], 'v' => $i['v'], 'q' => $i['q'], 'price' => $i['price']], $items)];
 		rec_put($db, 'orders', (string) $id, $o, $rev);
 		$uid = bin2hex(random_bytes(6));
 		rec_put($db, 'activity', 'a' . $uid, ['_id' => 'a' . $uid, 'at' => $now, 'user' => $staff ? $u['name'] : 'Boutique', 'role' => $staff ? $u['role'] : 'site', 'action' => 'Nouvelle commande', 'entity' => $o['ref'], 'details' => 'Source : ' . $source], $rev);
@@ -439,12 +482,12 @@ function auto_carrier(int $wid): string {
 			return (string) $c['id'];
 		}
 	}
-	return (string) (array_key_first($carriers) ?? 'dhd');
+	return ''; // aucune société par défaut : l'équipe la choisit à la confirmation
 }
 
 /** Ce que le client final peut voir de sa commande (page merci, suivi). */
 function public_order(array $o): array {
-	$o = array_intersect_key($o, array_flip(['id', 'ref', 'created', 'status', 'items', 'discount', 'delivery', 'wilaya', 'commune', 'tracking', 'unreachN', 'carrier', 'parcels', 'freeShip', 'feeFixed', 'history']));
+	$o = array_intersect_key($o, array_flip(['id', 'ref', 'created', 'status', 'items', 'discount', 'discountType', 'delivery', 'wilaya', 'commune', 'tracking', 'unreachN', 'carrier', 'parcels', 'freeShip', 'feeFixed', 'history']));
 	$o['history'] = array_values(array_map(fn($h) => ['at' => $h['at'], 'action' => $h['action'], 'color' => $h['color'] ?? ''], array_filter((array) ($o['history'] ?? []), fn($h) => !preg_match('/Assign|Réassign|Verrou|Appel|Poids|Remise/u', (string) $h['action']))));
 	foreach ($o['items'] as &$i) {
 		unset($i['cost']);
