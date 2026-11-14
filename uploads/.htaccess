@@ -1,0 +1,5 @@
+# images envoyées par l'équipe : jamais exécutées
+php_flag engine off
+<FilesMatch "\.(php|phtml|phar|cgi|pl|py)$">
+Require all denied
+</FilesMatch>
