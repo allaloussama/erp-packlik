@@ -45,6 +45,8 @@ boutique / équipe, droits par rôle, conflit d'écriture, anti-doublon.
 | `assets/kando.js` | Commandes à confirmer et suivi des commandes (pastilles de statut, édition dans la ligne) |
 | `assets/tajer.js` | Formulaire de commande sur la fiche produit, fiche produit du back-office |
 | `assets/delivery.js` | Module livraison : catalogue de 114 sociétés, clés API, tarifs par wilaya |
+| `assets/catalog.js`, `assets/products/` | Catalogue réel repris de packlik.shop : photos, descriptions, prix des 91 produits |
+| `assets/brand/` | Logo, icône et favicon PackLik |
 
 ## Comment ça marche
 

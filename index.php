@@ -13,6 +13,8 @@ $v = fn(string $f): string => $f . '?v=' . filemtime(__DIR__ . '/' . $f);
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PackLik – Emballage alimentaire en Algérie</title>
 <meta name="description" content="PackLik : emballage alimentaire livré partout en Algérie, paiement à la livraison.">
+<link rel="icon" type="image/png" href="assets/brand/favicon.png">
+<meta name="theme-color" content="#FD6400">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= $v('assets/app.css') ?>">
@@ -23,6 +25,7 @@ $v = fn(string $f): string => $f . '?v=' . filemtime(__DIR__ . '/' . $f);
 <div id="ov"></div>
 <div id="toasts" aria-live="polite"></div>
 <script src="<?= $v('assets/app.js') ?>"></script>
+<script src="<?= $v('assets/catalog.js') ?>"></script>
 <script src="<?= $v('assets/backend.js') ?>"></script>
 <script src="<?= $v('assets/kando.js') ?>"></script>
 <script src="<?= $v('assets/tajer.js') ?>"></script>

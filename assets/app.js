@@ -312,7 +312,7 @@ const SETTINGS = {
   discountAgent:5, discountManager:10, supplierTerms:7, usdRate:260, adCostPerDelivered:700, commission:100,
   boxes:{security:20, reinvest:80, securityCap:15}, advanceCap:30, safetyMargin:20000,
   callbackDelays:['30 min','2 h','Lendemain'], dhdSyncMin:15, dhdApiKey:'dhd_live_••••••••3f9a', waKey:'',
-  pixelId:'1029384756', capiToken:'EAAG••••••••', maintenance:false, primary:'#B8875A',
+  pixelId:'1029384756', capiToken:'EAAG••••••••', maintenance:false, primary:'#FD6400',
   rules:[{type:'wilaya', value:'31', agentId:5},{type:'source', value:'WhatsApp', agentId:4},{type:'montant', value:'10000', agentId:4}],
   templates:{unreach:'Bonjour {nom}, PackLik a essayé de vous joindre pour confirmer votre commande {ref}. Rappelez-nous au 0549 59 31 60.', shipped:'Votre commande {ref} est en route avec DHD. Suivi : {tracking}.'}
 };
@@ -324,8 +324,8 @@ const CARRIERS = [
   {id:'zr', name:'ZR Express', short:'ZR', connected:false, isDefault:false, apiKey:'', apiId:'', feeFactor:0.95, baseKg:5, extraPerKg:40, maxParcelKg:20, chargeOverweight:true, desk:true, cod:true, sync:15, color:'#D99A2B'},
   {id:'maystro', name:'Maystro Delivery', short:'MAY', connected:false, isDefault:false, apiKey:'', feeFactor:1, baseKg:3, extraPerKg:60, maxParcelKg:15, chargeOverweight:true, desk:false, cod:true, sync:30, color:'#6A4C93'},
   {id:'noest', name:'Noest Express', short:'NOE', connected:false, isDefault:false, apiKey:'', apiId:'', feeFactor:0.9, baseKg:5, extraPerKg:50, maxParcelKg:20, chargeOverweight:true, desk:true, cod:true, sync:15, color:'#2F7D4F'},
-  {id:'ecotrack', name:'EcoTrack (Procolis, Guepex…)', short:'ECO', connected:false, isDefault:false, apiKey:'', feeFactor:1, baseKg:5, extraPerKg:50, maxParcelKg:20, chargeOverweight:true, desk:true, cod:true, sync:15, color:'#8E6339'},
-  {id:'own', name:'Mes livreurs', short:'PKL', connected:true, isDefault:false, internal:true, feeFactor:0.8, baseKg:20, extraPerKg:0, maxParcelKg:40, chargeOverweight:false, desk:false, cod:true, color:'#1F2A24', wilayas:[16,9,35,42]}
+  {id:'ecotrack', name:'EcoTrack (Procolis, Guepex…)', short:'ECO', connected:false, isDefault:false, apiKey:'', feeFactor:1, baseKg:5, extraPerKg:50, maxParcelKg:20, chargeOverweight:true, desk:true, cod:true, sync:15, color:'#C74B00'},
+  {id:'own', name:'Mes livreurs', short:'PKL', connected:true, isDefault:false, internal:true, feeFactor:0.8, baseKg:20, extraPerKg:0, maxParcelKg:40, chargeOverweight:false, desk:false, cod:true, color:'#182028', wilayas:[16,9,35,42]}
 ];
 const CRB = Object.fromEntries(CARRIERS.map(c=>[c.id,c]));
 const COURIERS = [
@@ -629,8 +629,8 @@ function prodTone(p){ const n=p.name.toLowerCase();
   if(/blanc|white|cristal|silofan/.test(n)) return ['#F4F1EC','#FFFFFF','#D9D2C7'];
   if(/alum|alim/.test(n)) return ['#C9CED3','#E6E9EC','#9AA2A9'];
   if(/orange/.test(n)) return ['#E58A3A','#F2A65E','#B9672A'];
-  if(/imprim|halwa|dessert|extra/.test(n)) return ['#C99B6D','#E8D2B6','#8E6339'];
-  return ['#C69A6B','#DDBA92','#8E6339'];
+  if(/imprim|halwa|dessert|extra/.test(n)) return ['#C99B6D','#E8D2B6','#C74B00'];
+  return ['#C69A6B','#DDBA92','#C74B00'];
 }
 function prodKind(p){ const n=p.name.toLowerCase();
   if(p.packItems || /^pack|pack promo/.test(n)) return 'pack';
@@ -643,7 +643,7 @@ function prodKind(p){ const n=p.name.toLowerCase();
   if(/pizza|layer|cayk|crêpe|crepe|club|cokiz|patisser/.test(n)) return 'flat';
   return 'box';
 }
-function prodArt(p, size){ if(p && p.images && p.images.length) return '<img src="'+esc(p.images[0])+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">'; return prodSvg(p, size); }
+function prodArt(p, size){ if(p && p.images && p.images.length) return '<img src="'+esc(p.images[0])+'" alt="" loading="lazy" style="'+(size && size<=100? 'width:'+size+'px;height:'+size+'px;flex:none;border-radius:6px' : 'width:100%;height:100%')+';object-fit:contain;background:#fff;display:block">'; return prodSvg(p, size); }
 function prodSvg(p, size){ if(!p) return '<svg></svg>';
   const [a,b,d] = prodTone(p), k = prodKind(p), s=size||120;
   let g='';
@@ -655,10 +655,10 @@ function prodSvg(p, size){ if(!p) return '<svg></svg>';
   if(k==='roll') g=`<rect x="26" y="40" width="60" height="44" rx="4" fill="${b}"/><ellipse cx="86" cy="62" rx="10" ry="22" fill="${a}"/><ellipse cx="86" cy="62" rx="4" ry="9" fill="${d}"/><path d="M26 84h60" stroke="${d}" stroke-width="1.5"/><path d="M34 52h40M34 60h40M34 68h30" stroke="${a}" stroke-width="2" opacity=".6"/>`;
   if(k==='cup') g=`<path d="M38 34h44l-6 66H44z" fill="${a}"/><ellipse cx="60" cy="34" rx="22" ry="6" fill="${b}"/><path d="M41 58h38" stroke="${d}" stroke-width="2"/><path d="M68 38h14l-6 62h-8z" fill="${d}" opacity=".18"/>`;
   if(k==='sauce') g=`<ellipse cx="44" cy="72" rx="20" ry="6" fill="${d}"/><path d="M24 58l4 16h32l4-16z" fill="${a}"/><ellipse cx="44" cy="58" rx="20" ry="6" fill="${b}"/><ellipse cx="80" cy="64" rx="16" ry="5" fill="${d}"/><path d="M64 52l3 13h26l3-13z" fill="${a}"/><ellipse cx="80" cy="52" rx="16" ry="5" fill="${b}"/>`;
-  if(k==='pack') g=`<rect x="18" y="54" width="44" height="38" rx="3" fill="${a}"/><path d="M18 54h44l-4-8H22z" fill="${b}"/><path d="M58 50 84 38l22 12v26L84 88 58 76z" fill="#DDBA92"/><path d="M58 50l26 12 22-12" fill="none" stroke="#8E6339" stroke-width="1.5"/><rect x="36" y="30" width="22" height="16" rx="3" fill="#2F7D4F"/><text x="47" y="41.5" font-size="9" font-weight="800" fill="#fff" text-anchor="middle" font-family="Inter,sans-serif">%</text>`;
+  if(k==='pack') g=`<rect x="18" y="54" width="44" height="38" rx="3" fill="${a}"/><path d="M18 54h44l-4-8H22z" fill="${b}"/><path d="M58 50 84 38l22 12v26L84 88 58 76z" fill="#DDBA92"/><path d="M58 50l26 12 22-12" fill="none" stroke="#C74B00" stroke-width="1.5"/><rect x="36" y="30" width="22" height="16" rx="3" fill="#2F7D4F"/><text x="47" y="41.5" font-size="9" font-weight="800" fill="#fff" text-anchor="middle" font-family="Inter,sans-serif">%</text>`;
   return `<svg viewBox="0 0 120 120" width="${s}" height="${s}" role="img" aria-label="${esc(p.name)}"><ellipse cx="60" cy="104" rx="42" ry="5" fill="#000" opacity=".06"/>${g}</svg>`;
 }
-function logoMark(){ return `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><path d="M4 8.5 12 13l8-4.5M12 13v7" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>`; }
+function logoMark(){ return '<img src="assets/brand/mark.png" alt="" width="26" height="26">'; }
 
 /* ---------- règles métier : prix, finance, stock ---------- */
 function itemPrice(it){ return it.price; }
@@ -858,7 +858,7 @@ function lineChart(series, labels, opts){
 function barChart(data, opts){ // data [{l, v, c}]
   opts=opts||{}; const W=opts.w||640,H=opts.h||200,pl=40,pt=10,pb=28; const max=Math.max(1,...data.map(d=>d.v))*1.1; const bw=(W-pl-10)/data.length;
   let g=''; for(let k=0;k<=4;k++){ const v=max*k/4, yy=pt+(H-pt-pb)*(1-k/4); g+=`<line x1="${pl}" x2="${W-10}" y1="${yy}" y2="${yy}" stroke="#EFEAE2"/><text x="${pl-6}" y="${yy+4}" font-size="10" fill="#6B746F" text-anchor="end">${v>=1000?Math.round(v/1000)+'k':Math.round(v)}</text>`; }
-  data.forEach((d,i)=>{ const h=(H-pt-pb)*d.v/max, xx=pl+i*bw+bw*.18; g+=`<rect x="${xx}" y="${H-pb-h}" width="${bw*.64}" height="${h}" rx="3" fill="${d.c||'#B8875A'}"><title>${esc(d.l)} : ${nf(d.v)}</title></rect><text x="${xx+bw*.32}" y="${H-10}" font-size="10" fill="#6B746F" text-anchor="middle">${esc(d.l)}</text>`; });
+  data.forEach((d,i)=>{ const h=(H-pt-pb)*d.v/max, xx=pl+i*bw+bw*.18; g+=`<rect x="${xx}" y="${H-pb-h}" width="${bw*.64}" height="${h}" rx="3" fill="${d.c||'#FD6400'}"><title>${esc(d.l)} : ${nf(d.v)}</title></rect><text x="${xx+bw*.32}" y="${H-10}" font-size="10" fill="#6B746F" text-anchor="middle">${esc(d.l)}</text>`; });
   return `<div class="chart" dir="ltr"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.label||'graphique')}">${g}</svg></div>`;
 }
 function donut(parts, size){ // [{v,c,l}]
@@ -896,7 +896,7 @@ function shopShell(content, active){
     <span class="row">${ic('truck','sm')} ${t('Livraison 69 wilayas')} · ${t('Paiement à la livraison')}</span>
   </div></div>
   <header class="shop-h"><div class="in">
-    <a href="#/" class="logo" aria-label="PackLik — accueil"><span class="mk">${logoMark()}</span><span>Pack<b>Lik</b></span></a>
+    <a href="#/" class="logo" aria-label="PackLik — accueil"><img src="assets/brand/logo.png" alt="PackLik" width="560" height="111"></a>
     <form class="search" data-sub="shopSearch" role="search"><input id="shopQ" type="search" placeholder="${t('Rechercher un emballage…')}" value="${esc(S.ui.shop.q)}" aria-label="${t('Rechercher')}"><button type="submit" aria-label="${t('Rechercher')}">${ic('search')}</button></form>
     <div class="hicons">
       <a class="hicon" href="#/compte">${ic('user')}<span class="lbl">${t('Connexion')}</span></a>
@@ -945,13 +945,13 @@ function viewHome(){
   const heroArt2 = `<svg viewBox="0 0 440 300" aria-hidden="true"><g transform="translate(60,30) scale(1.9)">${prodSvg(PBY[45],0).replace(/^<svg[^>]*>|<\/svg>$/g,'')}</g><circle cx="360" cy="70" r="46" fill="#D99A2B"/><text x="360" y="66" text-anchor="middle" font-size="26" font-weight="800" fill="#2b1d03" font-family="Inter,sans-serif">-15%</text><text x="360" y="88" text-anchor="middle" font-size="12" font-weight="700" fill="#2b1d03" font-family="Inter,sans-serif">PACKS</text></svg>`;
   return shopShell(`<div class="container">
     <section class="hero" aria-roledescription="carrousel" style="background:var(--kraft-l)">
-      <div class="slide ${S.heroIdx===0?'on':''}" style="background:linear-gradient(0deg,#EBDCC9,#F3E9DD)">
+      <div class="slide ${S.heroIdx===0?'on':''}" style="background:linear-gradient(0deg,#FFD8BD,#FFE7D6)">
         <div style="position:relative;z-index:1"><span class="badge kraft">${t('Emballage personnalisé')}</span><h2 style="margin-top:10px">${t('Prix compétitifs – emballage personnalisé selon votre marque')}</h2><p class="muted">${t('Boîtes, barquettes, bowls, sacs craft et papier imprimés à votre logo, pour restaurants, fast-foods et pâtisseries.')}</p><a href="#/contact" class="btn primary lg">${ic('phone','sm')} ${t('Contactez-nous')}</a></div>
-        <div class="art">${heroArt1}</div>
+        <div class="art">${heroPhoto(5) || heroArt1}</div>
       </div>
-      <div class="slide ${S.heroIdx===1?'on':''}" style="background:#1F2A24;color:#fff">
+      <div class="slide ${S.heroIdx===1?'on':''}" style="background:#182028;color:#fff">
         <div style="position:relative;z-index:1"><span class="badge amber">PACK PROMO</span><h2 style="margin-top:10px">${t('Offres exclusives à ne pas manquer')}</h2><p style="color:#C8D1CC">${t('Des packs complets prêts à l\'emploi pour démarrer votre service à emporter au meilleur prix.')}</p><a href="#/categorie/pack-promo" class="btn kraft lg">${ic('cart','sm')} ${t('Acheter')}</a></div>
-        <div class="art">${heroArt2}</div>
+        <div class="art">${heroPhoto(45) || heroArt2}</div>
       </div>
       <div class="dots">${[0,1].map(i=>`<button class="${S.heroIdx===i?'on':''}" data-a="hero" data-v="${i}" aria-label="Slide ${i+1}"></button>`).join('')}</div>
     </section>
@@ -1145,7 +1145,7 @@ function viewContact(){
         <div class="row">${ic('phone')} <a href="tel:0540021914">${COMPANY.phone2}</a></div>
         <div class="row">${ic('mail')} <a href="mailto:${COMPANY.email}">${COMPANY.email}</a></div>
         <div style="border-radius:10px;overflow:hidden;border:1px solid var(--line);aspect-ratio:16/9;background:#E9E4DA;position:relative" role="img" aria-label="Carte : Douéra, Alger">
-          <svg viewBox="0 0 400 225" width="100%" height="100%" aria-hidden="true"><rect width="400" height="225" fill="#EAE5DB"/><path d="M0 150 C80 120 140 170 220 140 S340 90 400 110" stroke="#fff" stroke-width="14" fill="none"/><path d="M120 0 L170 225" stroke="#fff" stroke-width="10"/><path d="M260 0 C250 80 300 140 290 225" stroke="#fff" stroke-width="8" fill="none"/><rect x="40" y="30" width="60" height="40" fill="#DCD5C8"/><rect x="300" y="160" width="70" height="40" fill="#DCD5C8"/><circle cx="200" cy="105" r="16" fill="#C2453D"/><circle cx="200" cy="105" r="6" fill="#fff"/><text x="200" y="140" text-anchor="middle" font-size="12" font-weight="700" fill="#1F2A24" font-family="Inter,sans-serif">PackLik · Douéra</text></svg>
+          <svg viewBox="0 0 400 225" width="100%" height="100%" aria-hidden="true"><rect width="400" height="225" fill="#EAE5DB"/><path d="M0 150 C80 120 140 170 220 140 S340 90 400 110" stroke="#fff" stroke-width="14" fill="none"/><path d="M120 0 L170 225" stroke="#fff" stroke-width="10"/><path d="M260 0 C250 80 300 140 290 225" stroke="#fff" stroke-width="8" fill="none"/><rect x="40" y="30" width="60" height="40" fill="#DCD5C8"/><rect x="300" y="160" width="70" height="40" fill="#DCD5C8"/><circle cx="200" cy="105" r="16" fill="#C2453D"/><circle cx="200" cy="105" r="6" fill="#fff"/><text x="200" y="140" text-anchor="middle" font-size="12" font-weight="700" fill="#182028" font-family="Inter,sans-serif">PackLik · Douéra</text></svg>
         </div>
         <a class="btn wa" href="https://wa.me/213549593160" target="_blank" rel="noopener">${ic('wa')} ${t('Écrire sur WhatsApp')}</a>
       </div>
@@ -1288,7 +1288,7 @@ function erpShell(page, title, sub, body, actions){
     <aside class="side" aria-label="Menu ERP">
       <div class="brand"><span class="mk">${logoMark()}</span><span>PackLik ERP<small>${t(ROLE_LABEL[S.role])}</small></span></div>
       <nav>${nav}</nav>
-      <div class="foot"><a class="it" href="#/" style="display:flex;gap:10px;align-items:center;color:#C4CEC9;padding:8px">${ic('store')}<span class="lbl">${t('Voir la boutique')}</span></a></div>
+      <div class="foot"><a class="it" href="#/" style="display:flex;gap:10px;align-items:center;color:#C3CBD5;padding:8px">${ic('store')}<span class="lbl">${t('Voir la boutique')}</span></a></div>
     </aside>
     <div style="min-width:0">
       <header class="topbar">
@@ -1383,13 +1383,13 @@ function viewDashboard(){
       ${kpi(t('Panier moyen'), dzd(s.avg))}${kpi(t('Gain d\'upsell'), dzd(s.up), '<span class="up">+'+fmtPct(pct(s.up, list.filter(o=>CONFIRMED_ST.includes(o.status)).reduce((x,o)=>x+linesTotal(o.initial),0)))+'</span>')}
     </div>
     <div class="g21">
-      ${card(t('Commandes et CA livré — 30 jours'), `<div class="card-b">${lineChart([{name:t('Commandes'),data:ser.data,color:'#B8875A',area:true},{name:t('CA livré (k DZD)'),data:ca.data,color:'#2F7D4F'}], ser.labels,{label:'commandes et CA'})}<div class="legend" style="margin-top:6px"><span><i style="background:#B8875A"></i>${t('Commandes')}</span><span><i style="background:#2F7D4F"></i>${t('CA livré (k DZD)')}</span></div></div>`)}
+      ${card(t('Commandes et CA livré — 30 jours'), `<div class="card-b">${lineChart([{name:t('Commandes'),data:ser.data,color:'#FD6400',area:true},{name:t('CA livré (k DZD)'),data:ca.data,color:'#2F7D4F'}], ser.labels,{label:'commandes et CA'})}<div class="legend" style="margin-top:6px"><span><i style="background:#FD6400"></i>${t('Commandes')}</span><span><i style="background:#2F7D4F"></i>${t('CA livré (k DZD)')}</span></div></div>`)}
       ${treasuryCard()}
     </div>
     <div class="g2">${supplierDashCard()}${adsDashCard()}</div>
     ${dailyCard()}
     <div class="g3">
-      ${card(t('Entonnoir'), `<div class="card-b funnel">${funnel.map(([l,v],i)=>`<div class="f"><span class="lb">${t(l)}</span><div class="b"><i style="width:${Math.max(8,v/Math.max(1,s.rec)*100)}%;background:${['#8E6339','#B8875A','#2F6690','#2F7D4F','#1F5C38'][i]}">${v}</i></div><span class="pc">${i? fmtPct(pct(v,funnel[i-1][1])):'100 %'}</span></div>`).join('')}</div>`)}
+      ${card(t('Entonnoir'), `<div class="card-b funnel">${funnel.map(([l,v],i)=>`<div class="f"><span class="lb">${t(l)}</span><div class="b"><i style="width:${Math.max(8,v/Math.max(1,s.rec)*100)}%;background:${['#C74B00','#FD6400','#2F6690','#2F7D4F','#1F5C38'][i]}">${v}</i></div><span class="pc">${i? fmtPct(pct(v,funnel[i-1][1])):'100 %'}</span></div>`).join('')}</div>`)}
       ${card(t('Top 10 produits'), `<div class="card-b">${barsList(Object.entries(topP).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([pid,v])=>({l:esc(PBY[pid].name),v})), true)}</div>`)}
       ${card(t('Top wilayas'), `<div class="card-b">${barsList(Object.entries(topW).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([w,v])=>({l:esc(wName(+w)),v, extra: fmtPct(deliveryRate(ORDERS.filter(o=>o.wilaya===+w)))+' '+t('livr.'), c:'#2F6690'})))}</div>`)}
     </div>
@@ -1876,7 +1876,7 @@ function viewAssign(){
       </div>`)}
     </div>
     ${card(t('Prévisualisation de la répartition du jour'), `<div class="card-b g2">
-      <div>${barsList(AGENTS.map(a=>({l:esc(a.name), v: ORDERS.filter(o=>o.agentId===a.id && o.created>=todayStart.getTime()).length + (sim? sim[a.id]||0 : 0), extra: sim&&sim[a.id]? '(+'+sim[a.id]+' '+t('simulées')+')':'', c: a.online&&!a.pause? '#B8875A':'#C9C2B6'})))}</div>
+      <div>${barsList(AGENTS.map(a=>({l:esc(a.name), v: ORDERS.filter(o=>o.agentId===a.id && o.created>=todayStart.getTime()).length + (sim? sim[a.id]||0 : 0), extra: sim&&sim[a.id]? '(+'+sim[a.id]+' '+t('simulées')+')':'', c: a.online&&!a.pause? '#FD6400':'#C9C2B6'})))}</div>
       <div class="col"><p class="small muted" style="margin:0">${t('Testez le mode choisi : simulez 20 nouvelles commandes et voyez qui les recevrait.')}</p><button class="btn kraft" data-a="simAssign">${ic('shuffle','sm')} ${t('Simuler 20 commandes')}</button>${sim?`<button class="btn" data-a="simReset">${t('Effacer la simulation')}</button>`:''}</div>
     </div>`)}`;
   return erpShell('repartition', t('Répartition des agents'), '', body);
@@ -1975,7 +1975,7 @@ function viewStats(page){
   const doms = S.role==='admin'? [['ventes','Ventes'],['appel','Centre d\'appel'],['livraison','Livraison'],['produits','Produits'],['clients','Clients'],['marketing','Marketing'],['finance','Finance']] : [['ventes','Ventes'],['appel','Centre d\'appel'],['livraison','Livraison'],['produits','Produits']];
   let inner='';
   if(u.tab==='ventes'){ const bySrc={}; list.forEach(o=>bySrc[o.source]=(bySrc[o.source]||0)+1); const ser=dailySeries(30,(a,b)=>list.filter(o=>o.created>=a&&o.created<b).length);
-    inner = `<div class="kpis">${kpi(t('Reçues'),s.rec)}${kpi(t('Confirmées'),s.conf)}${kpi(t('Livrées'),s.deliv)}${kpi(t('Payées'),s.paid)}${kpi(t('CA livré'),dzd(s.ca))}${kpi(t('Panier moyen'),dzd(s.avg))}</div><div class="g21">${card(t('Commandes par jour'), `<div class="card-b">${lineChart([{name:t('Commandes'),data:ser.data,color:'#B8875A',area:true}],ser.labels)}</div>`)}${card(t('Par source'), `<div class="card-b row" style="gap:16px">${donut(Object.entries(bySrc).map(([k,v],i)=>({v,l:k,c:['#B8875A','#2F7D4F','#2F6690','#6A4C93','#D99A2B'][i%5]})),120)}<div class="col small">${Object.entries(bySrc).map(([k,v],i)=>`<span class="row"><i class="dot" style="background:${['#B8875A','#2F7D4F','#2F6690','#6A4C93','#D99A2B'][i%5]}"></i>${t(k)} · <b>${v}</b></span>`).join('')}</div></div>`)}</div>`; }
+    inner = `<div class="kpis">${kpi(t('Reçues'),s.rec)}${kpi(t('Confirmées'),s.conf)}${kpi(t('Livrées'),s.deliv)}${kpi(t('Payées'),s.paid)}${kpi(t('CA livré'),dzd(s.ca))}${kpi(t('Panier moyen'),dzd(s.avg))}</div><div class="g21">${card(t('Commandes par jour'), `<div class="card-b">${lineChart([{name:t('Commandes'),data:ser.data,color:'#FD6400',area:true}],ser.labels)}</div>`)}${card(t('Par source'), `<div class="card-b row" style="gap:16px">${donut(Object.entries(bySrc).map(([k,v],i)=>({v,l:k,c:['#FD6400','#2F7D4F','#2F6690','#6A4C93','#D99A2B'][i%5]})),120)}<div class="col small">${Object.entries(bySrc).map(([k,v],i)=>`<span class="row"><i class="dot" style="background:${['#FD6400','#2F7D4F','#2F6690','#6A4C93','#D99A2B'][i%5]}"></i>${t(k)} · <b>${v}</b></span>`).join('')}</div></div>`)}</div>`; }
   if(u.tab==='appel'){ const reasons={}; list.filter(o=>o.status==='cancelled').forEach(o=>reasons[o.cancelReason]=(reasons[o.cancelReason]||0)+1);
     inner = `<div class="kpis">${kpi(t('Taux de confirmation'),fmtPct(s.confRate))}${kpi(t('Délai moyen 1er appel'), Math.round(AGENTS.reduce((x,a)=>x+agentPerf(a,list).firstCall,0)/AGENTS.length)+' min', t('objectif')+' < 2 h')}${kpi(t('Appels par commande'), (list.reduce((x,o)=>x+o.calls,0)/Math.max(1,list.length)).toFixed(1).replace('.',','))}${kpi(t('Gain d\'upsell'), dzd(s.up))}${kpi(t('Taux d\'upsell'), fmtPct(pct(list.filter(o=>CONFIRMED_ST.includes(o.status)&&upsellGain(o)>0).length, s.conf)))}</div><div class="g21">${card(t('Par agent'), agentTable(list))}${card(t('Motifs d\'annulation'), `<div class="card-b">${barsList(Object.entries(reasons).map(([k,v])=>({l:t(k),v,c:'#C2453D'})))||'—'}</div>`)}</div>`; }
   if(u.tab==='livraison'){ const byW={}; list.forEach(o=>{ byW[o.wilaya]=byW[o.wilaya]||[]; byW[o.wilaya].push(o); }); const reasons={}; list.forEach(o=>o.attempts.forEach(a=>reasons[a.reason]=(reasons[a.reason]||0)+1));
@@ -2040,7 +2040,7 @@ function viewGerantDash(){
   const c = (sts)=>ORDERS.filter(o=>sts.includes(o.status)).length;
   const sentToday = ORDERS.filter(o=>o.times.sent && o.times.sent>=new Date().setHours(0,0,0,0)).length;
   const body = `<div class="kpis">${kpi(t('À préparer'),c(['toprep']))}${kpi(t('Prêtes'),c(['ready']))}${kpi(t('Envoyées aujourd\'hui'),sentToday)}${kpi(t('En transit'),c(['sent','picked','transit','outfor']))}${kpi(t('Tentatives échouées'),`<span class="down">${c(['failed'])}</span>`)}${kpi(t('Retours à réceptionner'),c(['returning']))}</div>
-    <div class="g21">${card(t('Flux du jour'), `<div class="card-b funnel">${[['À préparer',['toprep'],'#8E6339'],['Prêtes',['ready'],'#B8875A'],['Chez DHD',['sent','picked','transit','outfor'],'#2F6690'],['Échecs',['failed'],'#C2453D'],['Retours',['returning'],'#962F28']].map(([l,s,col])=>{ const n=c(s); return `<div class="f"><span class="lb">${t(l)}</span><div class="b"><i style="width:${Math.max(6,n/Math.max(1,c(['toprep','ready','sent','picked','transit','outfor','failed','returning']))*100)}%;background:${col}">${n}</i></div></div>`; }).join('')}</div><div class="card-b row wrap" style="padding-top:0"><a class="btn kraft" href="#/erp/preparation">${ic('box','sm')} ${t('Préparer')}</a><a class="btn primary" href="#/erp/expedition">${ic('send','sm')} ${t('Expédier')}</a><a class="btn" href="#/erp/retours">${ic('undo','sm')} ${t('Retours')}</a></div>`)}${alertsCard()}</div>
+    <div class="g21">${card(t('Flux du jour'), `<div class="card-b funnel">${[['À préparer',['toprep'],'#C74B00'],['Prêtes',['ready'],'#FD6400'],['Chez DHD',['sent','picked','transit','outfor'],'#2F6690'],['Échecs',['failed'],'#C2453D'],['Retours',['returning'],'#962F28']].map(([l,s,col])=>{ const n=c(s); return `<div class="f"><span class="lb">${t(l)}</span><div class="b"><i style="width:${Math.max(6,n/Math.max(1,c(['toprep','ready','sent','picked','transit','outfor','failed','returning']))*100)}%;background:${col}">${n}</i></div></div>`; }).join('')}</div><div class="card-b row wrap" style="padding-top:0"><a class="btn kraft" href="#/erp/preparation">${ic('box','sm')} ${t('Préparer')}</a><a class="btn primary" href="#/erp/expedition">${ic('send','sm')} ${t('Expédier')}</a><a class="btn" href="#/erp/retours">${ic('undo','sm')} ${t('Retours')}</a></div>`)}${alertsCard()}</div>
     <div class="lock-note">${ic('lock','sm')} ${t('Espace Gérant : prix d\'achat, bénéfices, caisses et salaires masqués.')}</div>`;
   return erpShell('dashboard', t('Tableau de bord opérations'), t('Préparation, expédition DHD, retours, stock'), body);
 }

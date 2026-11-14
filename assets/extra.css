@@ -116,3 +116,16 @@ button.kpill:hover{filter:brightness(.94)}
 .dl-pick b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dl-pick small{font-size:11px;font-weight:600}
 .dl-pick[hidden]{display:none}
+
+/* ===== Identité PackLik (packlik.shop) : logo, orange #FD6400, bleu nuit #182028 ===== */
+.logo img{height:46px;width:auto;display:block}
+.logo .mk,.side .brand .mk{background:#fff}
+.logo .mk img,.side .brand .mk img{width:26px;height:26px;object-fit:contain}
+.side a.it.on{background:var(--kraft);color:#121920;font-weight:700}
+.side a.it.on .cnt{background:rgba(18,25,32,.16);color:#121920}
+.tj-submit{background:#F25C00;box-shadow:0 12px 24px -14px #F25C00;font-size:18px}
+.tj-submit:hover{background:#D95200}
+.tj-cod-title .ic{background:var(--kraft)}
+.pcard .im img,.pdp .gal img,.tj-thumbs img{object-fit:contain!important;background:#fff}
+.pcard .im:has(img){background:#fff}
+@media (max-width:640px){.logo img{height:36px}}

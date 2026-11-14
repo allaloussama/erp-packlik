@@ -30,6 +30,7 @@ async function api(route, body){
 const DEMO = {}; Object.entries(COLLS).forEach(([c,arr])=>{ DEMO[c]=clone(arr); arr.length=0; });
 S.favs = new Set(); S.compare = new Set(); S.uid = 0; S.role = 'public';
 
+function realCatalog(p){ const r = typeof REAL_CATALOG!=='undefined' && REAL_CATALOG[p.id]; if(!r) return p; if(!(p.images||[]).length) p.images=r.images.slice(); if(!p.desc) p.desc=r.desc; if(!p.short) p.short=r.short; p.slug=p.slug||r.slug; return p; }
 function reindex(){
   const fill = (map, arr)=>{ Object.keys(map).forEach(k=>delete map[k]); arr.forEach(x=>map[x.id]=x); };
   fill(PBY,PRODUCTS); fill(CBY,CUSTOMERS); fill(UBY,USERS); fill(CRB,CARRIERS); fill(CUB,COURIERS); fill(CBX,CASHBOXES); fill(WBY,WILAYAS);
@@ -133,7 +134,7 @@ function unitPrice(p, v, q){
 /* ---------- écrans : installation, connexion, initialisation ---------- */
 function authCard(title, sub, fields, btn, formName, extra){
   return `<div style="min-height:100vh;display:grid;place-items:center;padding:20px;background:var(--bg)"><form class="card card-b col" data-sub="${formName}" style="width:min(420px,100%);gap:14px" novalidate>
-    <div class="row" style="gap:10px"><span style="width:38px;height:38px;border-radius:10px;background:var(--ink);color:#fff;display:grid;place-items:center">${logoMark()}</span><div><h1 style="font-size:19px">${title}</h1><div class="small muted">${sub}</div></div></div>
+    <img src="assets/brand/logo.png" alt="PackLik" width="560" height="111" style="width:210px;height:auto;align-self:center"><div style="text-align:center"><h1 style="font-size:19px">${title}</h1><div class="small muted">${sub}</div></div>
     ${fields.map(([id,label,type,ac])=>`<div class="field"><label for="${id}">${label}</label><input class="input" id="${id}" type="${type}" autocomplete="${ac}" required></div>`).join('')}
     <button class="btn primary lg block" type="submit">${btn}</button>${extra||''}
     <a class="small" href="#/" style="text-align:center">${t('Retour à la boutique')}</a></form></div>`;
@@ -154,7 +155,7 @@ A.initLoad = async(el)=>{
   const demo = el.dataset.v==='demo'; el.closest('.card').style.opacity=.5;
   const take = c => clone(DEMO[c]);
   WILAYAS.push(...take('wilayas'));
-  PRODUCTS.push(...take('products').map(p=> demo? p : {...p, cost:0, stock:0, onDemand:true, sold30:0, lastSale:null, priceHistory:[], status:p.price? 'actif':'devis', variants:p.variants? p.variants.map(v=>({...v, cost:0, stock:0})):null}));
+  PRODUCTS.push(...take('products').map(realCatalog).map(p=> demo? p : {...p, cost:0, stock:0, onDemand:true, sold30:0, lastSale:null, priceHistory:[], status:p.price? 'actif':'devis', variants:p.variants? p.variants.map(v=>({...v, cost:0, stock:0})):null}));
   CASHBOXES.push(...take('cashboxes').map(b=> demo? b : {...b, balance:0}));
   const dhd = take('carriers').find(c=>c.id==='dhd'), own = take('carriers').find(c=>c.id==='own');
   delete dhd.apiKey; delete dhd.apiUrl; delete dhd.lastSync; delete dhd.status; dhd.name='DHD Livraison'; dhd.family='ecotrack'; dhd.logo='dhd.png'; dhd.creds={};
@@ -168,7 +169,7 @@ A.initLoad = async(el)=>{
     SUPPLIERS.push({id:1, name:'Fournisseur principal', contact:'', phone:'', email:'', address:'', terms:7, termsMax:10, ceiling:null, userId:null});
     Object.assign(SETTINGS, {rules:[], carrierRules:[]});
   }
-  Object.assign(SETTINGS, {dhdApiKey:'', waKey:'', pixelId:'', capiToken:''});
+  Object.assign(SETTINGS, {dhdApiKey:'', waKey:'', pixelId:'', capiToken:'', catalogFilled:true, primary:'#FD6400'});
   reindex(); NET.needInit=false;
   await syncNow(); location.hash='#/erp'; render();
   toast(demo? t('Démonstration chargée (données fictives)') : t('Catalogue chargé'),'ok');
@@ -204,6 +205,8 @@ async function bootApp(){
   const list=[]; Object.entries(b.data).forEach(([c,rows])=>rows.forEach(([id,rev,d])=>list.push([c,id,rev,d])));
   applyDocs(list, null, true); reindex();
   if(b.user){ S.uid=b.user.id; S.role=b.user.role; S.agentId=b.user.id; NET.needInit = b.empty && b.user.role==='admin'; }
+  // base créée avant l'import des photos : on complète une seule fois les fiches sans photo ni description
+  if(S.role==='admin' && PRODUCTS.length && !SETTINGS.catalogFilled){ PRODUCTS.forEach(realCatalog); SETTINGS.catalogFilled=true; queueSync(); }
   loadCart(); autoAssign(); render();
   // toute action de l'utilisateur déclenche l'envoi de ce qu'elle a modifié
   ['click','change','submit','drop'].forEach(ev=>document.addEventListener(ev, ()=>{ saveCart(); queueSync(); }));

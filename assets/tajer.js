@@ -260,3 +260,6 @@ A.peSave = (el)=>{
   log(isNew?'Produit créé':'Produit modifié', p.sku, name); S.ui.pe=null; closeModal();
   toast(p.status==='masqué'? t('Brouillon enregistré (non visible sur la boutique)') : t('Produit enregistré — visible sur la boutique'),'ok'); render();
 };
+
+/* accueil : vraie photo du produit mis en avant quand le catalogue en a une */
+function heroPhoto(id){ const p=PBY[id]; return p && p.images && p.images.length? `<img src="${esc(p.images[0])}" alt="${esc(p.name)}" style="width:100%;aspect-ratio:1/1;object-fit:contain;background:#fff;border-radius:18px;box-shadow:var(--sh2)">` : ''; }
