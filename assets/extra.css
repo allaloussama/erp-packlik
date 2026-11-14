@@ -106,3 +106,13 @@ button.kpill:hover{filter:brightness(.94)}
 .pe-chip:has(input:checked){border-color:var(--kraft-d);background:var(--kraft-l);font-weight:600}
 .pe-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr)) ;gap:10px;align-items:end}
 .pe-row>.btn{justify-self:start}
+
+/* ===== Module livraison ===== */
+.dl-card.def{border-color:var(--kraft-d);box-shadow:0 0 0 3px rgba(184,135,90,.15)}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;max-height:56vh;overflow:auto}
+.dl-pick{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:9px 10px;cursor:pointer;text-align:start}
+.dl-pick:hover{border-color:var(--kraft-d);background:var(--kraft-ll)}
+.dl-pick span{display:flex;flex-direction:column;min-width:0}
+.dl-pick b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dl-pick small{font-size:11px;font-weight:600}
+.dl-pick[hidden]{display:none}

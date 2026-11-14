@@ -315,3 +315,5 @@ A.knSave = async(el)=>{
   try{ const r = await api('order', n); closeModal(); await syncNow(); toast(r.ref+' '+t('créée'),'ok'); render(); }
   catch(e){ el.disabled=false; toast(esc(e.message),'bad'); }
 };
+/* l'agent a lui aussi le tableau de confirmation dans son menu */
+MENUS.agent[0][1].splice(1, 0, ['confirmer','headset','Commandes à confirmer','mine']);

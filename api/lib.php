@@ -14,6 +14,9 @@ function cfg(): array {
 		if (is_file(ROOT . '/config.php')) {
 			$c = array_merge($c, (array) require ROOT . '/config.php');
 		}
+		if (getenv('PACKLIK_DSN')) { // tests : base jetable
+			$c = ['dsn' => getenv('PACKLIK_DSN'), 'user' => null, 'pass' => null];
+		}
 	}
 	return $c;
 }

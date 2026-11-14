@@ -26,6 +26,7 @@ $v = fn(string $f): string => $f . '?v=' . filemtime(__DIR__ . '/' . $f);
 <script src="<?= $v('assets/backend.js') ?>"></script>
 <script src="<?= $v('assets/kando.js') ?>"></script>
 <script src="<?= $v('assets/tajer.js') ?>"></script>
+<script src="<?= $v('assets/delivery.js') ?>"></script>
 <script src="<?= $v('assets/boot.js') ?>"></script>
 </body>
 </html>
