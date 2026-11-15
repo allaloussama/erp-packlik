@@ -1,0 +1,44 @@
+# Déploiement automatique sur Hostinger : à chaque envoi sur main, les tests passent puis le site est copié par FTP.
+# Secrets à créer dans GitHub › Settings › Secrets and variables › Actions :
+#   FTP_SERVER, FTP_USERNAME, FTP_PASSWORD  (hPanel › Fichiers › Comptes FTP)
+#   FTP_DIR (facultatif) : dossier du site vu depuis le compte FTP, par défaut ./ (ex. public_html/)
+# La base (data/*.sqlite), les fichiers envoyés (uploads/) et config.php ne sont pas dans Git :
+# ils ne sont jamais envoyés ni effacés (l'action ne supprime que ce qu'elle a elle-même envoyé).
+name: Déployer sur Hostinger
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-hostinger
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Vérifier le code (PHP + tests)
+        run: |
+          php -v
+          for f in index.php router.php api/*.php; do php -l "$f"; done
+          php tests/smoke.php
+
+      - name: Envoyer sur Hostinger (FTP)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_DIR || './' }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .github/**
+            config.php
+            tests/**
+            *.md

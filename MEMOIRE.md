@@ -2,6 +2,12 @@
 
 Journal des changements, du plus récent au plus ancien. La fiche agent (`AGENTS.md`) explique comment le code est construit.
 
+## 15 novembre 2026 (3) — déploiement automatique
+
+Chaque envoi sur `main` lance `.github/workflows/deploy.yml` : vérification PHP + `tests/smoke.php`, puis copie
+FTP vers Hostinger (secrets `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`, `FTP_DIR` facultatif, à créer dans GitHub).
+`data/`, `uploads/` et `config.php` ne sont jamais envoyés ni effacés. Voir « Déployer sur Hostinger » dans `README.md`.
+
 ## 15 novembre 2026 (2) — menu, formulaire, chargement, éditeur de pages
 
 | Demande | Ce qui a été fait | Où |

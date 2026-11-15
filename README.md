@@ -98,6 +98,23 @@ Les comptes se créent dans **Équipe et accès** (e-mail + mot de passe de 8 ca
 
 ## Déployer sur Hostinger
 
+### Automatique (recommandé)
+
+À chaque envoi sur la branche `main`, GitHub vérifie le code (tests) puis copie le site sur Hostinger par FTP
+(`.github/workflows/deploy.yml`). La base `data/`, les fichiers envoyés `uploads/` et `config.php` ne sont
+jamais touchés. À faire **une seule fois** :
+
+1. hPanel › Fichiers › **Comptes FTP** : noter l'hôte (ex. `ftp.packlik.shop` ou l'IP), l'utilisateur et le
+   mot de passe (le réinitialiser si besoin), et le **répertoire** du compte.
+2. GitHub › dépôt `erp-packlik` › **Settings › Secrets and variables › Actions › New repository secret** :
+   `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`. Si le compte FTP s'ouvre au-dessus de `public_html`,
+   ajouter aussi `FTP_DIR` = `public_html/`.
+3. GitHub › **Actions › Déployer sur Hostinger › Run workflow** pour le premier envoi (ensuite, c'est automatique).
+
+Suivi : onglet **Actions** du dépôt (vert = en ligne, rouge = tests ou FTP en échec, rien n'est envoyé).
+
+### À la main
+
 Hébergement mutualisé Hostinger (hPanel), PHP 8.1 ou plus :
 
 1. **hPanel › Sites web › Gérer › Avancé › GIT** : dépôt `https://github.com/cib3845-sys/erp-packlik.git`,
