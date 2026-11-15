@@ -29,7 +29,7 @@ php -S localhost:8080 router.php
 php tests/smoke.php
 ```
 
-Le test lance un serveur sur une base jetable et vérifie 24 points : prix décidés par le serveur, cloisonnement
+Le test lance un serveur sur une base jetable et vérifie 29 points : prix décidés par le serveur, cloisonnement
 boutique / équipe, droits par rôle, conflit d'écriture, anti-doublon.
 
 ## Ce qui est où
@@ -54,6 +54,8 @@ boutique / équipe, droits par rôle, conflit d'écriture, anti-doublon.
 | `assets/documents.js` | Facture, facture proforma, bon de livraison, décharge : remplis depuis la commande, modifiables, imprimables |
 | `assets/shop-plus.js` | Mini-panier, panier avec formulaire, slides, réglages du formulaire et de la fiche produit, textes modifiables (ERP › Boutique) |
 | `assets/page-editor.js` | Éditeur de pages de la boutique (ERP › Boutique › Pages) |
+| `assets/livreur.js` | Espace livreur |
+| `mobile/` | Application mobile Flutter (Android / iOS), voir `mobile/README.md` |
 | `AGENTS.md`, `MEMOIRE.md` | Fiche pour les développeurs / agents, et journal de ce qui a été fait et où |
 
 ## Comment ça marche
@@ -75,6 +77,7 @@ société de livraison sont décidés par le serveur.
 | Manager | Centre d'appel, répartition, clients, équipe |
 | Agent | Ses commandes à confirmer, ses rappels, ses livraisons |
 | Fournisseur | Son portail : ventes, bons de commande, paiements — sans nom, téléphone ni adresse des clients |
+| Livreur | Sa tournée (ses commandes seulement), son argent en main, son historique, ses performances |
 
 Les comptes se créent dans **Équipe et accès** (e-mail + mot de passe de 8 caractères minimum).
 

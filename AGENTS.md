@@ -30,6 +30,8 @@ Les scripts se chargent dans l'ordre de `index.php` ; chaque fichier **surcharge
 | `assets/documents.js` | Facture, proforma, bon de livraison, décharge (sur `o.docs`) |
 | `assets/shop-plus.js` | Mini-panier, panier + formulaire, slides, réglages formulaire/fiche produit, textes modifiables, page ERP « Boutique » |
 | `assets/page-editor.js` | Éditeur de pages : repères `data-pe`, styles / animations / déplacements / blocs par page (`SETTINGS.site.pages`), aperçu dans un cadre relié par `window.peBridge` |
+| `assets/livreur.js` | Rôle Livreur (menus, vues, actions) ; côté serveur : `out_doc` et `guard_courier` dans `api/lib.php` |
+| `mobile/` | Application Flutter (voir `mobile/README.md`) |
 | `assets/extra.css` | Styles ajoutés (dont le design des commandes) |
 
 ## Règles à respecter
@@ -47,7 +49,8 @@ Les scripts se chargent dans l'ordre de `index.php` ; chaque fichier **surcharge
 7. Vérifier chaque fichier JS modifié : `node --check assets/<fichier>.js`, puis `php tests/smoke.php`.
 8. **JSON côté serveur** : décoder les documents avec `jdec()` (garde `{}`), jamais `json_decode(…, true)` pour ce qui repart au navigateur.
 9. Les données de départ sont écrites dans `index.php` (`pk-boot`) ; `boot()` est dans `api/lib.php`.
-10. Envoi de fichiers : `api/?r=upload` — JPG/PNG/WEBP 4 Mo, MP4/WEBM 40 Mo, rangés dans `uploads/` (PHP désactivé).
+10. **Rôles** : admin, gerant, manager, agent, fournisseur, livreur. Tout nouveau rôle ou collection doit être filtré dans `out_doc()` et gardé à l'écriture, avec une vérification dans `tests/smoke.php`.
+11. Envoi de fichiers : `api/?r=upload` — JPG/PNG/WEBP 4 Mo, MP4/WEBM 40 Mo, rangés dans `uploads/` (PHP désactivé).
 
 ## Déploiement
 

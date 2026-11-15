@@ -4,7 +4,7 @@ DirectoryIndex index.php
 <IfModule mod_rewrite.c>
 RewriteEngine On
 # rien d'interne n'est servi : base SQLite, configuration, tests, bibliothèques de l'API
-RewriteRule ^(data|tests|\.git)(/|$) - [F,L]
+RewriteRule ^(data|tests|mobile|\.git)(/|$) - [F,L]
 RewriteRule ^(config\.php|router\.php|.*\.(sqlite|md|sql))$ - [F,L]
 RewriteRule ^api/(lib|carriers|carriers_catalog)\.php$ - [F,L]
 # /admin : entrée de l'administration

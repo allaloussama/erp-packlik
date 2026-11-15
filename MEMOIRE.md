@@ -2,6 +2,18 @@
 
 Journal des changements, du plus récent au plus ancien. La fiche agent (`AGENTS.md`) explique comment le code est construit.
 
+## 15 novembre 2026 (4) — commandes, en-tête, connexion, livreur, application mobile
+
+| Demande | Ce qui a été fait | Où |
+| --- | --- | --- |
+| Historique des commandes | Colonne « Historique » (dernière action, quand, qui, nombre d'étapes) dans Commandes à confirmer et Suivi ; fenêtre chronologique complète | `assets/erp-plus.js` (fin) |
+| Annuler l'envoi | Le colis est supprimé chez la société (API Yalidine / EcoTrack-DHD / Noest, route `carrier.cancel`), la commande revient dans « Commandes à confirmer » au statut « En attente », le stock est réintégré | `api/carriers.php` (`carrier_cancel`), `assets/erp-plus.js` (`cancelShipment`) |
+| Raccourci fiche d'appel | Bouton casque en tête des actions de chaque commande | `assets/erp-plus.js` |
+| En-tête et pied de page entièrement modifiables | Éditeur › « En-tête et pied de page » : nom, logo, icône, bandeau, recherche, connexion, catégories, menu, téléphones, WhatsApp, e-mail, adresse, textes, liens, réseaux sociaux (`SETTINGS.site.brand`) | `assets/shop-plus.js` (`shopShell`), `assets/page-editor.js` |
+| Bouton Connexion + belle page de connexion | Bouton « Connexion » / « Mon espace » dans l'en-tête ; page de connexion en deux panneaux (aussi pour l'installation) | `assets/shop-plus.js` (`authCard`) |
+| Rôle Livreur | Compte relié à une fiche livreur (Équipe › Ajouter › Livreur). Ma tournée (appeler, WhatsApp, itinéraire, je pars, livrée, échec avec motif, note), Mon argent, Historique, Performances. Le serveur ne lui envoie que ses commandes et leurs clients et n'accepte que les changements de livraison (`guard_courier`) ; 5 vérifications ajoutées à `tests/smoke.php` | `assets/livreur.js`, `api/lib.php`, `api/index.php` |
+| Application mobile | Flutter (Android / iOS) dans `mobile/` : boutique native (accueil, boutique, fiche produit, panier avec formulaire, confirmation, français / arabe) + espace équipe (ERP complet, tous les rôles dont livreur). Voir `mobile/README.md` | `mobile/` |
+
 ## 15 novembre 2026 (3) — déploiement
 
 GitHub est relié à Hostinger par le propriétaire (hPanel › GIT) : le déploiement passe par là (webhook ou bouton
