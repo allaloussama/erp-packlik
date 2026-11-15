@@ -42,8 +42,7 @@ function tjCarrierCard(c){
 const _viewDelivery = viewDelivery;
 viewDelivery = function(){
   const u=S.ui.liv;
-  if(u.tab==='couriers') u.tab='carriers';
-  if(u.tab==='rules'){ const h=_viewDelivery(); return h.replace(/<div class="tabs">[\s\S]*?<\/div>/, livTabs()).replace(t('Sociétés de livraison, vos livreurs et le poids des colis'), t('Sociétés de livraison, règles d\'attribution et tarifs par wilaya')); }
+  if(u.tab==='rules' || u.tab==='couriers'){ const h=_viewDelivery(); return h.replace(/<div class="tabs">[\s\S]*?<\/div>/, livTabs()).replace(t('Sociétés de livraison, vos livreurs et le poids des colis'), t('Sociétés de livraison, règles d\'attribution et tarifs par wilaya')); }
   if(!CATALOG){ loadCatalog().then(()=>{ if(location.hash.startsWith('#/erp/livraison')) render(); }); }
   let inner;
   if(u.tab==='carriers') inner = `<div class="card-b row between wrap"><span class="small muted" style="max-width:640px">${t('Ajoutez votre société, collez ses clés API puis « Enregistrer et tester la connexion ». Le colis est alors créé chez elle à l\'expédition et son suivi relu par « Synchroniser les statuts ». Liaison API disponible pour Yalidine, EcoTrack (dont DHD) et Noest.')}</span><button class="btn primary" data-a="carPick">${ic('plus','sm')} ${t('Ajouter une société')}</button></div>
@@ -59,17 +58,17 @@ viewDelivery = function(){
       </tbody></table></div>`;
   }
   const body = card('', livTabs()+inner);
-  return erpShell('livraison', t('Sociétés de livraison'), t('Sociétés de livraison, règles d\'attribution et tarifs par wilaya'), body);
+  return erpShell('livraison', t('Livraison'), t('Sociétés de livraison, règles d\'attribution et tarifs par wilaya'), body);
 };
-function livTabs(){ const u=S.ui.liv; return `<div class="tabs">${[['carriers','Sociétés de livraison'],['rules','Règles d\'attribution'],['fees','Tarifs par wilaya']].map(([k,l])=>`<button class="${u.tab===k?'on':''}" data-a="livTab" data-v="${k}">${t(l)}</button>`).join('')}</div>`; }
+function livTabs(){ const u=S.ui.liv; return `<div class="tabs">${[['carriers','Sociétés de livraison'],['couriers','Livreurs'],['rules','Règles d\'attribution'],['fees','Tarifs par wilaya']].map(([k,l])=>`<button class="${u.tab===k?'on':''}" data-a="livTab" data-v="${k}">${t(l)}</button>`).join('')}</div>`; }
 /* menu séparé « Livreurs » : vos propres livreurs, leurs zones, l'argent qu'ils ont en main */
 function viewCouriers(){
   const keep=S.ui.liv.tab, es=erpShell; S.ui.liv.tab='couriers';
   erpShell = (page, title, sub, body, actions)=> es('livreurs', t('Livreurs'), t('Vos livreurs, leurs zones et l\'argent qu\'ils ont en main'), body.replace(/<div class="tabs">[\s\S]*?<\/div>/, ''), actions);
   try{ return _viewDelivery(); } finally{ erpShell=es; S.ui.liv.tab=keep; }
 }
-['admin','gerant'].forEach(r=>{ ERP_VIEWS[r].livraison = ()=>viewDelivery(); ERP_VIEWS[r].livreurs = viewCouriers; });
-[MENUS.admin, MENUS.gerant].forEach(groups=>groups.forEach(g=>{ const i=g[1].findIndex(x=>x[0]==='livraison'); if(i>=0) g[1].splice(i, 1, ['livraison','truck','Sociétés de livraison'], ['livreurs','userR','Livreurs']); }));
+['admin','gerant'].forEach(r=>{ ERP_VIEWS[r].livraison = ()=>viewDelivery(); ERP_VIEWS[r].livreurs = ()=>{ S.ui.liv.tab='couriers'; return viewDelivery(); }; });
+/* « Livreurs » est un onglet du module Livraison ; l'ancien lien y mène */
 A.carNoDefault = el=>{ const c=CRB[el.dataset.id]; if(c) c.isDefault=false; render(); };
 IN.livQ = (el)=>{ S.ui.liv.q=el.value; render(); };
 CH.wActive = (el)=>{ WBY[+el.dataset.id].active=el.checked; render(); };

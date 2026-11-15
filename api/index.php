@@ -119,12 +119,16 @@ switch ($route) {
 	case 'upload':
 		$need(['admin', 'gerant']);
 		$f = $_FILES['file'] ?? null;
-		if (!$f || $f['error'] !== UPLOAD_ERR_OK || $f['size'] > 4 * 1024 * 1024) {
-			fail(422, 'Image manquante ou trop lourde (4 Mo maximum).');
+		if (!$f || $f['error'] !== UPLOAD_ERR_OK) {
+			fail(422, 'Fichier manquant ou trop lourd pour le serveur.');
 		}
-		$ext = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'][(new finfo(FILEINFO_MIME_TYPE))->file($f['tmp_name'])] ?? null;
+		$mime = (new finfo(FILEINFO_MIME_TYPE))->file($f['tmp_name']);
+		$ext = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'video/mp4' => 'mp4', 'video/webm' => 'webm'][$mime] ?? null;
 		if (!$ext) {
-			fail(422, 'Format accepté : JPG, PNG ou WEBP.');
+			fail(422, 'Format accepté : JPG, PNG, WEBP, MP4 ou WEBM.');
+		}
+		if ($f['size'] > (str_starts_with($mime, 'video/') ? 40 : 4) * 1024 * 1024) {
+			fail(422, 'Fichier trop lourd (photo 4 Mo, vidéo 40 Mo maximum).');
 		}
 		$name = bin2hex(random_bytes(12)) . '.' . $ext;
 		is_dir(ROOT . '/uploads') || mkdir(ROOT . '/uploads', 0755, true);

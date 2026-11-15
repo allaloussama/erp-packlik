@@ -5,7 +5,7 @@
    Le sélecteur sert aussi dans la fiche d'appel pour ajouter un produit au panier.
    ============================================================ */
 const kCost = (p, v) => v && p.variants? ((p.variants.find(x=>x.id===v)||{}).cost||0) : (p.cost||0);
-function kfBlank(){ return {id:null, ref:'', status:'pending', exchange:false, returnedProduct:'', note:'', name:'', phone:'', phone2:'', address:'', carrier:autoCarrier({wilaya:16}), delivery:'home', wilaya:16, commune:'', items:[], weight:'', weightManual:false, fee:'', feeManual:false, discount:'', discountType:'amount', source:'Téléphone'}; }
+function kfBlank(){ return {id:null, ref:'', status:'pending', exchange:false, returnedProduct:'', note:'', name:'', phone:'', phone2:'', address:'', carrier:autoCarrier({wilaya:16}), delivery:'home', wilaya:16, commune:'', items:[], weight:'', weightManual:false, fee:'', feeManual:false, discount:'', discountType:'amount', source:'Téléphone', platform:''}; }
 A.kForm = ()=>{ S.ui.kc.pop=''; S.ui.kf = kfBlank(); S.ui.pk = {target:'form', idx:-1, q:'', cat:'', pid:null}; kFormDraw(); };
 A.manualOrder = A.kForm;
 A.kEdit = el=>{
@@ -13,7 +13,7 @@ A.kEdit = el=>{
   if(!kCanConf(o) && !kCanShip()){ toast(t('Action non autorisée pour votre rôle.'),'bad'); return; }
   if(SHIP_ST.includes(o.status) && carrierHasApi(carrierOf(o)) && o.tracking){ toast(t('Commande chez le transporteur — non modifiable'),'bad'); return; }
   S.ui.kf = {id:o.id, ref:o.ref, status:confDef(o).id, exchange:!!o.exchange, returnedProduct:o.returnedProduct||'', note:o.note||'', name:c.name||'', phone:c.phone||'', phone2:c.phone2||'', address:o.address||'', carrier:o.carrier||'', delivery:o.delivery, wilaya:o.wilaya, commune:o.commune||'',
-    items:o.items.map(i=>({pid:i.pid, v:i.v, q:i.q, price:i.price})), weight:o.weightFixed||'', weightManual:!!o.weightFixed, fee:o.feeFixed!=null? o.feeFixed : '', feeManual:o.feeFixed!=null && !SHIP_ST.includes(o.status), discount:o.discount||'', discountType:o.discountType||'percent', source:o.source};
+    items:o.items.map(i=>({pid:i.pid, v:i.v, q:i.q, price:i.price})), weight:o.weightFixed||'', weightManual:!!o.weightFixed, fee:o.feeFixed!=null? o.feeFixed : '', feeManual:o.feeFixed!=null && !SHIP_ST.includes(o.status), discount:o.discount||'', discountType:o.discountType||'percent', source:o.source, platform:o.platform||''};
   S.ui.pk=null; kFormDraw();
 };
 function kfQuote(d){
@@ -40,6 +40,7 @@ function kFormHtml(){
       ${L('Statut', `<select class="select" data-kf="status">${kList('conf').map(s=>`<option value="${esc(s.id)}" ${s.id===d.status?'selected':''}>${esc(t(s.label))}</option>`).join('')}</select>`)}
       ${L('Échange ?', `<div class="row" style="gap:8px;flex-wrap:nowrap"><input type="checkbox" class="kfchk" ${d.exchange?'checked':''} data-kf="exchange"><input class="input" placeholder="${t('Produit retourné')}" value="${esc(d.returnedProduct)}" data-kf="returnedProduct" ${d.exchange?'':'disabled'}></div>`)}
       ${L('Notes', `<textarea class="input" rows="1" data-kf="note">${esc(d.note)}</textarea>`)}
+      ${L('Source', `<select class="select" data-kf="platform"><option value="">— ${t('Choisir')} —</option>${Object.entries(PLAT).map(([k,v])=>`<option value="${k}" ${k===d.platform?'selected':''}>${esc(v[0])}</option>`).join('')}</select>`)}
     </div>
     <div class="kfgrid">
       ${L('Nom complet', `<input class="input" value="${esc(d.name)}" data-kf="name" autocomplete="off">`)}
@@ -56,7 +57,7 @@ function kFormHtml(){
     <div class="kfitems">${pid || `<p class="small muted" style="margin:0;text-align:center">${t('Aucun produit')}</p>`}<div style="text-align:center"><button class="kfadd" data-a="pkForm" data-i="-1" aria-label="${t('Ajouter un produit')}">${ic('plus','sm')}</button></div></div>
     <div class="kfgrid kftot">
       ${L('Sub total', `<input class="input num" dir="ltr" id="kfSub" value="${dzd(q.sub)}" readonly>`)}
-      ${L('Poids (kg)', `<input class="input num" type="number" min="0" step="0.1" dir="ltr" value="${d.weightManual? esc(d.weight) : ''}" placeholder="${(Math.round(q.w*10)/10)}" data-kf="weight">`)}
+      ${L('Poids total (kg)', `<input class="input num" type="number" min="0" step="0.1" dir="ltr" value="${d.weightManual? esc(d.weight) : ''}" placeholder="${(Math.round(q.w*10)/10)}" data-kf="weight">`)}
       ${L('Prix de livraison', `<input class="input num" type="number" min="0" dir="ltr" value="${d.feeManual? esc(d.fee) : ''}" placeholder="${q.fee}" data-kf="fee">`)}
       ${L('Remise', `<div class="row" style="gap:6px;flex-wrap:nowrap"><input class="input num" type="number" min="0" dir="ltr" placeholder="0" value="${esc(d.discount)}" data-kf="discount"><select class="select" style="width:64px" data-kf="discountType"><option value="amount" ${d.discountType==='amount'?'selected':''}>DA</option><option value="percent" ${d.discountType==='percent'?'selected':''}>%</option></select></div>`)}
       ${L('Prix total', `<input class="input num kftotal" dir="ltr" id="kfTot" value="${dzd(q.total)}" readonly>`)}
@@ -85,7 +86,7 @@ document.addEventListener('change', e=>{
   if(el.dataset.kfi!==undefined){ const it=d.items[+el.dataset.kfi]; if(el.dataset.f==='v'){ it.v=el.value; const p=PBY[it.pid]; it.price=unitPrice(p, it.v, +it.q||1); kFormDraw(); } return; }
   const f=el.dataset.kf;
   if(el.type==='checkbox'){ d[f]=el.checked; kFormDraw(); return; }
-  if(['carrier','wilaya','commune','status','discountType'].includes(f)){ d[f]=el.value; if(f==='wilaya'){ d.commune=''; const ac=autoCarrier({wilaya:+el.value}); if(ac) d.carrier=ac; } kFormDraw(); }
+  if(['carrier','wilaya','commune','status','discountType','platform'].includes(f)){ d[f]=el.value; if(f==='wilaya'){ d.commune=''; const ac=autoCarrier({wilaya:+el.value}); if(ac) d.carrier=ac; } kFormDraw(); }
 });
 A.kfDel2 = el=>{ S.ui.kf.delivery=el.dataset.v; kFormDraw(); };
 A.kfDel = el=>{ S.ui.kf.items.splice(+el.dataset.i,1); kFormDraw(); };
@@ -100,7 +101,7 @@ A.kfSave = async el=>{
   if(!d.id){
     el.disabled=true;
     try{
-      const r = await api('order', {name:d.name.trim(), phone:d.phone, phone2:d.phone2, wilaya:+d.wilaya, commune:d.commune, address:d.address, delivery:d.delivery, note:d.note, source:d.source, carrier:d.carrier,
+      const r = await api('order', {name:d.name.trim(), phone:d.phone, phone2:d.phone2, wilaya:+d.wilaya, commune:d.commune, address:d.address, delivery:d.delivery, note:d.note, source:d.source, platform:d.platform, carrier:d.carrier,
         exchange:d.exchange, returnedProduct:d.returnedProduct, discount:+d.discount||0, discountType:d.discountType, fee: d.feeManual? +d.fee||0 : null, weight: d.weightManual? +d.weight||0 : null,
         items:items.map(i=>({pid:i.pid, v:i.v, q:Math.max(1,+i.q||1), price:+i.price||0}))});
       S.ui.kf=null; S.ui.pk=null; closeModal(); await syncNow(); kAfterCreate(r.id, d.status); toast(r.ref+' '+t('créée'),'ok'); render();
@@ -110,7 +111,7 @@ A.kfSave = async el=>{
   const o=ORDERS.find(x=>x.id===d.id), c=CBY[o.customerId];
   c.name=d.name.trim(); c.phone=fmtPhone(d.phone); c.phone2 = d.phone2? fmtPhone(d.phone2) : '';
   const sent = SHIP_ST.includes(o.status);
-  Object.assign(o, {address:d.address, wilaya:+d.wilaya, commune:d.commune, note:d.note, exchange:d.exchange, returnedProduct:d.returnedProduct, discount:+d.discount||0, discountType:d.discountType});
+  Object.assign(o, {address:d.address, wilaya:+d.wilaya, commune:d.commune, note:d.note, exchange:d.exchange, returnedProduct:d.returnedProduct, discount:+d.discount||0, discountType:d.discountType, platform:d.platform||''});
   if(!sent){ o.delivery=d.delivery; if(o.carrier!==d.carrier){ o.carrier=d.carrier; o.parcels=null; } }
   o.items = items.map(i=>{ const p=PBY[i.pid]; const was=o.initial.find(x=>x.pid===i.pid && x.v===i.v); return {pid:i.pid, v:i.v||null, q:Math.max(1,+i.q||1), price:+i.price||0, cost:kCost(p,i.v), up:!was || (+i.q>was.q)}; });
   if(!sent){ if(d.feeManual) o.feeFixed=+d.fee||0; else delete o.feeFixed; }

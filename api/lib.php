@@ -209,7 +209,7 @@ function out_doc(string $coll, array $d, ?array $u): ?array {
 	}
 	if ($role === 'public') {
 		if ($coll === 'products') {
-			if (in_array($d['status'] ?? '', ['masqué', 'archivé'], true)) {
+			if (in_array($d['status'] ?? '', ['masqué', 'archivé', 'corbeille'], true)) {
 				return null; // brouillons et produits archivés : invisibles sur la boutique
 			}
 			unset($d['cost'], $d['supplierId'], $d['priceHistory'], $d['sold30'], $d['lastSale']);
@@ -220,7 +220,7 @@ function out_doc(string $coll, array $d, ?array $u): ?array {
 			$d = array_intersect_key($d, array_flip(['id', 'name', 'short', 'connected', 'isDefault', 'internal', 'feeFactor', 'baseKg', 'extraPerKg', 'maxParcelKg', 'chargeOverweight', 'desk', 'wilayas', 'color', 'logo']));
 		} elseif ($coll === 'kv') {
 			if (($d['_key'] ?? '') === 'settings') {
-				$d = array_intersect_key($d, array_flip(['_key', 'modules', 'carrierRules', 'purchaseOn', 'dedup', 'maintenance', 'primary']));
+				$d = array_intersect_key($d, array_flip(['_key', 'modules', 'carrierRules', 'purchaseOn', 'dedup', 'maintenance', 'primary', 'cats', 'site']));
 			}
 		} elseif ($coll === 'pixels') {
 			$d = array_intersect_key($d, array_flip(['id', 'platform', 'name', 'pixelId', 'active']));

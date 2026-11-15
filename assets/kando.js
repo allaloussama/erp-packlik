@@ -116,7 +116,7 @@ renderOverlay = function(){
   const ov = document.getElementById('ov');
   let h = ''; if(S.drawer && !S.drawer.page) h += renderDrawer(); if(S.modal) h += S.modal.html;
   if(ov._h === h) return;
-  const had = {drawer: !!ov.querySelector('.drawer') && !!S.drawer && ov._did===S.drawer.id, modal: !!ov.querySelector('.modal') && ov._mod===S.modal};
+  const had = {drawer: !!ov.querySelector('.drawer') && !!S.drawer && ov._did===S.drawer.id, modal: !!ov.querySelector('.modal') && !!S.modal}; // même fenêtre redessinée (étape, onglet) : pas de nouvelle animation
   const scrolls = [...ov.querySelectorAll('.drawer-b,.modal-b,.timeline,.kscroll')].map(e=>e.scrollTop);
   ov.innerHTML = h; ov._h = h; ov._did = S.drawer && S.drawer.id; ov._mod = S.modal;
   if(had.drawer) ov.querySelectorAll('.drawer,.drawer-ov').forEach(e=>e.style.animation='none');
@@ -154,7 +154,7 @@ function kConfApply(o, id, note){
 
 /* ---------- colonnes (comme Kando : afficher, renommer, réordonner, colonnes libres) ---------- */
 const KCOLS = {
-  conf: [['source','Source',1],['platform','Plateforme',1],['origin','Origine',1],['orderNo','Commande N°',1],['date','Date',1],['store','Nom boutique',1],['fullName','Nom complet',1],['phone','Téléphone',1],['verify','Vérifier',1],['status','Statut',1],['confirmedBy','Confirmé par',1],['address','Adresse',1],['dc','Société de livraison',1],['dcAction','DC action',0],['typeL','Type de livraison',1],['wilaya','Wilaya',1],['commune','Commune',1],['product','Produit',1],['sku','Réf (SKU)',1],['variants','Variantes',0],['qty','Quantité',0],['productPrice','Prix de produit',1],['deliveryCost','Prix de livraison',1],['discount','Remise',0],['weight','Poids',0],['exchange','Changer',0],['total','Total',1],['finance','Finance',1],['costMeta','Cost final',0],['remarks','Remarques',0],['otherCols','Autres colonnes',1],['actions','Actions',1]],
+  conf: [['source','Source',1],['platform','Plateforme',1],['origin','Origine',1],['orderNo','Commande N°',1],['date','Date',1],['store','Nom boutique',1],['fullName','Nom complet',1],['phone','Téléphone',1],['verify','Vérifier',1],['status','Statut',1],['confirmedBy','Confirmé par',1],['address','Adresse',1],['dc','Société de livraison',1],['dcAction','DC action',0],['typeL','Type de livraison',1],['wilaya','Wilaya',1],['commune','Commune',1],['product','Produit',1],['sku','Réf (SKU)',1],['variants','Variantes',0],['qty','Quantité',0],['productPrice','Prix de produit',1],['deliveryCost','Prix de livraison',1],['discount','Remise',0],['weight','Poids (kg)',1],['exchange','Changer',0],['total','Total',1],['finance','Finance',1],['costMeta','Cost final',0],['remarks','Remarques',0],['otherCols','Autres colonnes',1],['actions','Actions',1]],
   track: [['sentAt','Date d\'expédition',1],['dc','Société de livraison',1],['deliveryMan','Livreur',0],['tracking','Numéro de suivi',1],['status','Statut',1],['finance','Finance',1],['fullName','Nom complet',1],['phone','Téléphone',1],['verify','Vérifier',1],['trackNote','Notes de suivi',1],['wilaya','Wilaya',1],['commune','Commune',1],['product','Produit',1],['total','Total',1],['trackedBy','Suivi par',1],['confirmedBy','Confirmé par',1],['actions','Actions',1],['orderNo','Commande N°',0],['address','Adresse',0],['typeL','Type de livraison',0],['qty','Quantité',0],['weight','Poids',0],['deliveryCost','Prix de livraison',1],['discount','Remise',0],['remarks','Remarques',0]]
 };
 /* sur téléphone, la carte d'une commande montre d'abord ces colonnes ; « Détails » déplie les autres */
@@ -417,12 +417,12 @@ viewConfList = function(){
           ${kCanDelete()? `<button class="kiconbtn danger" data-a="kDelSel" data-b="conf" ${selN?'':'disabled'} title="${t('Corbeille')}" aria-label="${t('Supprimer la sélection')}">${ic('trash','sm')}</button><button class="kbtn danger" data-a="kDelAll" data-b="conf" ${list.length?'':'disabled'}>${ic('trash','sm')} ${t('Tout supprimer')}</button><button class="kiconbtn" data-a="kTrash" title="${t('Corbeille')}" aria-label="${t('Corbeille')}" style="position:relative">${ic('archive','sm')}${kTrashList().length? `<span class="kdot">${kTrashList().length}</span>`:''}</button>`:''}
           <button class="kiconbtn" data-a="kReport" data-b="conf" title="${t('Rapport d\'envoi')}" aria-label="${t('Rapport d\'envoi')}">${ic('file','sm')}</button>
           ${kManage()? `<button class="kiconbtn" data-a="kManage" data-v="conf" title="${t('Gérer les statuts')}" aria-label="${t('Gérer les statuts')}">${ic('gear','sm')}</button>`:''}
-          <div class="kpopwrap"><button class="btn primary" data-a="kPop" data-b="conf" data-v="add">${ic('plus','sm')} ${t('Nouvelle commande')}</button>${u.pop==='add'? `<div class="kpop kaddmenu"><button data-a="kForm">${ic('tag','sm')} ${t('Ajouter par formulaire')}</button><button data-a="kRowStart">${ic('rows','sm')} ${t('Ajouter par ligne')}</button><button data-a="kMulti">${ic('list','sm')} ${t('Ajouter plusieurs lignes')}</button></div>`:''}</div>
+          <button class="btn primary" data-a="kForm">${ic('plus','sm')} ${t('Nouvelle commande')}</button>
         </div>
       </div>
       <div class="kfilters">
-        <select class="kfsel" data-ch="kcF" data-f="src">${opt('',u.src,t('Source')+': '+t('Tous'))}${['Site','Manuel'].map(s=>opt(s,u.src,t(s==='Site'?'Boutique PackLik':'Manuel'))).join('')}</select>
-        <select class="kfsel" data-ch="kcF" data-f="plat">${opt('',u.plat,t('Plateforme')+': '+t('Tous'))}${plats.map(p=>opt(p,u.plat,PLAT[p]?PLAT[p][0]:p)).join('')}</select>
+        <select class="kfsel" data-ch="kcF" data-f="src">${opt('',u.src,t('Plateforme')+': '+t('Tous'))}${['Site','Manuel'].map(s=>opt(s,u.src,t(s==='Site'?'Boutique PackLik':'Manuel'))).join('')}</select>
+        <select class="kfsel" data-ch="kcF" data-f="plat">${opt('',u.plat,t('Source')+': '+t('Tous'))}${plats.map(p=>opt(p,u.plat,PLAT[p]?PLAT[p][0]:p)).join('')}</select>
         <select class="kfsel" data-ch="kcF" data-f="hour">${opt('',u.hour,t('Heure')+': '+t('Tous'))}${hours.map(h=>opt(h,u.hour,pad(h)+':00')).join('')}</select>
         <select class="kfsel" data-ch="kcF" data-f="store">${opt('',u.store,t('Nom boutique')+': '+t('Tous'))}${opt('PackLik',u.store,'PackLik')}</select>
         <select class="kfsel" data-ch="kcF" data-f="wil">${opt('',u.wil,t('Wilaya')+': '+t('Tous'))}${wils.map(w=>opt(w,u.wil,(WBY[w]||{code:w}).code+' - '+wName(w))).join('')}</select>
@@ -437,7 +437,7 @@ viewConfList = function(){
     <div class="kchips">
       <button class="kchip ${!u.st&&!u.noPlat&&!u.noProd?'on':''}" data-a="kcChip" data-v="">${t('Tous')} <b>${base.length}</b></button>
       ${defs.map(d=>`<button class="kchip ${u.st===d.id?'on':''}" data-a="kcChip" data-v="${esc(d.id)}"><span class="dot" style="background:${d.color}"></span>${esc(t(d.label))} <b>${counts[d.id]||0}</b></button>`).join('')}
-      <button class="kchip ${u.noPlat?'on':''}" data-a="kcChip" data-v="_noplat"><span class="dot" style="background:#667080"></span>${t('Sans plateforme')} <b>${base.filter(o=>!platformOf(o)).length}</b></button>
+      <button class="kchip ${u.noPlat?'on':''}" data-a="kcChip" data-v="_noplat"><span class="dot" style="background:#667080"></span>${t('Sans source')} <b>${base.filter(o=>!platformOf(o)).length}</b></button>
       <button class="kchip ${u.noProd?'on':''}" data-a="kcChip" data-v="_noprod"><span class="dot" style="background:#667080"></span>${t('Aucun produit')} <b>${base.filter(o=>!o.items.length).length}</b></button>
     </div>`;
   const table = kTable('conf', rows, cols, kConfCell, u, o=>{ const c=kColor(o); return `background:${c}1F;border-inline-start:3px solid ${c}`; }, kRowDraft(cols));

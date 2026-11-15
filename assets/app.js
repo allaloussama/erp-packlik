@@ -1235,20 +1235,16 @@ function placeOrder(){
    ============================================================ */
 const MENUS = {
   admin:[
-    ['Pilotage',[['dashboard','dash','Tableau de bord']]],
-    ['Ventes',[['confirmer','headset','Commandes à confirmer','conf'],['suivi','truck','Suivi des commandes'],['tentatives','alert','Tentatives de livraison','fail']]],
-    ['Opérations',[['achats','file','Achats'],['produits','box','Produits'],['stock','layers','Gestion de stock','low']]],
-    ['Relations',[['fournisseurs','factory','Fournisseurs'],['clients','users','Clients']]],
-    ['Équipe',[['equipe','user','Équipe et accès'],['repartition','shuffle','Répartition des agents']]],
-    ['Finance',[['finance','wallet','Finance'],['compta','book','Comptabilité'],['stats','chart','Statistiques']]],
-    ['Système',[['modules','grid','Modules'],['livraison','truck','Livraison et livreurs'],['pixels','target','Pixels Facebook et TikTok'],['parametres','gear','Paramètres'],['journal','file','Journal d\'activité']]]
+    ['',[['dashboard','dash','Tableau de bord'],['produits','box','Produits'],['stock','layers','Gestion de stock','low'],['livraison','truck','Livraison'],['meta','target','Coût Meta'],['pixels','target','Pixels Facebook et TikTok'],['equipe','user','Équipe et accès'],['stats','chart','Statistiques'],['fournisseurs','factory','Fournisseurs'],['clients','users','Clients'],['achats','file','Achats'],['finance','wallet','Finance'],['compta','book','Comptabilité']]],
+    ['Commandes',[['confirmer','headset','Commandes à confirmer','conf'],['suivi','truck','Suivi des commandes'],['documents','file','Factures et documents']]],
+    ['Système',[['site','store','Boutique : slides, formulaire, pages'],['repartition','shuffle','Répartition des agents'],['modules','grid','Modules'],['parametres','gear','Paramètres'],['journal','file','Journal d\'activité']]]
   ],
   gerant:[
-    ['Opérations',[['dashboard','dash','Tableau de bord'],['preparation','box','Préparation','prep'],['expedition','truck','Expédition','ready'],['suivi','layers','Suivi des commandes'],['tentatives','alert','Tentatives de livraison','fail'],['retours','undo','Retours','ret'],['livraison','user','Livraison et livreurs']]],
+    ['Opérations',[['dashboard','dash','Tableau de bord'],['preparation','box','Préparation','prep'],['expedition','truck','Expédition','ready'],['suivi','layers','Suivi des commandes'],['retours','undo','Retours','ret'],['livraison','truck','Livraison']]],
     ['Stock et achats',[['stock','layers','Gestion de stock','low'],['achats','file','Achats'],['produits','grid','Produits']]]
   ],
   manager:[
-    ['Centre d\'appel',[['dashboard','dash','Tableau de bord équipe'],['file','drag','File globale','conf'],['confirmer','headset','Commandes à confirmer'],['cas','flag','Cas difficiles','hard'],['tentatives','alert','Tentatives de livraison','fail']]],
+    ['Centre d\'appel',[['dashboard','dash','Tableau de bord équipe'],['file','drag','File globale','conf'],['confirmer','headset','Commandes à confirmer'],['cas','flag','Cas difficiles','hard']]],
     ['Pilotage',[['repartition','shuffle','Répartition'],['classement','award','Classement et objectifs'],['clients','users','Clients'],['equipe','user','Mon équipe'],['journal','file','Journal (mes agents)']]]
   ],
   agent:[
@@ -1283,7 +1279,7 @@ function allowedPages(){ return MENUS[S.role].flatMap(g=>g[1].map(i=>i[0])); }
 function erpShell(page, title, sub, body, actions){
   const cnt = counters(); const u = me();
   const modOff = id=> (id==='livraison' && !SETTINGS.modules.delivery && !SETTINGS.modules.couriers) || (id==='pixels' && !SETTINGS.modules.pixels);
-  const nav = MENUS[S.role].map(([g,items])=>`<div class="grp">${t(g)}</div>`+items.filter(i=>!modOff(i[0])).map(([id,icon,label,ck])=>{ const n = ck? cnt[ck] : 0; return `<a class="it ${page===id?'on':''}" href="#/erp/${id}" title="${esc(t(label))}" ${page===id?'aria-current="page"':''}>${ic(icon)}<span class="lbl">${t(label)}</span>${n? `<span class="cnt ${['fail','hard','low','myfail'].includes(ck)?'red':''}">${n}</span>`:''}</a>`; }).join('')).join('');
+  const nav = MENUS[S.role].map(([g,items])=>(g?`<div class="grp">${t(g)}</div>`:'')+items.filter(i=>!modOff(i[0])).map(([id,icon,label,ck])=>{ const n = ck? cnt[ck] : 0; return `<a class="it ${page===id?'on':''}" href="#/erp/${id}" title="${esc(t(label))}" ${page===id?'aria-current="page"':''}>${ic(icon)}<span class="lbl">${t(label)}</span>${n? `<span class="cnt ${['fail','hard','low','myfail'].includes(ck)?'red':''}">${n}</span>`:''}</a>`; }).join('')).join('');
   return `<div class="erp ${S.erpCollapsed?'collapsed':''} ${S.mOpen?'mopen':''}">
     <aside class="side" aria-label="Menu ERP">
       <div class="brand"><span class="mk">${logoMark()}</span><span>PackLik ERP<small>${t(ROLE_LABEL[S.role])}</small></span></div>
@@ -1349,8 +1345,8 @@ function dailySeries(days, fn){ const labels=[], data=[]; for(let d=days-1; d>=0
 function alertsList(){
   const A=[];
   lowStock().slice(0,4).forEach(p=>{ const s=stockInfo(p.id); A.push(['amber','layers', t('Stock bas')+' : '+esc(p.name), s.available+' '+t('disponibles')+' · '+t('seuil')+' '+p.threshold, '#/erp/stock']); });
-  ORDERS.filter(o=>BLOCK_ST.includes(o.status) && o.lastDhdUpdate && Date.now()-o.lastDhdUpdate>48*HOUR).forEach(o=>A.push(['red','clock', t('Colis bloqué +48 h')+' : '+o.ref, t('Aucune mise à jour DHD depuis')+' '+ago(o.lastDhdUpdate).replace(/^il y a |^منذ /,''), '#/erp/tentatives']));
-  const fd = ORDERS.filter(o=>o.status==='failed' && o.attempts.length && Date.now()-o.attempts[o.attempts.length-1].at<DAY).length; if(fd) A.push(['red','alert', fd+' '+t('tentatives échouées aujourd\'hui'), t('À traiter par les agents'), '#/erp/tentatives']);
+  ORDERS.filter(o=>BLOCK_ST.includes(o.status) && o.lastDhdUpdate && Date.now()-o.lastDhdUpdate>48*HOUR).forEach(o=>A.push(['red','clock', t('Colis bloqué +48 h')+' : '+o.ref, t('Aucune mise à jour DHD depuis')+' '+ago(o.lastDhdUpdate).replace(/^il y a |^منذ /,''), '#/erp/suivi']));
+  const fd = ORDERS.filter(o=>o.status==='failed' && o.attempts.length && Date.now()-o.attempts[o.attempts.length-1].at<DAY).length; if(fd) A.push(['red','alert', fd+' '+t('tentatives échouées aujourd\'hui'), t('À traiter par les agents'), '#/erp/suivi']);
   const due = supplierDues().filter(d=>d.due-Date.now()<48*HOUR); if(due.length && S.role!=='gerant') A.push(['amber','factory', t('Échéance fournisseur dans 48 h'), dzd(due.reduce((s,d)=>s+d.rest,0))+' · '+fDate(due[0].due), '#/erp/fournisseurs']);
   const late = ORDERS.filter(o=>['new'].includes(o.status) && Date.now()-o.created>2*HOUR).length; if(late) A.push(['blue','headset', late+' '+t('commandes non traitées depuis +2 h'), t('Réassigner ou relancer les agents'), '#/erp/confirmer']);
   return A;
@@ -1570,7 +1566,7 @@ function orderActions(o){
   if(st==='toprep' && ['admin','gerant'].includes(S.role)) A.push(`<button class="btn green" data-a="oSet" data-v="ready">${ic('box','sm')} ${t('Marquer prête')}</button>`);
   if(st==='ready' && ['admin','gerant'].includes(S.role)) A.push(`<button class="btn primary" data-a="oSet" data-v="sent">${ic('send','sm')} ${t('Envoyer à DHD')}</button>`);
   if(['sent','picked','transit','outfor'].includes(st) && ['admin','gerant'].includes(S.role)) A.push(`<button class="btn" data-a="simAttempt">${ic('alert','sm')} ${t('Simuler une tentative échouée')}</button><button class="btn green" data-a="oSet" data-v="delivered">${ic('check','sm')} ${t('Marquer livrée')}</button>`);
-  if(st==='failed') A.push(`<a class="btn" href="#/erp/tentatives">${ic('alert','sm')} ${t('Traiter la tentative')}</a>`);
+  
   if(st==='delivered' && isAdmin()) A.push(`<button class="btn green" data-a="oSet" data-v="paid">${ic('cash','sm')} ${t('Marquer payée par DHD')}</button>`);
   if(st==='paid' && isAdmin()) A.push(`<button class="btn primary" data-a="oSet" data-v="closed">${ic('lock','sm')} ${t('Clôturer')}</button>`);
   if(st==='returning' && ['admin','gerant'].includes(S.role)) A.push(`<button class="btn" data-a="receiveReturn" data-id="${o.id}">${ic('undo','sm')} ${t('Réceptionner le retour')}</button>`);
@@ -1659,7 +1655,7 @@ function viewTracking(page){
     <div class="tbl-wrap"><table class="tbl"><thead><tr>${ops?`<th><input type="checkbox" data-ch="selAllT" aria-label="${t('Tout sélectionner')}"></th>`:''}<th>${t('N°')}</th><th>${t('Client')}</th><th>${t('Wilaya')}</th><th>${t('Produits')}</th><th class="r">${t('Total')}</th><th>${t('Agent')}</th><th>${t('Suivi DHD')}</th><th>${t('Dernière mise à jour')}</th><th>${t('Statut')}</th></tr></thead><tbody>
     ${list.length? list.map(o=>{ const blocked = BLOCK_ST.includes(o.status) && Date.now()-o.lastDhdUpdate>48*HOUR; return `<tr class="clickable ${o.riskReturn&&o.status==='failed'?'risk':''}" data-a="openOrder" data-id="${o.id}">${ops?`<td data-stop="1"><input type="checkbox" ${u.sel.has(o.id)?'checked':''} data-ch="selT" data-id="${o.id}" aria-label="${o.ref}"></td>`:''}<td><b>${o.ref}</b></td><td>${custCell(o)}</td><td>${esc(wName(o.wilaya))}<div class="xs muted">${o.delivery==='home'?t('Domicile'):t('Bureau DHD')}</div></td><td>${itemsSummary(o.items)}</td><td class="r num">${dzd(orderTotal(o))}</td><td>${agentCell(o.agentId)}</td><td class="small" dir="ltr">${o.tracking||'—'}</td><td class="small">${o.lastDhdUpdate? ago(o.lastDhdUpdate):'—'}${blocked?` <span class="badge red">${t('bloqué +48 h')}</span>`:''}</td><td>${stBadge(o)}</td></tr>`; }).join('') : emptyRow(10,'Aucune commande dans cet onglet','box')}
     </tbody></table></div>`);
-  const actions = `${ops?`<button class="btn" data-a="dhdSync">${ic('refresh','sm')} ${t('Actualiser DHD')}</button>`:''}<a class="btn kraft" href="#/erp/tentatives">${ic('alert','sm')} ${t('Onglet Tentatives')}</a>${isAdmin()?`<button class="btn" data-a="reconcile">${ic('cash','sm')} ${t('Rapprochement DHD')}</button>`:''}`;
+  const actions = `${ops?`<button class="btn" data-a="dhdSync">${ic('refresh','sm')} ${t('Actualiser DHD')}</button>`:''}${isAdmin()?`<button class="btn" data-a="reconcile">${ic('cash','sm')} ${t('Rapprochement DHD')}</button>`:''}`;
   return erpShell(page||'suivi', t('Suivi des commandes'), t('Synchronisation DHD toutes les 15 minutes')+' · '+t('dernière')+' : '+fTime(S.lastSync||NOW-7*MIN), body, actions);
 }
 
@@ -2132,7 +2128,7 @@ function viewMyDeliveries(){
   const mine = ORDERS.filter(o=>o.agentId===S.agentId && CONFIRMED_ST.includes(o.status)).sort((a,b)=>(b.status==='failed')-(a.status==='failed') || b.created-a.created);
   const p = agentPerf(me());
   const body = `<div class="kpis">${kpi(t('Confirmées'),mine.length)}${kpi(t('Livrées'),p.deliv)}${kpi(t('Retours'),p.ret)}${kpi(t('Mon taux de livraison'),fmtPct(p.delivRate), t('objectif')+' 75 %','accent')}</div>`
-    + (mine.some(o=>o.status==='failed')? `<div class="lock-note" style="background:var(--red-l);color:#962F28">${ic('alert','sm')} ${mine.filter(o=>o.status==='failed').length} ${t('tentative(s) échouée(s) à traiter : elles comptent dans votre taux de livraison.')} <a href="#/erp/tentatives" style="margin-inline-start:auto">${t('Traiter')} →</a></div>`:'')
+    + (mine.some(o=>o.status==='failed')? `<div class="lock-note" style="background:var(--red-l);color:#962F28">${ic('alert','sm')} ${mine.filter(o=>o.status==='failed').length} ${t('tentative(s) échouée(s) à traiter : elles comptent dans votre taux de livraison.')}</div>`:'')
     + card(t('Mes commandes confirmées jusqu\'à la livraison'), `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>${t('N°')}</th><th>${t('Client')}</th><th>${t('Wilaya')}</th><th class="r">${t('Total')}</th><th>${t('Suivi')}</th><th>${t('Statut')}</th></tr></thead><tbody>${mine.map(o=>`<tr class="clickable ${o.status==='failed'?'risk':''}" data-a="openOrder" data-id="${o.id}"><td><b>${o.ref}</b></td><td>${custCell(o)}</td><td>${esc(wName(o.wilaya))}</td><td class="r num">${dzd(orderTotal(o))}</td><td>${trackMini(o)}</td><td>${stBadge(o)}</td></tr>`).join('') || emptyRow(6,'Aucune commande confirmée')}</tbody></table></div>`);
   return erpShell('livraisons', t('Mes livraisons'), '', body);
 }
@@ -2340,10 +2336,10 @@ function route(){
   return {parts, q};
 }
 const ERP_VIEWS = {
-  admin:{dashboard:viewDashboard, confirmer:viewConfList, suivi:()=>viewTracking(), tentatives:()=>viewAttempts(), achats:viewPurchases, produits:viewProducts, stock:viewStock, fournisseurs:viewSuppliers, clients:viewCustomers, equipe:viewTeam, repartition:viewAssign, finance:viewFinance, compta:viewAccounting, stats:()=>viewStats(), parametres:viewSettings, journal:viewJournal, modules:viewModules, livraison:viewDelivery, pixels:viewPixels},
-  gerant:{dashboard:viewGerantDash, preparation:viewPreparation, expedition:viewExpedition, suivi:()=>viewTracking(), tentatives:()=>viewAttempts(), retours:viewReturns, livraison:viewDelivery, stock:viewStock, achats:viewPurchases, produits:viewProducts},
-  manager:{dashboard:viewManagerDash, file:viewQueue, confirmer:viewConfList, cas:viewHard, tentatives:()=>viewAttempts(), repartition:viewAssign, classement:viewRanking, clients:viewCustomers, equipe:viewTeam, journal:viewJournal},
-  agent:{mafile:viewMyQueue, rappels:viewMyCallbacks, livraisons:viewMyDeliveries, perfs:viewMyPerf, confirmer:viewConfList, tentatives:()=>viewAttempts(), clients:viewCustomers},
+  admin:{dashboard:viewDashboard, confirmer:viewConfList, suivi:()=>viewTracking(), achats:viewPurchases, produits:viewProducts, stock:viewStock, fournisseurs:viewSuppliers, clients:viewCustomers, equipe:viewTeam, repartition:viewAssign, finance:viewFinance, compta:viewAccounting, stats:()=>viewStats(), parametres:viewSettings, journal:viewJournal, modules:viewModules, livraison:viewDelivery, pixels:viewPixels},
+  gerant:{dashboard:viewGerantDash, preparation:viewPreparation, expedition:viewExpedition, suivi:()=>viewTracking(), retours:viewReturns, livraison:viewDelivery, stock:viewStock, achats:viewPurchases, produits:viewProducts},
+  manager:{dashboard:viewManagerDash, file:viewQueue, confirmer:viewConfList, cas:viewHard, repartition:viewAssign, classement:viewRanking, clients:viewCustomers, equipe:viewTeam, journal:viewJournal},
+  agent:{mafile:viewMyQueue, rappels:viewMyCallbacks, livraisons:viewMyDeliveries, perfs:viewMyPerf, confirmer:viewConfList, clients:viewCustomers},
   fournisseur:{dashboard:viewSupplierDash, paiements:viewSupplierPayments, bons:viewSupplierPOs, receptions:viewSupplierDeliveries, releve:viewSupplierStatement, ventes:viewSupplierSales}
 };
 const ROLE_HOME = {admin:'dashboard', gerant:'dashboard', manager:'dashboard', agent:'mafile', fournisseur:'dashboard'};
@@ -2385,7 +2381,9 @@ function render(){
   }
   // préserver le focus d'un champ de recherche
   const ae = document.activeElement; const keep = ae && ae.dataset && ae.dataset.in ? ae.dataset.in : null; const caret = keep? ae.selectionStart : 0;
+  const sideEl = document.querySelector('.side'), sideTop = sideEl? sideEl.scrollTop : 0; // le menu garde sa position
   document.getElementById('app').innerHTML = html;
+  const side2 = document.querySelector('.side'); if(side2) side2.scrollTop = sideTop;
   renderOverlay();
   if(keep){ const el = document.querySelector(`[data-in="${keep}"]`); if(el){ el.focus(); try{ el.setSelectionRange(caret,caret); }catch(e){} } }
   const cur = location.hash; if(cur!==lastPath){ if(!keep) window.scrollTo(0,0); lastPath = cur; }

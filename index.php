@@ -3,7 +3,7 @@
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: SAMEORIGIN');
 header('Referrer-Policy: strict-origin-when-cross-origin');
-header("Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://graph.facebook.com; frame-ancestors 'self'");
+header("Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://graph.facebook.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com; frame-ancestors 'self'");
 $v = fn(string $f): string => $f . '?v=' . filemtime(__DIR__ . '/' . $f);
 ?>
 <!DOCTYPE html>
@@ -33,6 +33,8 @@ $v = fn(string $f): string => $f . '?v=' . filemtime(__DIR__ . '/' . $f);
 <script src="<?= $v('assets/tajer.js') ?>"></script>
 <script src="<?= $v('assets/delivery.js') ?>"></script>
 <script src="<?= $v('assets/meta.js') ?>"></script>
+<script src="<?= $v('assets/erp-plus.js') ?>"></script>
+<script src="<?= $v('assets/documents.js') ?>"></script>
 <script src="<?= $v('assets/boot.js') ?>"></script>
 </body>
 </html>

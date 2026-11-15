@@ -127,7 +127,7 @@ viewProduct = function(id){
         ${quote? `<div class="lock-note">${ic('phone','sm')} ${t('Ce pack est composé sur mesure : contactez-nous pour un devis.')}</div><a class="btn wa lg" href="https://wa.me/213549593160" target="_blank" rel="noopener">${ic('wa')} ${t('Demander sur WhatsApp')}</a>` : codForm(codItems(), {product:p, options, addCart:ok, ok})}
       </div>
     </div>
-    ${p.desc? `<section class="tj-desc"><h2>${t('Description du produit')}</h2><div>${esc(p.desc).replace(/\n/g,'<br>')}</div></section>`:''}
+    ${p.desc? `<section class="tj-desc"><h2>${t('Description du produit')}</h2><div>${richHtml(p.desc)}</div></section>`:''}
     ${related.length? `<div class="sec-t"><h2>${t('Produits associés')}</h2></div><div class="pgrid">${related.map(pcard).join('')}</div>`:''}
   </div>`,'shop');
 };

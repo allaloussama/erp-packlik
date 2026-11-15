@@ -123,7 +123,7 @@ function viewMeta(){
   return erpShell('meta', t('Coût Meta'), '', `<div class="col" style="gap:18px">${header}${kpiRow}${cards}</div>`);
 }
 ERP_VIEWS.admin.meta = viewMeta;
-(MENUS.admin.find(g=>g[0]==='Finance')||MENUS.admin[0])[1].push(['meta','target','Coût Meta']);
+
 
 /* ---------- actions ---------- */
 A.mCur = el=>{ META.dispCur=el.dataset.v; render(); };
