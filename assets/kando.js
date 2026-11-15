@@ -76,7 +76,7 @@ const PRE_ST = ['new','calling','unreach','callback','cancelled','toprep','ready
 function kList(k){ const l = (SETTINGS.kando||{})[k]; return Array.isArray(l) && l.length? l : KDEF[k]; }
 const kManage = () => S.role==='admin';
 function kTextOn(hex){ const h=String(hex||'#999999').replace('#',''); const l=(0.299*parseInt(h.slice(0,2),16)+0.587*parseInt(h.slice(2,4),16)+0.114*parseInt(h.slice(4,6),16))/255; return l>0.7? '#0B1220':'#fff'; }
-function kPillStyle(c){ return `background:${c};color:${kTextOn(c)}`; }
+function kPillStyle(c){ return `--c:${c}`; } /* la couleur du statut n'est qu'un repère : point + liseré, le texte reste lisible */
 function kindOf(st){ return st==='new'?'pending' : st==='unreach'?'fail' : st==='callback'?'callback' : st==='cancelled'?'cancel' : st==='calling'?'calling' : 'confirm'; }
 /* Statut affiché d'une commande pas encore expédiée : celui choisi s'il correspond encore à son étape, sinon celui par défaut. */
 function confDef(o){
@@ -440,7 +440,7 @@ viewConfList = function(){
       <button class="kchip ${u.noPlat?'on':''}" data-a="kcChip" data-v="_noplat"><span class="dot" style="background:#667080"></span>${t('Sans source')} <b>${base.filter(o=>!platformOf(o)).length}</b></button>
       <button class="kchip ${u.noProd?'on':''}" data-a="kcChip" data-v="_noprod"><span class="dot" style="background:#667080"></span>${t('Aucun produit')} <b>${base.filter(o=>!o.items.length).length}</b></button>
     </div>`;
-  const table = kTable('conf', rows, cols, kConfCell, u, o=>{ const c=kColor(o); return `background:${c}1F;border-inline-start:3px solid ${c}`; }, kRowDraft(cols));
+  const table = kTable('conf', rows, cols, kConfCell, u, o=>`--c:${kColor(o)}`, kRowDraft(cols));
   return erpShell('confirmer', t('Commandes à confirmer'), '', `<div class="kboard">${bar}${table}</div>`);
 };
 function kAssignPop(b, selN){ return `<div class="kpop" style="width:260px;padding:12px"><b class="xs">${t('Assigner un agent de confirmation')}</b>${selN? `<select class="select" id="kAssignSel" style="margin-top:8px"><option value="">—</option>${AGENTS.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join('')}<option value="0">${t('File commune')}</option></select><div class="row" style="gap:6px;margin-top:8px"><button class="btn sm grow" data-a="kPop" data-b="${b}" data-v="assign">${t('Annuler')}</button><button class="btn sm green grow" data-a="kAssign" data-b="${b}">${t('Enregistrer')}</button></div>` : `<p class="small muted" style="margin:8px 0 0">${t('Sélectionnez d\'abord des commandes')}</p>`}</div>`; }

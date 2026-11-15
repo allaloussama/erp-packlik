@@ -477,3 +477,70 @@ body.editing-page main#main :is(h1,h2,h3,h4,p,span,a,b,strong,small,label,button
 .pdp-blk{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:9px;padding:6px 6px 6px 12px;background:#fff}
 .sl-form-prev{pointer-events:none;opacity:.95}
 @media (max-width:700px){.sl-card{flex-direction:column}.sl-prev{width:100%}}
+
+/* ============================================================
+   Commandes : registre PackLik (remplace l'ancien habillage).
+   Statuts dans un rail vertical, tableau blanc et dense, statut = point de couleur + texte encre.
+   ============================================================ */
+.erp ::selection{background:#FFD9BF;color:#121920}
+.erp :focus-visible{outline:2px solid var(--kraft);outline-offset:2px}
+.ktbl input[type=checkbox],.kchk input{accent-color:#121920;width:15px;height:15px}
+/* puces de statut : carré doux, liseré et point de la couleur du statut */
+.kpill,.kmpill{--c:#9ca3af;display:inline-flex;align-items:center;gap:7px;border:1px solid color-mix(in srgb,var(--c) 45%,#fff);background:color-mix(in srgb,var(--c) 9%,#fff);color:#121920;border-radius:6px;padding:4px 9px 4px 8px;font-size:12px;font-weight:600;line-height:1.3;white-space:nowrap}
+.kpill::before,.kmpill::before{content:"";width:7px;height:7px;border-radius:2px;background:var(--c);flex:none}
+.kpill.sm{padding:2px 7px;font-size:11px;font-weight:500;color:#4A5561}
+button.kpill:hover,button.kmpill:hover{filter:none;background:color-mix(in srgb,var(--c) 18%,#fff)}
+.kpill .ico{opacity:.55}
+.kmnote{--c:#9ca3af;border:1px solid color-mix(in srgb,var(--c) 45%,#fff)!important;background:color-mix(in srgb,var(--c) 9%,#fff)!important;color:#121920!important}
+/* barre d'outils : onglets de période soulignés, filtres sobres */
+.kcmd{padding:4px 0 10px;border-bottom:1px solid var(--line)}
+.kseg{border:0;border-radius:0;background:none;gap:2px}
+.kseg button{border:0!important;border-radius:0;padding:9px 10px 7px;color:#5B6672;font-weight:600;border-bottom:2px solid transparent!important;transition:color .15s,border-color .15s}
+.kseg button:hover{color:#121920}
+.kseg button.on{background:none;color:#121920;border-bottom-color:var(--kraft)!important}
+.ksearch .input{border-radius:8px;background:#fff}
+.kiconbtn{border-radius:8px;background:#fff}
+.kfsel{border-radius:8px;background:#fff;font-weight:500;color:#2B3540}
+.kfilters{padding:2px 0}
+.kbtn{border-radius:8px}
+.kbtn.brand{background:#121920;border-color:#121920;color:#fff}
+.kbtn.brand:hover{background:#2B3540}
+.kmulti{border-radius:6px;background:#121920;color:#fff}
+/* rail des statuts */
+.kchips .kchip{border:0;border-radius:8px;background:transparent;color:#2B3540;font-weight:500;padding:7px 10px;justify-content:flex-start}
+.kchips .kchip b{margin-inline-start:auto;color:#6B7682;font-weight:600}
+.kchips .kchip:hover{background:#ECEEF0}
+.kchips .kchip.on{background:#121920;color:#fff}
+.kchips .kchip.on b{color:#FFB98A}
+.kchip .dot{border-radius:2px;width:8px;height:8px}
+/* tableau */
+.ktable{padding:0;border-radius:12px;border:1px solid var(--line);box-shadow:0 1px 2px rgba(18,25,32,.04)}
+.ktbl thead th{background:#fff;text-transform:none;letter-spacing:0;font-size:12px;font-weight:600;color:#5B6672;border-bottom:1px solid #D9DEE3;padding:11px 10px}
+.ktbl thead th .ico{opacity:.4}
+.ktbl tbody tr{background:#fff;transition:background .12s}
+.ktbl tbody tr:hover{background:#FBF8F4}
+.ktbl tbody tr:has(.kchk input:checked){background:#FFF3EA}
+.ktbl td{border-bottom:1px solid #EEF0F2;font-variant-numeric:tabular-nums}
+.kbadge{border-radius:6px;font-weight:600}
+.kbadge.btnlike{border-radius:6px}
+.kname{font-weight:600}
+.kprod{color:#121920;text-decoration:none;font-weight:500}
+.kverify{border-width:1px;border-radius:6px;font-weight:700}
+.kico{border-radius:7px}
+.kico:hover{background:#ECEEF0}
+.kico.sent{background:#E7F5EA}
+.kpager{border-top:1px solid #EEF0F2}
+.kpg{border-radius:7px}
+.kpg.on{background:#121920;color:#fff}
+@media (min-width:1100px){
+  .kboard{display:grid;grid-template-columns:200px minmax(0,1fr);column-gap:18px;row-gap:12px;align-items:start}
+  .kboard .kcmd,.kboard .kfilters,.kboard .kmbar,.kboard .kseg2{grid-column:1/-1}
+  .kboard>.kchips{grid-column:1;flex-direction:column;flex-wrap:nowrap;gap:2px;position:sticky;top:12px;max-height:calc(100vh - 110px);overflow:auto;padding:8px;background:#F4F5F6;border-radius:12px}
+  .kboard>.ktable{grid-column:2}
+}
+@media (max-width:1099px){ .kboard>.kchips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin} .kchips .kchip{flex:none;background:#F4F5F6} }
+.ktrack{border:1px solid #D9DEE3;border-radius:6px;padding:0 8px 0 0;background:#fff;font-family:ui-monospace,"SFMono-Regular",Consolas,monospace;font-size:12px}
+.ktrack:hover{border-color:#121920}
+.kseg2{justify-content:flex-start;align-self:stretch;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:0;gap:6px}
+.kseg2 button{border-radius:0;padding:10px 4px 9px;margin-inline-end:14px;color:#5B6672;border-bottom:2px solid transparent}
+.kseg2 button.on{background:none;box-shadow:none;color:#121920;border-bottom-color:var(--kraft)}

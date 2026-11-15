@@ -175,6 +175,12 @@ function rteClean(html){
 /* les anciennes descriptions sont du texte brut : on garde les retours à la ligne */
 const isHtml = s => /<(p|br|b|strong|i|em|u|h\d|ul|ol|li|img|video|iframe|div|span|font|a)\b/i.test(s||'');
 function richHtml(s){ return isHtml(s)? rteClean(s) : esc(s||'').replace(/\n/g,'<br>'); }
+Object.assign(IC, {
+  alignL:'<path d="M4 6h16M4 10h10M4 14h16M4 18h10"/>', alignC:'<path d="M4 6h16M7 10h10M4 14h16M7 18h10"/>', alignR:'<path d="M4 6h16M10 10h10M4 14h16M10 18h10"/>',
+  listUl:'<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
+  listOl:'<path d="M10 6h10M10 12h10M10 18h10M4 4.5h1.5V9M3.5 9h3M3.5 14.5c.5-1 2.8-1 2.8.5 0 1.2-2.8 2-2.8 3.5h3"/>',
+  rule:'<path d="M3 12h18"/>', video:'<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/>', eraser:'<path d="m7 21-4-4 10-10 7 7-7 7H7zM10 10l7 7M14 21h7"/>'
+});
 const RTE_FONTS = ['Inter','Cairo','Arial','Georgia','Times New Roman','Courier New','Verdana','Tahoma'];
 function rteHtml(v){
   const b=(cmd,icon,label,arg)=>`<button type="button" class="rte-b" data-rte="${cmd}" ${arg?`data-arg="${esc(arg)}"`:''} title="${t(label)}" aria-label="${t(label)}">${icon}</button>`;
@@ -187,11 +193,11 @@ function rteHtml(v){
     <label class="rte-b rte-color" title="${t('Couleur du texte')}">A<input type="color" data-rtec="foreColor" value="#FD6400" aria-label="${t('Couleur du texte')}"></label>
     <label class="rte-b rte-color" title="${t('Surligner')}" style="background:#FFF3B0">A<input type="color" data-rtec="hiliteColor" value="#FFF3B0" aria-label="${t('Surligner')}"></label>
     <span class="rte-sep"></span>
-    ${b('justifyLeft','⯇','Aligner à gauche')}${b('justifyCenter','≡','Centrer')}${b('justifyRight','⯈','Aligner à droite')}
-    ${b('insertUnorderedList','•','Liste à puces')}${b('insertOrderedList','1.','Liste numérotée')}${b('insertHorizontalRule','—','Ligne de séparation')}
+    ${b('justifyLeft',ic('alignL','sm'),'Aligner à gauche')}${b('justifyCenter',ic('alignC','sm'),'Centrer')}${b('justifyRight',ic('alignR','sm'),'Aligner à droite')}
+    ${b('insertUnorderedList',ic('listUl','sm'),'Liste à puces')}${b('insertOrderedList',ic('listOl','sm'),'Liste numérotée')}${b('insertHorizontalRule',ic('rule','sm'),'Ligne de séparation')}
     <span class="rte-sep"></span>
-    ${b('link',ic('globe','sm'),'Lien')}${b('image',ic('upload','sm'),'Ajouter une photo')}${b('video','▶','Ajouter une vidéo')}
-    ${b('undo',ic('undo','sm'),'Annuler')}${b('removeFormat','⌫','Effacer la mise en forme')}
+    ${b('link',ic('globe','sm'),'Lien')}${b('image',ic('upload','sm'),'Ajouter une photo')}${b('video',ic('video','sm'),'Ajouter une vidéo')}
+    ${b('undo',ic('undo','sm'),'Annuler')}${b('removeFormat',ic('eraser','sm'),'Effacer la mise en forme')}
   </div><div class="rte-area" id="rte" contenteditable="true" role="textbox" aria-multiline="true" aria-label="${t('Description complète')}">${richHtml(v)}</div>
   <div class="xs muted">${t('Photo : JPG / PNG / WEBP, 4 Mo. Vidéo : MP4 / WEBM, 40 Mo, ou un lien YouTube.')}</div></div>`;
 }

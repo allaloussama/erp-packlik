@@ -207,7 +207,7 @@ viewTracking = function(page){
       <button class="kchip ${!u.st?'on':''}" data-a="ktChip" data-v="">${t('Tous')} <b>${base.length}</b></button>
       ${chips.map(c=>`<button class="kchip ${u.st===c.id?'on':''}" data-a="ktChip" data-v="${esc(c.id)}"><span class="dot" style="background:${c.color}"></span>${esc(t(c.label))} <b>${counts[c.id]||0}</b></button>`).join('')}
     </div>`;
-  const table = kTable('track', rows, cols, kTrackCell, u, o=> ['returning','returned'].includes(o.status)? 'background:#E230240A' : ['delivered','paid','closed'].includes(o.status)? 'background:#2FBF4A0F' : '');
+  const table = kTable('track', rows, cols, kTrackCell, u, o=>`--c:${kColor(o)}`);
   return erpShell(page||'suivi', t('Suivi des commandes'), '', `<div class="kboard">${bar}${table}</div>`);
 };
 ['admin','gerant'].forEach(r=>ERP_VIEWS[r].suivi = ()=>viewTracking());
