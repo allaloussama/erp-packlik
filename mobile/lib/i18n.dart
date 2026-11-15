@@ -24,6 +24,8 @@ const Map<String, String> _ar = {
   'Ajouter aussi au formulaire': 'أضف إلى نموذج الطلب', 'Nouveau': 'جديد', 'Promo': 'تخفيض', 'Trier': 'ترتيب', 'Prix croissant': 'السعر تصاعديًا',
   'Prix décroissant': 'السعر تنازليًا', 'Plus récents': 'الأحدث', 'Pertinence': 'الملاءمة', 'Retrait au bureau le plus proche': 'الاستلام من أقرب مكتب',
   'Livré jusqu\'à votre porte': 'يصل حتى باب منزلك', 'estimée': 'تقديري', 'Total': 'المجموع',
+  'Paiement à la livraison (espèces) dans les 69 wilayas via la société de livraison. Les frais de livraison dépendent de la wilaya et du type de livraison (domicile ou bureau).': 'الدفع نقدًا عند الاستلام في 69 ولاية عبر شركة التوصيل. تختلف تكاليف التوصيل حسب الولاية ونوع التوصيل (إلى المنزل أو المكتب).',
+  'Chaque commande est confirmée par téléphone par un agent PackLik avant expédition.': 'يتم تأكيد كل طلب هاتفيًا من طرف أحد أعوان PackLik قبل الشحن.',
 };
 
 String tr(String lang, String fr) => lang == 'ar' ? (_ar[fr] ?? fr) : fr;

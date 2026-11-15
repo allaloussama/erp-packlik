@@ -31,7 +31,7 @@ Les scripts se chargent dans l'ordre de `index.php` ; chaque fichier **surcharge
 | `assets/shop-plus.js` | Mini-panier, panier + formulaire, slides, réglages formulaire/fiche produit, textes modifiables, page ERP « Boutique » |
 | `assets/page-editor.js` | Éditeur de pages : repères `data-pe`, styles / animations / déplacements / blocs par page (`SETTINGS.site.pages`), aperçu dans un cadre relié par `window.peBridge` |
 | `assets/livreur.js` | Rôle Livreur (menus, vues, actions) ; côté serveur : `out_doc` et `guard_courier` dans `api/lib.php` |
-| `mobile/` | Application Flutter (voir `mobile/README.md`) |
+| `mobile/` | Application Flutter native : boutique + ERP de tous les rôles (voir `mobile/README.md`). Une règle métier changée dans `assets/*.js` doit l'être aussi dans `mobile/lib/erp/rules.dart` |
 | `assets/extra.css` | Styles ajoutés (dont le design des commandes) |
 
 ## Règles à respecter

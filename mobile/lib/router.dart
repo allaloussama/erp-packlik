@@ -9,10 +9,11 @@ import 'screens/home_screen.dart';
 import 'screens/more_screen.dart';
 import 'screens/product_screen.dart';
 import 'screens/shop_screen.dart';
-import 'screens/web_screen.dart';
+import 'erp/erp_app.dart';
+import 'screens/cgv_screen.dart';
 import 'state.dart';
 
-/// Quatre onglets (Accueil, Boutique, Panier, Plus) ; fiche produit, confirmation et pages web par-dessus.
+/// Quatre onglets (Accueil, Boutique, Panier, Plus) ; fiche produit, confirmation, espace équipe (ERP natif) et CGV par-dessus.
 final appRouter = GoRouter(
   initialLocation: '/',
   routes: [
@@ -27,7 +28,8 @@ final appRouter = GoRouter(
     ),
     GoRoute(path: '/produit/:id', builder: (c, s) => ProductScreen(id: int.tryParse(s.pathParameters['id'] ?? '') ?? 0)),
     GoRoute(path: '/confirmation', builder: (c, s) => ConfirmScreen(ref: s.uri.queryParameters['ref'] ?? '', total: int.tryParse(s.uri.queryParameters['total'] ?? '') ?? 0)),
-    GoRoute(path: '/web', builder: (c, s) => WebScreen(path: s.uri.queryParameters['p'] ?? '#/erp', title: s.uri.queryParameters['t'] ?? '')),
+    GoRoute(path: '/erp', builder: (c, s) => const ErpGate()),
+    GoRoute(path: '/cgv', builder: (c, s) => const CgvScreen()),
   ],
 );
 

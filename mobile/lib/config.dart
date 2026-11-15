@@ -1,6 +1,6 @@
 /// Adresse du site PackLik. À changer au besoin à la compilation :
 /// flutter build apk --dart-define=PACKLIK_URL=https://packlik.shop/
-const String kBaseUrl = String.fromEnvironment('PACKLIK_URL', defaultValue: 'https://packlik.shop/');
+const String kBaseUrl = String.fromEnvironment('PACKLIK_URL', defaultValue: 'https://honeydew-jackal-507877.hostingersite.com/');
 
 /// Les images et liens du site sont relatifs (assets/…, uploads/…) : on les complète avec l'adresse du site.
 String absUrl(String u) {

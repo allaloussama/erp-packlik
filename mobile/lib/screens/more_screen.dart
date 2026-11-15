@@ -30,7 +30,7 @@ class MoreScreen extends ConsumerWidget {
             title: Text(tr(lang, 'Espace équipe'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
             subtitle: Text(tr(lang, 'Connexion à l\'administration, confirmation, livraison, livreurs…'), style: const TextStyle(color: Color(0xFFAEB8C3), fontSize: 12.5)),
             trailing: const Icon(Icons.chevron_right, color: Colors.white),
-            onTap: () => context.push('/web?p=${Uri.encodeComponent('#/erp')}&t=${Uri.encodeComponent(tr(lang, 'Espace équipe'))}'),
+            onTap: () => context.push('/erp'),
           ),
         ),
         const SizedBox(height: 14),
@@ -54,7 +54,7 @@ class MoreScreen extends ConsumerWidget {
         ]),
         const SizedBox(height: 14),
         _Section(title: '', children: [
-          _tile(Icons.description_outlined, tr(lang, 'Conditions générales de vente'), '', () => context.push('/web?p=${Uri.encodeComponent('#/cgv')}&t=${Uri.encodeComponent(tr(lang, 'Conditions générales de vente'))}')),
+          _tile(Icons.description_outlined, tr(lang, 'Conditions générales de vente'), '', () => context.push('/cgv')),
           _tile(Icons.public, tr(lang, 'Ouvrir le site'), kBaseUrl, () => open(kBaseUrl)),
         ]),
         const SizedBox(height: 18),

@@ -2,6 +2,18 @@
 
 Journal des changements, du plus récent au plus ancien. La fiche agent (`AGENTS.md`) explique comment le code est construit.
 
+## 15 novembre 2026 (5) — ERP natif dans l'application mobile
+
+| Demande | Ce qui a été fait | Où |
+| --- | --- | --- |
+| Une vraie application Flutter pour l'ERP, pas une page web | L'espace équipe n'est plus le site dans une WebView : connexion, menus de chaque rôle (admin, gérant, manager, agent, fournisseur, livreur) et pages natives. Données et synchronisation par l'API du site (`boot` / `sync`, même protocole que `assets/backend.js`) ; règles portées depuis `app.js`, `kando.js`, `documents.js`, `livreur.js` | `mobile/lib/erp/` |
+| Pages faites | Tableaux de bord, commandes à confirmer, ma file, écran d'appel, rappels, mes livraisons, file globale, cas difficiles, suivi, préparation, expédition (API société ou livreur), retours, fiche commande (statuts de confirmation, rappel daté, produits, upsell, historique), produits, stock, clients, équipe, journal, tournée / argent / historique / performances du livreur, ventes du fournisseur | `mobile/lib/erp/` |
+| Tous les modules en natif | Livraison, Coût Meta, Pixels, Statistiques, Fournisseurs, Achats, Finance, Comptabilité, Factures et documents (PDF), Boutique, Répartition, Modules, Paramètres, Classement, portail fournisseur complet. Seul l'éditeur visuel des pages reste sur le site | `mobile/lib/erp/` |
+| Construction sur GitHub | Action « Application mobile » : analyse, tests, test de bout en bout (serveur PHP + base jetable), APK téléchargeable dans Actions › Artifacts | `.github/workflows/mobile-apk.yml` |
+| Écarts voulus avec le site | Suggestion d'achat sans le faux volume de démonstration du site ; tentative échouée saisie au bureau avec un motif choisi (le site en tire un au hasard) ; pas d'écriture de notifications par le fournisseur (le serveur les refuse) | `mobile/lib/erp/rules2.dart`, `supplier_pages.dart` |
+| Vérifications | Règles et synchronisation (serveur simulé), chaque page de chaque rôle en 360 px et tablette, parcours complet contre un vrai serveur local | `mobile/test/` |
+| Adresse par défaut | Le site Hostinger `honeydew-jackal-507877.hostingersite.com` | `mobile/lib/config.dart` |
+
 ## 15 novembre 2026 (4) — commandes, en-tête, connexion, livreur, application mobile
 
 | Demande | Ce qui a été fait | Où |

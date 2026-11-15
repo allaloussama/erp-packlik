@@ -1,0 +1,60 @@
+# Construit l'application Android (APK) sur les serveurs de GitHub, après les vérifications.
+# Se lance à chaque envoi touchant mobile/ sur main, ou à la main : onglet Actions › « Application mobile » › Run workflow.
+# L'APK se télécharge en bas de la page de l'exécution (Artifacts › packlik-apk).
+name: Application mobile
+
+on:
+  push:
+    branches: [main]
+    paths: ['mobile/**', 'api/**', '.github/workflows/mobile-apk.yml']
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.5
+          cache: true
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_sqlite, mbstring
+
+      - name: Dépendances
+        run: flutter pub get
+
+      - name: Analyse du code
+        run: flutter analyze
+
+      - name: Tests (règles, synchronisation, chaque écran de chaque rôle)
+        run: flutter test
+
+      - name: Test de bout en bout contre un vrai serveur PackLik (base jetable)
+        run: |
+          (cd .. && PACKLIK_DSN=sqlite:/tmp/pk-e2e.sqlite php -S 127.0.0.1:8199 router.php > /tmp/php.log 2>&1 &)
+          sleep 2
+          flutter test test/erp_live_test.dart --dart-define=PACKLIK_URL=http://127.0.0.1:8199/
+
+      - name: Construction de l'APK
+        run: flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packlik-apk
+          path: mobile/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
