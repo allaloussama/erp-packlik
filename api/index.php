@@ -196,6 +196,10 @@ function sync(array $u, array $in): array {
 					&& (!$exists || $cur['rev'] === (int) ($x['base'] ?? 0)) // sinon : modifié ailleurs entre-temps
 					&& ($exists || $c !== 'orders' || $u['role'] === 'admin') // une commande naît par la route « order »
 					&& !($u['role'] === 'fournisseur' && !$exists);
+				if ($ok && $c === 'orders' && $u['role'] === 'livreur') {
+					$d = guard_courier($u, $exists ? $cur['data'] : null, $d);
+					$ok = $d !== null;
+				}
 				if ($ok && $c === 'users') {
 					$d = guard_user($db, $u, $exists ? $cur['data'] : null, $d);
 					$ok = $d !== null;
@@ -214,7 +218,7 @@ function sync(array $u, array $in): array {
 					continue;
 				}
 				// ni les commandes ni les comptes ne se suppriment : on annule, on désactive
-				if (!can($u, $c, 1) || in_array($c, ['orders', 'users'], true) || $u['role'] === 'fournisseur') {
+				if (!can($u, $c, 1) || in_array($c, ['orders', 'users'], true) || in_array($u['role'], ['fournisseur', 'livreur'], true)) {
 					$reject($c, $id);
 					continue;
 				}
@@ -244,7 +248,7 @@ function guard_user(PDO $db, array $u, ?array $cur, array $d): ?array {
 		if (!$cur || (!$self && !($u['role'] === 'manager' && $cur['role'] === 'agent'))) {
 			return null;
 		}
-		foreach (['id', 'role', 'active', 'email', 'supplierId'] as $k) { // champs réservés à l'admin
+		foreach (['id', 'role', 'active', 'email', 'supplierId', 'courierId'] as $k) { // champs réservés à l'admin
 			if (array_key_exists($k, $cur)) {
 				$d[$k] = $cur[$k];
 			} else {

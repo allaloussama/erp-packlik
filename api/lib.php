@@ -4,7 +4,7 @@ declare(strict_types=1);
 date_default_timezone_set('Africa/Algiers');
 
 const STAFF = ['admin', 'gerant', 'manager', 'agent'];
-const ROLES = ['admin', 'gerant', 'manager', 'agent', 'fournisseur'];
+const ROLES = ['admin', 'gerant', 'manager', 'agent', 'fournisseur', 'livreur'];
 const ROOT = __DIR__ . '/..';
 
 function cfg(): array {
@@ -157,8 +157,8 @@ function acl(): array {
 	$adm = ['admin'];
 	return [
 		'products' => [['*'], $ops],
-		'orders' => [['*'], STAFF],
-		'customers' => [STAFF, STAFF],
+		'orders' => [['*'], [...STAFF, 'livreur']], // livreur : ses commandes seulement, voir guard_courier()
+		'customers' => [[...STAFF, 'livreur'], STAFF],
 		'users' => [['*'], ['*']], // affiné par guard_user()
 		'teams' => [STAFF, ['admin', 'manager']],
 		'suppliers' => [['admin', 'gerant', 'fournisseur'], $adm],
@@ -174,7 +174,7 @@ function acl(): array {
 		'activity' => [STAFF, STAFF],
 		'notifs' => [STAFF, STAFF],
 		'carriers' => [['*'], $ops],
-		'couriers' => [STAFF, $ops],
+		'couriers' => [[...STAFF, 'livreur'], $ops],
 		'pixels' => [$adm, $adm],
 		'wilayas' => [['*'], $ops],
 		'kv' => [['*'], $adm],
@@ -202,6 +202,24 @@ function out_doc(string $coll, array $d, ?array $u): ?array {
 		}
 		if ($coll === 'kv' && ($d['_key'] ?? '') !== 'settings') {
 			return null;
+		}
+	}
+	if ($role === 'livreur') { // ses commandes, leurs clients, son compte ; rien d'autre
+		$cid = (int) ($u['courierId'] ?? 0);
+		if ($coll === 'orders') {
+			return $cid && (int) ($d['courierId'] ?? 0) === $cid ? array_intersect_key($d, array_flip(['id', 'ref', 'created', 'status', 'items', 'customerId', 'courierId', 'carrier', 'wilaya', 'commune', 'address', 'delivery', 'note', 'tracking', 'times', 'history', 'attempts', 'cashWithCourier', 'courierNote', 'discount', 'discountType', 'feeFixed', 'freeShip', 'parcels', 'weightFixed'])) : null;
+		}
+		if ($coll === 'customers') {
+			return in_array((int) $d['id'], courier_customers($cid), true) ? array_intersect_key($d, array_flip(['id', 'name', 'phone', 'phone2'])) : null;
+		}
+		if (($coll === 'users' && (int) $d['id'] !== (int) $u['id']) || ($coll === 'couriers' && (int) $d['id'] !== $cid)) {
+			return null;
+		}
+		if ($coll === 'kv') {
+			return ($d['_key'] ?? '') === 'settings' ? array_intersect_key($d, array_flip(['_key', 'modules', 'carrierRules', 'cats', 'site'])) : null;
+		}
+		if ($coll === 'products') {
+			unset($d['cost'], $d['supplierId'], $d['priceHistory']);
 		}
 	}
 	if ($coll === 'kv' && ($d['_key'] ?? '') === 'meta' && $role !== 'admin') {
@@ -338,4 +356,47 @@ function boot(?array $u): array {
 		'rev' => $rev,
 		'data' => $data,
 	];
+}
+
+/** Clients des commandes confiées à un livreur (pour ne lui montrer que ceux-là). */
+function courier_customers(int $cid): array {
+	static $memo = [];
+	if (!$cid) {
+		return [];
+	}
+	if (!isset($memo[$cid])) {
+		$memo[$cid] = [];
+		foreach (db()->query("SELECT data FROM records WHERE coll='orders' AND deleted=0") as $r) {
+			$o = json_decode($r['data'], true);
+			if ((int) ($o['courierId'] ?? 0) === $cid) {
+				$memo[$cid][] = (int) ($o['customerId'] ?? 0);
+			}
+		}
+	}
+	return $memo[$cid];
+}
+
+/**
+ * Ce qu'un livreur peut changer sur une commande : seulement les siennes, seulement la livraison
+ * (statut de livraison, historique, tentatives, argent encaissé, sa note). Le reste reprend la version serveur.
+ */
+function guard_courier(array $u, ?array $cur, array $d): ?array {
+	$cid = (int) ($u['courierId'] ?? 0);
+	if (!$cur || !$cid || (int) ($cur['courierId'] ?? 0) !== $cid) {
+		return null;
+	}
+	$st = (string) ($d['status'] ?? $cur['status']);
+	if ($st !== $cur['status'] && !in_array($st, ['picked', 'transit', 'outfor', 'delivered', 'failed', 'returning'], true)) {
+		return null;
+	}
+	$out = $cur;
+	foreach (['status', 'times', 'history', 'attempts', 'cashWithCourier', 'courierNote', 'lastDhdUpdate'] as $k) {
+		if (array_key_exists($k, $d)) {
+			$out[$k] = $d[$k];
+		}
+	}
+	if (count((array) ($out['history'] ?? [])) < count((array) ($cur['history'] ?? []))) {
+		return null; // l'historique ne fait que s'allonger
+	}
+	return $out;
 }

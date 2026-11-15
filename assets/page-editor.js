@@ -241,3 +241,39 @@ viewSite = function(){
 };
 ERP_VIEWS.admin.site = ()=>viewSite();
 editBar = function(){ return S.role==='admin' && !PE.preview? `<div class="edit-bar"><a class="btn sm primary" href="#/erp/site?edit=${pePageKey()}">${ic('edit','sm')} ${t('Modifier la page')}</a></div>` : ''; };
+
+/* ---------- éditeur : infos de l'en-tête et du pied de page ---------- */
+function pedBrandPanel(){
+  const p=document.getElementById('pe-panel'); if(!p) return; const b=brand();
+  const f=(k,l,a)=>`<label class="pe-f col"><span>${t(l)}</span><input data-peb2="${k}" value="${esc(b[k]||'')}" ${a||''}></label>`;
+  const tx=(k,l)=>`<label class="pe-f col"><span>${t(l)}</span><textarea data-peb2="${k}" rows="2">${esc(b[k]||'')}</textarea></label>`;
+  const chk=(k,l)=>`<label class="check small"><input type="checkbox" data-peb2="${k}" ${b[k]?'checked':''}> ${t(l)}</label>`;
+  const img=(k,l)=>`<div class="pe-f"><span>${t(l)}</span><span class="row" style="gap:6px"><img src="${esc(b[k])}" alt="" class="pe-brimg"><button class="btn sm" data-a="pedBrImg" data-k="${k}">${ic('upload','sm')} ${t('Changer')}</button></span></div>`;
+  const list=(k,l)=>`<div class="pe-f col"><span>${t(l)}</span>${b[k].map((n,i)=>`<div class="pe-lrow"><input data-pel="${k}" data-i="${i}" data-f="label" value="${esc(n.label)}" placeholder="${t('Texte')}"><input data-pel="${k}" data-i="${i}" data-f="link" value="${esc(n.link)}" placeholder="#/boutique"><button data-a="pedLMove" data-k="${k}" data-i="${i}" ${i?'':'disabled'} aria-label="${t('Monter')}">${ic('arrowU','sm')}</button><button data-a="pedLDel" data-k="${k}" data-i="${i}" aria-label="${t('Supprimer')}">${ic('x','sm')}</button></div>`).join('')}<button class="btn sm" data-a="pedLAdd" data-k="${k}" style="align-self:start">${ic('plus','sm')} ${t('Ajouter un lien')}</button></div>`;
+  const grp=(title, body, open)=>`<details class="pe-grp" ${open?'open':''}><summary>${t(title)}</summary><div class="pe-grp-b">${body}</div></details>`;
+  p.innerHTML = `<div class="pe-head"><div><small>${t('Toutes les pages')}</small><b>${t('En-tête et pied de page')}</b></div><div class="pe-acts"><button data-a="pedBrandClose">${ic('x','sm')} ${t('Fermer')}</button></div></div><div class="pe-scroll">
+    ${grp('Identité', f('name','Nom de la boutique')+img('logo','Logo')+img('mark','Icône (pied de page)'), true)}
+    ${grp('En-tête', f('topText','Bandeau tout en haut (vide = aucun)','placeholder="Livraison gratuite dès 10 000 DA"')+chk('showSearch','Barre de recherche')+chk('showLogin','Bouton « Connexion »')+chk('showCats','Barre des catégories')+list('nav','Menu'))}
+    ${grp('Contact', f('phone1','Téléphone 1','dir="ltr"')+f('phone2','Téléphone 2','dir="ltr"')+f('whatsapp','WhatsApp (213…)','dir="ltr"')+chk('showWa','Bouton WhatsApp flottant')+f('email','E-mail','type="email"')+tx('address','Adresse'))}
+    ${grp('Pied de page', tx('about','Présentation')+tx('payText','Texte « Paiement à la livraison »')+list('links','Liens utiles')+f('copyright','Ligne du bas'))}
+    ${grp('Réseaux sociaux', ['facebook','instagram','tiktok','youtube'].map(k=>`<label class="pe-f col"><span>${k[0].toUpperCase()+k.slice(1)}</span><input data-pes2="${k}" value="${esc(b.social[k]||'')}" placeholder="https://…"></label>`).join(''))}
+  </div>`;
+}
+const pedBrandSave = fn=>{ pedSnap(); const s=site(); s.brand = JSON.parse(JSON.stringify(brand())); fn(s.brand); pedCommit(); };
+A.pedBrand = ()=>{ PED.sel=null; PED.brand=true; pedBrandPanel(); };
+A.pedBrandClose = ()=>{ PED.brand=false; pedPanel(); };
+A.pedBrImg = async el=>{ const f=await pickFile('image/jpeg,image/png,image/webp'); if(!f) return; try{ const u=await uploadFile(f); pedBrandSave(b=>b[el.dataset.k]=u); pedBrandPanel(); }catch(err){ toast(esc(err.message),'bad'); } };
+A.pedLAdd = el=>{ pedBrandSave(b=>b[el.dataset.k].push({label:t('Nouveau lien'), link:'#/boutique'})); pedBrandPanel(); };
+A.pedLDel = el=>{ pedBrandSave(b=>b[el.dataset.k].splice(+el.dataset.i,1)); pedBrandPanel(); };
+A.pedLMove = el=>{ const i=+el.dataset.i; pedBrandSave(b=>{ const a=b[el.dataset.k]; [a[i-1],a[i]]=[a[i],a[i-1]]; }); pedBrandPanel(); };
+document.addEventListener('change', e=>{ const el=e.target; if(!el.closest || !el.closest('#pe-panel')) return;
+  if(el.dataset.peb2) pedBrandSave(b=>b[el.dataset.peb2] = el.type==='checkbox'? el.checked : el.value.trim());
+  if(el.dataset.pes2) pedBrandSave(b=>b.social[el.dataset.pes2]=el.value.trim());
+  if(el.dataset.pel) pedBrandSave(b=>b[el.dataset.pel][+el.dataset.i][el.dataset.f]=el.value.trim());
+});
+/* bouton dans la barre du haut, et raccourci quand on clique dans l'en-tête ou le pied de page */
+const _peOpenBr = A.peOpen;
+A.peOpen = el=>{ _peOpenBr(el); PED.brand=false; const top=document.querySelector('.pe-top .grow'); if(top) top.insertAdjacentHTML('beforebegin', `<button class="pe-tb" data-a="pedBrand">${ic('layers','sm')} ${t('En-tête et pied de page')}</button>`); };
+const _pedPanelBr = pedPanel;
+pedPanel = function(){ if(PED.brand && !PED.sel) return pedBrandPanel(); _pedPanelBr(); const s=PED.sel; if(s && /^[hncf](\.|$)/.test(s.id)){ const h=document.querySelector('#pe-panel .pe-scroll'); if(h) h.insertAdjacentHTML('afterbegin', `<div class="pe-grp-b" style="padding-top:12px"><button class="btn sm primary" data-a="pedBrand">${ic('edit','sm')} ${t('Logo, téléphones, menu, liens, réseaux…')}</button></div>`); } };
+window.peOnSelect = d=>{ if(!document.getElementById('pe-root')) return; PED.brand=false; PED.sel=JSON.parse(JSON.stringify(d)); pedPanel(); };

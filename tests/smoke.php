@@ -119,4 +119,35 @@ check(count($res['rejected']) === 1, 'conflit : une écriture basée sur une ver
 check(count($res['rejected']) === 1, 'une commande ne se supprime pas');
 check(call('logout', [], $agent, $acsrf)[0] === 200 && call('sync', ['since' => 0], $agent, $acsrf)[0] === 401, 'déconnexion : session fermée');
 
+// livreur : ne voit que ses commandes, ne change que la livraison
+$liv = tempnam(sys_get_temp_dir(), 'pk');
+$now = call('boot', null, $admin)[1];
+$all = array_column(array_column($now['data']['orders'], 2), null, 'id');
+$mine = $all[$r['id']];
+$other = $all[$r2['id']];
+$mine['courierId'] = 7;
+$mine['status'] = 'sent';
+[$c, $res] = call('sync', ['since' => $now['rev'], 'up' => [
+	['c' => 'orders', 'id' => (string) $mine['id'], 'd' => $mine, 'base' => $rev('orders', (string) $mine['id'], $now)],
+	['c' => 'users', 'id' => '3', 'd' => ['id' => 3, 'name' => 'Livreur', 'role' => 'livreur', 'courierId' => 7, 'email' => 'liv@test.local', 'active' => true], 'base' => 0],
+]], $admin, $csrf);
+check($c === 200 && !$res['rejected'], 'l\'admin crée un livreur et lui confie une commande');
+call('password', ['uid' => 3, 'password' => $pass], $admin, $csrf);
+check(call('login', ['email' => 'liv@test.local', 'password' => $pass], $liv)[0] === 200, 'le livreur se connecte');
+$lb = call('boot', null, $liv)[1];
+$lo = array_column(array_column($lb['data']['orders'] ?? [], 2), null, 'id');
+$lc = array_column(array_column($lb['data']['customers'] ?? [], 2), null, 'id');
+check(array_keys($lo) === [$mine['id']] && count($lc) === 1 && !isset($lb['data']['cashboxes']) && !isset($lb['data']['carriers'][0][2]['creds']), 'livreur : seulement sa commande et son client, ni caisses ni clés API');
+$d = $lo[$mine['id']];
+$d['status'] = 'delivered';
+$d['cashWithCourier'] = true;
+$d['items'][0]['price'] = 1;
+$d['history'][] = ['at' => 1, 'who' => 'Livreur', 'action' => 'Livrée'];
+[$c, $res] = call('sync', ['since' => $lb['rev'], 'up' => [['c' => 'orders', 'id' => (string) $d['id'], 'd' => $d, 'base' => $rev('orders', (string) $d['id'], $lb)]]], $liv, $lb['csrf']);
+$saved = array_column(array_column(call('boot', null, $admin)[1]['data']['orders'], 2), null, 'id')[$mine['id']];
+check(!$res['rejected'] && $saved['status'] === 'delivered' && $saved['cashWithCourier'] === true && $saved['items'][0]['price'] === 800, 'livreur : marque « livrée », mais ne peut pas changer le prix');
+$other['courierId'] = 7;
+[$c, $res] = call('sync', ['since' => $lb['rev'], 'up' => [['c' => 'orders', 'id' => (string) $other['id'], 'd' => ['status' => 'delivered'] + $other, 'base' => $rev('orders', (string) $other['id'], $now)]]], $liv, $lb['csrf']);
+check(count($res['rejected']) === 1, 'livreur : ne peut pas toucher la commande d\'un autre');
+
 echo "\n$n vérifications réussies.\n";

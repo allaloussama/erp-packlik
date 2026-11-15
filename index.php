@@ -56,6 +56,7 @@ $v = fn(string $f): string => $f . '?v=' . filemtime(__DIR__ . '/' . $f);
 <script src="<?= $v('assets/documents.js') ?>"></script>
 <script src="<?= $v('assets/shop-plus.js') ?>"></script>
 <script src="<?= $v('assets/page-editor.js') ?>"></script>
+<script src="<?= $v('assets/livreur.js') ?>"></script>
 <script src="<?= $v('assets/boot.js') ?>"></script>
 </body>
 </html>

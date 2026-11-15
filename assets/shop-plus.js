@@ -29,8 +29,46 @@ function miniCart(){
       <a class="btn primary block lg" href="#/panier?form=1" data-a="miniGo">${t('Commander')}</a></div>`:''}
   </aside>`;
 }
-const _shopShell = shopShell;
-shopShell = function(content, active){ return _shopShell(content, active) + miniCart() + editBar(); };
+/* ---------- en-tête et pied de page : tout se règle (ERP › Boutique › Pages › Infos de l'en-tête et du pied de page) ----------
+   SETTINGS.site.brand = {name, logo, mark, phone1, phone2, whatsapp, email, address, about, payText, copyright,
+     topText, showSearch, showCats, showWa, showLogin, nav:[{label,link}], links:[{label,link}], social:{facebook,instagram,tiktok,youtube}} */
+const BRAND_DEF = () => ({name:'PackLik', logo:'assets/brand/logo.png', mark:'assets/brand/mark.png', phone1:COMPANY.phone1, phone2:COMPANY.phone2, whatsapp:'213549593160', email:COMPANY.email,
+  address:COMPANY.address, about:'PackLik, votre partenaire de confiance pour l\'emballage et les solutions alimentaires en Algérie.', payText:'Vous payez en espèces au livreur à la réception de votre colis, dans les 69 wilayas.',
+  copyright:'© '+new Date().getFullYear()+' PackLik · packlik.shop', showSearch:true, showCats:true, showWa:true, showLogin:true,
+  nav:[{label:'Accueil', link:'#/'},{label:'Boutique', link:'#/boutique'},{label:'Contact', link:'#/contact'}],
+  links:[{label:'Boutique', link:'#/boutique'},{label:'Contact', link:'#/contact'},{label:'Conditions générales de vente', link:'#/cgv'}],
+  social:{facebook:'', instagram:'', tiktok:'', youtube:''}});
+function brand(){ const d=BRAND_DEF(), b=(SETTINGS.site && SETTINGS.site.brand && typeof SETTINGS.site.brand==='object' && !Array.isArray(SETTINGS.site.brand))? SETTINGS.site.brand : {}; const out={...d, ...b, social:{...d.social, ...(b.social||{})}}; ['nav','links'].forEach(k=>{ if(!Array.isArray(out[k])) out[k]=d[k]; }); return out; }
+const safeLink = l => /^(#\/|https?:\/\/|tel:|mailto:)/.test(l||'')? l : '#/';
+const telOf = p => 'tel:'+String(p||'').replace(/[^\d+]/g,'');
+const SOCIAL_IC = {facebook:'<path d="M14 8h3V4h-3a4 4 0 0 0-4 4v3H7v4h3v6h4v-6h3l1-4h-4V8z"/>', instagram:'<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/>', tiktok:'<path d="M14 3v11a4 4 0 1 1-4-4M14 3c.5 3 2.5 5 6 5"/>', youtube:'<rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z"/>'};
+shopShell = function(content, active){
+  const b=brand(), route0=route().parts[0]||'', on=l=> (l==='#/'? !route0 : location.hash.startsWith(l))? 'on':'';
+  const staff = S.uid && S.role && S.role!=='public';
+  return `${b.topText? `<div class="sh-top">${esc(t(b.topText))}</div>`:''}
+  <header class="shop-h"><div class="in">
+    <a href="#/" class="logo" aria-label="${esc(b.name)} — ${t('accueil')}"><img src="${esc(b.logo)}" alt="${esc(b.name)}" width="560" height="111"></a>
+    ${b.showSearch? `<form class="search" data-sub="shopSearch" role="search"><input id="shopQ" type="search" placeholder="${t('Rechercher un emballage…')}" value="${esc(S.ui.shop.q)}" aria-label="${t('Rechercher')}"><button type="submit" aria-label="${t('Rechercher')}">${ic('search')}</button></form>` : '<span class="grow"></span>'}
+    <div class="hicons">
+      ${langSwitch()}
+      ${b.showLogin? `<a class="sh-login" href="#/erp">${ic('user','sm')}<span class="lbl">${staff? t('Mon espace') : t('Connexion')}</span></a>`:''}
+      <a class="cart-pill" href="#/panier" data-a="miniOpen" aria-label="${t('Panier')}">${ic('cart')}<span class="num">${cartCount()}</span><span class="num">${dzd(cartTotal())}</span></a>
+    </div>
+  </div></header>
+  <nav class="nav" aria-label="${t('Menu principal')}"><div class="in"><span class="navlinks">${b.nav.map(n=>`<a href="${esc(safeLink(n.link))}" class="${on(n.link)}">${esc(t(n.label))}</a>`).join('')}</span></div></nav>
+  ${b.showCats? `<div class="catbar"><div class="in">${CATS.map(c=>`<a href="#/categorie/${c.id}" class="${S.ui.shop.cat===c.id && active==='shop'?'on':''}">${esc(catName(c))}</a>`).join('')}</div></div>`:''}
+  <main id="main">${content}</main>
+  <footer class="footer"><div class="in">
+    <div><a href="#/" class="logo" style="color:#fff"><span class="mk"><img src="${esc(b.mark)}" alt="" width="26" height="26"></span><span>${esc(b.name)}</span></a><p style="margin:12px 0 0;max-width:320px">${esc(t(b.about))}</p>
+      ${Object.entries(b.social).some(([,u])=>u)? `<div class="sh-social">${Object.entries(b.social).filter(([,u])=>/^https?:\/\//.test(u||'')).map(([k,u])=>`<a href="${esc(u)}" target="_blank" rel="noopener" aria-label="${k}"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${SOCIAL_IC[k]}</svg></a>`).join('')}</div>`:''}</div>
+    <div><h4>${t('Contact')}</h4>${b.address?`<a>${esc(t(b.address))}</a>`:''}${b.phone1?`<a href="${telOf(b.phone1)}" dir="ltr">${esc(b.phone1)}</a>`:''}${b.phone2?`<a href="${telOf(b.phone2)}" dir="ltr">${esc(b.phone2)}</a>`:''}${b.email?`<a href="mailto:${esc(b.email)}">${esc(b.email)}</a>`:''}</div>
+    <div><h4>${t('Liens utiles')}</h4>${b.links.map(n=>`<a href="${esc(safeLink(n.link))}">${esc(t(n.label))}</a>`).join('')}</div>
+    <div><h4>${t('Paiement à la livraison')}</h4><p style="margin:0">${esc(t(b.payText))}</p></div>
+  </div><div class="bot">${esc(t(b.copyright))}</div></footer>
+  ${b.showWa && b.whatsapp? `<a class="wa-float" href="https://wa.me/${esc(String(b.whatsapp).replace(/\D/g,''))}" target="_blank" rel="noopener" aria-label="WhatsApp">${ic('wa','lg')}</a>`:''}`
+  + miniCart() + editBar();
+};
+
 const openMini = ()=>{ S.ui.mini=true; render(); document.getElementById('toasts').replaceChildren(); }; // le panneau suffit comme confirmation
 A.addCart = el=>{ const p=PBY[+el.dataset.id]; if(!p) return; addToCart(p.id, p.minQty||1, null); fbq('AddToCart',{id:p.id}); openMini(); };
 A.pdpAdd = ()=>{ const p=PBY[S.ui.pdp.id]; addToCart(p.id, Math.max(p.minQty||1, +S.ui.pdp.q||1), S.ui.pdp.v); fbq('AddToCart',{id:p.id}); openMini(); };
@@ -230,3 +268,22 @@ A.ffMove = el=>{ const fs=formFields(), i=+el.dataset.i, j=i+(+el.dataset.v); [f
 A.ffAdd = ()=>{ const fs=formFields(); fs.push({key:'f'+uid(), label:t('Nouveau champ'), placeholder:'', type:'text', required:false, show:true, full:false}); ffSave(fs); };
 A.ffDel = el=>{ const fs=formFields(); fs.splice(+el.dataset.i,1); ffSave(fs); };
 A.ffReset = ()=>{ if(!confirm(t('Revenir aux champs par défaut ?'))) return; const s=site(); if(s.form) delete s.form.fields; slSave(); };
+
+/* ============================================================
+   Page de connexion (aussi installation et premier lancement) : deux panneaux, marque à gauche, formulaire à droite
+   ============================================================ */
+authCard = function(title, sub, fields, btn, formName, extra){
+  const b=brand();
+  return `<div class="lg-wrap">
+    <aside class="lg-side"><a href="#/" class="lg-logo"><span class="lg-mk"><img src="${esc(b.mark)}" alt=""></span><span>${esc(b.name)}</span></a>
+      <div class="lg-pitch"><h2>${t('Votre boutique et votre ERP, au même endroit.')}</h2><p>${t('Commandes, confirmation, livraison, stock, fournisseurs et finances : tout se pilote d\'ici.')}</p>
+        <ul>${[['headset','Confirmez les commandes en un clic'],['truck','Envoyez aux sociétés de livraison'],['wallet','Suivez l\'argent jusqu\'au dinar']].map(([i,l])=>`<li>${ic(i,'sm')} ${t(l)}</li>`).join('')}</ul></div>
+      <small>© ${new Date().getFullYear()} ${esc(b.name)}</small></aside>
+    <main class="lg-main"><form class="lg-form" data-sub="${formName}" novalidate>
+      <div class="lg-head"><h1>${title}</h1><p>${sub}</p></div>
+      ${fields.map(([id,label,type,ac])=>`<div class="lg-field"><label for="${id}">${label}</label><div class="lg-inp">${ic(type==='password'?'lock':type==='email'?'mail':'user','sm')}<input id="${id}" type="${type}" autocomplete="${ac}" required>${type==='password'?`<button type="button" class="lg-eye" data-a="lgEye" data-v="${id}" aria-label="${t('Afficher le mot de passe')}">${ic('eye','sm')}</button>`:''}</div></div>`).join('')}
+      <button class="lg-btn" type="submit">${btn} ${ic('arrowR','sm flip')}</button>${extra||''}
+      <a class="lg-back" href="#/">${ic('chevR','sm')} ${t('Retour à la boutique')}</a>
+    </form></main></div>`;
+};
+A.lgEye = el=>{ const i=document.getElementById(el.dataset.v); if(i) i.type = i.type==='password'? 'text' : 'password'; };
