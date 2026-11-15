@@ -441,3 +441,39 @@ button.kpill:hover{filter:brightness(.95)}
   body.printing-doc .modal-b{padding:0;overflow:visible}
   @page{size:A4;margin:14mm}
 }
+
+/* ---------- boutique : en-tête, carte produit, mini-panier, panier + formulaire, édition ---------- */
+.shop-h .hicons{display:flex;align-items:center;gap:12px}
+.shop-h .lang-sw{background:var(--bg);border:1px solid var(--line)}
+.pc-acts{display:flex;flex-direction:column;gap:6px;margin-top:auto}
+.mc-bg{position:fixed;inset:0;background:rgba(16,22,28,.45);z-index:120;animation:fin .15s}
+.mc{position:fixed;top:0;bottom:0;inset-inline-end:0;width:min(400px,100vw);background:#fff;z-index:121;display:flex;flex-direction:column;box-shadow:-10px 0 30px rgba(0,0,0,.15);animation:mcin .22s ease-out}
+[dir=rtl] .mc{animation-name:mcinr}
+@keyframes mcin{from{transform:translateX(100%)}to{transform:none}}
+@keyframes mcinr{from{transform:translateX(-100%)}to{transform:none}}
+.mc-h{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line);font-size:16px;text-transform:uppercase;letter-spacing:.04em}
+.mc-b{flex:1;overflow:auto;padding:6px 18px}
+.mc-it{display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--line2)}
+.mc-im{width:64px;height:64px;flex:none;border-radius:8px;overflow:hidden;background:var(--bg);display:grid;place-items:center}
+.mc-im img{width:100%;height:100%;object-fit:cover}
+.mc-nm{font-weight:600;font-size:13.5px;line-height:1.35;display:block;color:var(--ink)}
+.mc-f{border-top:1px solid var(--line);padding:16px 18px;display:flex;flex-direction:column;gap:10px;font-size:15px}
+.mc-f .btn{text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.mc-view{background:var(--bg)}
+.cart-cod{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.cart-cod{grid-template-columns:1fr}}
+.pdp.gal-right>.tj-gal{order:2}
+.edit-bar{position:fixed;bottom:16px;inset-inline-start:50%;transform:translateX(-50%);z-index:110;display:flex;gap:8px;align-items:center;background:#121920;color:#fff;padding:8px 10px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-size:13px;white-space:nowrap}
+[dir=rtl] .edit-bar{transform:translateX(50%)}
+.edit-bar.on{padding-inline-start:16px}
+body.editing-page main#main :is(h1,h2,h3,h4,p,span,a,b,strong,small,label,button,li,div):hover{outline:2px dashed var(--kraft);outline-offset:2px;cursor:text}
+/* ERP › Boutique */
+.sl-card{display:flex;gap:16px;border:1px solid var(--line);border-radius:12px;padding:12px;align-items:flex-start}
+.sl-card.off{opacity:.55}
+.sl-prev{width:220px;height:120px;flex:none;border-radius:10px;display:flex;align-items:center;gap:8px;padding:12px;overflow:hidden}
+.sl-prev div{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:12px;line-height:1.3}
+.sl-prev b{font-size:13px}
+.sl-prev img{width:90px;height:90px;object-fit:contain;flex:none}
+.pdp-blk{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:9px;padding:6px 6px 6px 12px;background:#fff}
+.sl-form-prev{pointer-events:none;opacity:.95}
+@media (max-width:700px){.sl-card{flex-direction:column}.sl-prev{width:100%}}

@@ -7,6 +7,8 @@ RewriteEngine On
 RewriteRule ^(data|tests|\.git)(/|$) - [F,L]
 RewriteRule ^(config\.php|router\.php|.*\.(sqlite|md|sql))$ - [F,L]
 RewriteRule ^api/(lib|carriers|carriers_catalog)\.php$ - [F,L]
+# /admin : entrée de l'administration
+RewriteRule ^admin/?$ index.php [L]
 </IfModule>
 <IfModule mod_headers.c>
 <FilesMatch "\.(css|js|png|jpg|jpeg|webp)$">

@@ -882,30 +882,15 @@ function canOrder(p){ if(p.status==='devis' || !p.price) return false; return st
 function shopShell(content, active){
   const cats = CATS;
   return `
-  <div class="demo-bar"><div class="in">
-    <span class="row">${ic('zap','sm')} ${t('Emballage alimentaire livré partout en Algérie')}</span>
-    <span class="row">
-      ${langSwitch()}
-      <a href="#/erp/dashboard" class="btn sm" style="background:#fff;color:var(--ink);border-color:#fff">${ic('dash','sm')} ${t('Espace équipe')}</a>
-    </span>
-  </div></div>
-  <div class="shop-top"><div class="in">
-    <span class="row">${ic('phone','sm')} <a href="tel:0549593160">${COMPANY.phone1}</a> (WhatsApp) · <a href="tel:0540021914">${COMPANY.phone2}</a></span>
-    <span class="row">${ic('mail','sm')} <a href="mailto:${COMPANY.email}">${COMPANY.email}</a></span>
-    <span class="row grow">${ic('pin','sm')} ${S.lang==='ar'?COMPANY.addressAr:S.lang==='en'?COMPANY.addressEn:COMPANY.address}</span>
-    <span class="row">${ic('truck','sm')} ${t('Livraison 69 wilayas')} · ${t('Paiement à la livraison')}</span>
-  </div></div>
   <header class="shop-h"><div class="in">
     <a href="#/" class="logo" aria-label="PackLik — accueil"><img src="assets/brand/logo.png" alt="PackLik" width="560" height="111"></a>
     <form class="search" data-sub="shopSearch" role="search"><input id="shopQ" type="search" placeholder="${t('Rechercher un emballage…')}" value="${esc(S.ui.shop.q)}" aria-label="${t('Rechercher')}"><button type="submit" aria-label="${t('Rechercher')}">${ic('search')}</button></form>
     <div class="hicons">
-      <a class="hicon" href="#/compte">${ic('user')}<span class="lbl">${t('Connexion')}</span></a>
-      <a class="hicon" href="#/favoris">${ic('heart')}<span class="lbl">${t('Favoris')}</span>${S.favs.size?`<span class="n">${S.favs.size}</span>`:''}</a>
-      <a class="hicon" href="#/comparer">${ic('compare')}<span class="lbl">${t('Comparer')}</span>${S.compare.size?`<span class="n">${S.compare.size}</span>`:''}</a>
-      <a class="cart-pill" href="#/panier" aria-label="${t('Panier')}">${ic('cart')}<span class="num">${cartCount()}</span><span class="num">${dzd(cartTotal())}</span></a>
+      ${langSwitch()}
+      <a class="cart-pill" href="#/panier" data-a="miniOpen" aria-label="${t('Panier')}">${ic('cart')}<span class="num">${cartCount()}</span><span class="num">${dzd(cartTotal())}</span></a>
     </div>
   </div></header>
-  <nav class="nav" aria-label="Menu principal"><div class="in"><span class="navlinks"><a href="#/" class="${active==='home'?'on':''}">${t('Accueil')}</a><a href="#/boutique" class="${active==='shop'?'on':''}">${t('Boutique')}</a><a href="#/contact" class="${active==='contact'?'on':''}">${t('Contact')}</a><a href="#/suivi" class="${active==='track'?'on':''}">${t('Suivi de commande')}</a></span></div></nav>
+  <nav class="nav" aria-label="Menu principal"><div class="in"><span class="navlinks"><a href="#/" class="${active==='home'?'on':''}">${t('Accueil')}</a><a href="#/boutique" class="${active==='shop'?'on':''}">${t('Boutique')}</a><a href="#/contact" class="${active==='contact'?'on':''}">${t('Contact')}</a></span></div></nav>
   <div class="catbar"><div class="in">${cats.map(c=>`<a href="#/categorie/${c.id}" class="${S.ui.shop.cat===c.id && active==='shop'?'on':''}">${esc(catName(c))}</a>`).join('')}</div></div>
   <main id="main">${content}</main>
   ${shopFooter()}
@@ -915,7 +900,7 @@ function shopFooter(){
   return `<footer class="footer"><div class="in">
     <div><a href="#/" class="logo" style="color:#fff"><span class="mk">${logoMark()}</span><span>Pack<b>Lik</b></span></a><p style="margin:12px 0 0;max-width:320px">${t('PackLik, votre partenaire de confiance pour l\'emballage et les solutions alimentaires en Algérie.')}</p></div>
     <div><h4>${t('Contact')}</h4><a>${S.lang==='ar'?COMPANY.addressAr:S.lang==='en'?COMPANY.addressEn:COMPANY.address}</a><a href="tel:0549593160">${COMPANY.phone1}</a><a href="tel:0540021914">${COMPANY.phone2}</a><a href="mailto:${COMPANY.email}">${COMPANY.email}</a></div>
-    <div><h4>${t('Liens utiles')}</h4><a href="#/boutique">${t('Boutique')}</a><a href="#/suivi">${t('Suivi de commande')}</a><a href="#/compte">${t('Mon compte')}</a><a href="#/contact">${t('Contact')}</a><a href="#/cgv">${t('Conditions générales de vente')}</a></div>
+    <div><h4>${t('Liens utiles')}</h4><a href="#/boutique">${t('Boutique')}</a><a href="#/contact">${t('Contact')}</a><a href="#/cgv">${t('Conditions générales de vente')}</a></div>
     <div><h4>${t('Paiement à la livraison')}</h4><p style="margin:0">${t('Vous payez en espèces au livreur DHD à la réception de votre colis, dans les 69 wilayas.')}</p></div>
   </div><div class="bot">© 2026 PackLik · packlik.shop</div></footer>`;
 }
@@ -928,9 +913,8 @@ function pcard(p){
       <span class="ct">${esc(p.cats.slice(0,2).map(c=>catName(CATS.find(x=>x.id===c))).join(' · '))}</span>
       <a class="nm" href="#/produit/${p.id}">${esc(p.name)}</a>
       <span class="pr num">${pPrice(p)}</span>
-      ${p.variants || p.status==='devis' ? `<div class="row"><a class="btn sm grow" href="#/produit/${p.id}">${p.status==='devis'?t('Demander un devis'):t('Choisir une option')}</a><button class="btn sm icon" data-a="fav" data-id="${p.id}" aria-label="${t('Ajouter aux favoris')}" style="${S.favs.has(p.id)?'color:var(--red)':''}">${ic('heart','sm')}</button></div>` : `
-      <button class="btn sm primary block" data-a="buyNow" data-id="${p.id}" ${out?'disabled':''}>${ic('zap','sm')} ${out?t('Rupture'):t('Acheter maintenant')}</button>
-      <div class="row"><button class="btn sm kraft grow" data-a="addCart" data-id="${p.id}" ${out?'disabled':''}>${ic('cart','sm')} ${t('Ajouter au panier')}</button><button class="btn sm icon" data-a="fav" data-id="${p.id}" aria-label="${t('Ajouter aux favoris')}" style="${S.favs.has(p.id)?'color:var(--red)':''}">${ic('heart','sm')}</button></div>`}
+      <div class="pc-acts">${p.variants || p.status==='devis' ? `<a class="btn sm kraft block" href="#/produit/${p.id}">${ic('cart','sm')} ${p.status==='devis'?t('Demander un devis'):t('Choisir une option')}</a>` : `<button class="btn sm kraft block" data-a="addCart" data-id="${p.id}" ${out?'disabled':''}>${ic('cart','sm')} ${out?t('Rupture'):t('Ajouter au panier')}</button>`}
+      <a class="btn sm primary block" href="#/produit/${p.id}">${ic('zap','sm')} ${t('Acheter maintenant')}</a></div>
     </div>
   </article>`;
 }
@@ -961,7 +945,7 @@ function viewHome(){
       <div class="perk"><span class="i">${ic('truck')}</span><div><b>${t('Livraison 69 wilayas')}</b><div class="muted small">${t('À domicile ou au bureau DHD')}</div></div></div>
     </section>
     <div class="sec-t"><h2>${t('Catégories populaires')}</h2><a href="#/boutique" class="row">${t('Tout voir')} ${ic('chevR','sm flip')}</a></div>
-    <div class="cat-tiles">${popular.map(c=>{ const p=PRODUCTS.find(x=>x.cats.includes(c.id)); return `<a class="cat-tile" href="#/categorie/${c.id}"><div class="im">${p?prodArt(p,84):''}</div><b>${esc(catName(c))}</b><span class="muted small">${c.n} ${t('produits')}</span></a>`; }).join('')}</div>
+    <div class="cat-tiles">${popular.map(c=>{ const p=PRODUCTS.find(x=>x.cats.includes(c.id)); return `<a class="cat-tile" href="#/categorie/${c.id}"><div class="im">${c.img? `<img src="${esc(c.img)}" alt="" loading="lazy">` : p?prodArt(p,84):''}</div><b>${esc(catName(c))}</b><span class="muted small">${c.n} ${t('produits')}</span></a>`; }).join('')}</div>
     <div class="sec-t"><h2>${t('Nouvelles offres')}</h2><div class="seg" role="tablist">${[['new','NOUVEAU'],['featured','EN VEDETTE'],['best','MEILLEURES VENTES']].map(([k,l])=>`<button role="tab" aria-selected="${sh.tab===k}" class="${sh.tab===k?'on':''}" data-a="homeTab" data-v="${k}">${t(l)}</button>`).join('')}</div></div>
     <div class="pgrid">${list.map(pcard).join('')}</div>
   </div>`,'home');
@@ -2756,7 +2740,7 @@ const SUB = {
 };
 
 /* ---------- minuteries ---------- */
-setInterval(()=>{ if(!location.hash || location.hash==='#/' ){ S.heroIdx=(S.heroIdx+1)%2; document.querySelectorAll('.hero .slide').forEach((s,i)=>s.classList.toggle('on',i===S.heroIdx)); document.querySelectorAll('.hero .dots button').forEach((s,i)=>s.classList.toggle('on',i===S.heroIdx)); } }, 6000);
+setInterval(()=>{ if(!location.hash || location.hash==='#/' ){ S.heroIdx=(S.heroIdx+1)%Math.max(1,document.querySelectorAll('.hero .slide').length); document.querySelectorAll('.hero .slide').forEach((s,i)=>s.classList.toggle('on',i===S.heroIdx)); document.querySelectorAll('.hero .dots button').forEach((s,i)=>s.classList.toggle('on',i===S.heroIdx)); } }, 6000);
 const notified = new Set();
 setInterval(()=>{
   // rappels à l'heure (agent)

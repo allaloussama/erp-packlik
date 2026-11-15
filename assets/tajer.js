@@ -113,22 +113,25 @@ viewProduct = function(id){
     ${p.variants? `<div class="tj-group"><legend>${t('Variante')}</legend><div class="row wrap">${p.variants.map(x=>`<button type="button" class="var-opt ${d.v===x.id?'on':''}" data-a="pdpVar" data-v="${esc(x.id)}" aria-pressed="${d.v===x.id}">${esc(x.label)} · ${dzd(x.price)}</button>`).join('')}</div></div>`:''}
     ${tiers.length? `<div class="tj-group"><legend>${t('Offres par quantité')}</legend><div class="tj-offers">${tiers.map(x=>`<button type="button" class="tj-offer ${cur===x?'on':''}" data-a="pdpTier" data-v="${x.min}" aria-pressed="${cur===x}"><span class="dot"></span><span class="txt"><strong>${x.min===min && min===1? t('1 pièce') : t('À partir de')+' '+x.min}</strong>${x.badge?`<em>${esc(x.badge)}</em>`:''}</span><b class="num">${dzd(x.price)}<small> / ${t('pièce')}</small></b></button>`).join('')}</div></div>`:''}
     <div class="tj-field tj-qty"><label for="pdpQ">${t('Quantité')}${min>1? ' ('+t('minimum')+' '+min+')':''}</label><div class="qty"><button type="button" data-a="pdpQ" data-v="-1" aria-label="${t('moins')}">−</button><input id="pdpQ" type="number" min="${min}" value="${d.q}" aria-label="${t('Quantité')}" data-ch="pdpQset"><button type="button" data-a="pdpQ" data-v="1" aria-label="${t('plus')}">+</button></div>${p.freeShipQty>0? `<small class="${d.q>=p.freeShipQty?'up':'muted'}">${ic('truck','sm')} ${t('Livraison gratuite à partir de')} ${p.freeShipQty} ${t('pièces')}</small>`:''}</div>`;
+  /* l'ordre des blocs, le côté de la galerie, la description et les produits associés se règlent dans ERP › Boutique */
+  const lay = pdpLayout(), B = {
+    badges: `<div class="row wrap">${p.badge?`<span class="badge red">${esc(p.badge)}</span>`:''}${p.cats.map(c=>`<a class="badge kraft" href="#/categorie/${c}">${esc(catName(CATS.find(x=>x.id===c)||CATS[0]))}</a>`).join('')}</div>`,
+    title: `<h1>${esc(S.lang==='ar' && p.nameAr? p.nameAr : p.name)}</h1>`,
+    price: `<div class="price num">${quote? t('Prix sur devis') : dzd(unit)}${!quote && (p.oldPrice>unit || unit<base)? ` <s class="tj-old">${dzd(Math.max(p.oldPrice||0, base))}</s> <span class="badge red">−${Math.round((1-unit/Math.max(p.oldPrice||0, base))*100)} %</span>`:''}</div>`,
+    short: `${p.short? `<p class="muted" style="margin:0">${esc(p.short)}</p>`:''}`,
+    meta: `<div class="row small wrap"><span class="badge">${t('Conditionnement')} : ${p.pack} ${t('pièces')}</span><span class="badge">${t('Réf.')} ${esc(p.sku)}</span>${quote?'':st.available>0? `<span class="badge green">${t('En stock')}</span>` : p.onDemand? `<span class="badge amber">${t('Sur commande')}</span>` : `<span class="badge red">${t('Rupture')}</span>`}</div>`,
+    pack: `${p.packItems? `<div class="card card-b small"><b>${t('Contenu du pack')}</b><ul style="margin:6px 0 0;padding-inline-start:18px">${p.packItems.filter(c=>PBY[c.pid]).map(c=>`<li>${c.q} × ${esc(PBY[c.pid].name)}</li>`).join('')}</ul></div>`:''}`,
+    form: `${quote? `<div class="lock-note">${ic('phone','sm')} ${t('Ce pack est composé sur mesure : contactez-nous pour un devis.')}</div><a class="btn wa lg" href="https://wa.me/213549593160" target="_blank" rel="noopener">${ic('wa')} ${t('Demander sur WhatsApp')}</a>` : codForm(codItems(), {product:p, options, addCart:ok, ok})}`
+  };
+  const desc = p.desc? `<section class="tj-desc"><h2>${t('Description du produit')}</h2><div>${richHtml(p.desc)}</div></section>`:'';
   return shopShell(`<div class="container">
     <div class="row small muted" style="margin-top:16px"><a href="#/">${t('Accueil')}</a> ${ic('chevR','sm flip')} <a href="#/categorie/${p.cats[0]}">${esc(catName(CATS.find(c=>c.id===p.cats[0])||CATS[0]))}</a> ${ic('chevR','sm flip')} ${esc(p.name)}</div>
-    <div class="pdp">
+    <div class="pdp ${lay.galleryRight?'gal-right':''}">
       <div class="tj-gal"><div class="gal">${imgs.length? `<img src="${esc(imgs[Math.min(d.img,imgs.length-1)])}" alt="${esc(p.name)}">` : prodArt(p,340)}</div>${imgs.length>1? `<div class="tj-thumbs">${imgs.map((u,i)=>`<button class="${i===d.img?'on':''}" data-a="pdpImg" data-v="${i}" aria-label="${t('Photo')} ${i+1}"><img src="${esc(u)}" alt="" loading="lazy"></button>`).join('')}</div>`:''}</div>
-      <div class="col" style="gap:14px">
-        <div class="row wrap">${p.badge?`<span class="badge red">${esc(p.badge)}</span>`:''}${p.cats.map(c=>`<a class="badge kraft" href="#/categorie/${c}">${esc(catName(CATS.find(x=>x.id===c)||CATS[0]))}</a>`).join('')}</div>
-        <h1>${esc(S.lang==='ar' && p.nameAr? p.nameAr : p.name)}</h1>
-        <div class="price num">${quote? t('Prix sur devis') : dzd(unit)}${!quote && (p.oldPrice>unit || unit<base)? ` <s class="tj-old">${dzd(Math.max(p.oldPrice||0, base))}</s> <span class="badge red">−${Math.round((1-unit/Math.max(p.oldPrice||0, base))*100)} %</span>`:''}</div>
-        ${p.short? `<p class="muted" style="margin:0">${esc(p.short)}</p>`:''}
-        <div class="row small wrap"><span class="badge">${t('Conditionnement')} : ${p.pack} ${t('pièces')}</span><span class="badge">${t('Réf.')} ${esc(p.sku)}</span>${quote?'':st.available>0? `<span class="badge green">${t('En stock')}</span>` : p.onDemand? `<span class="badge amber">${t('Sur commande')}</span>` : `<span class="badge red">${t('Rupture')}</span>`}</div>
-        ${p.packItems? `<div class="card card-b small"><b>${t('Contenu du pack')}</b><ul style="margin:6px 0 0;padding-inline-start:18px">${p.packItems.filter(c=>PBY[c.pid]).map(c=>`<li>${c.q} × ${esc(PBY[c.pid].name)}</li>`).join('')}</ul></div>`:''}
-        ${quote? `<div class="lock-note">${ic('phone','sm')} ${t('Ce pack est composé sur mesure : contactez-nous pour un devis.')}</div><a class="btn wa lg" href="https://wa.me/213549593160" target="_blank" rel="noopener">${ic('wa')} ${t('Demander sur WhatsApp')}</a>` : codForm(codItems(), {product:p, options, addCart:ok, ok})}
-      </div>
+      <div class="col" style="gap:14px">${lay.order.map(k=>k==='desc'? desc : B[k]||'').join('')}</div>
     </div>
-    ${p.desc? `<section class="tj-desc"><h2>${t('Description du produit')}</h2><div>${richHtml(p.desc)}</div></section>`:''}
-    ${related.length? `<div class="sec-t"><h2>${t('Produits associés')}</h2></div><div class="pgrid">${related.map(pcard).join('')}</div>`:''}
+    ${lay.order.includes('desc')? '' : desc}
+    ${lay.related!==false && related.length? `<div class="sec-t"><h2>${t('Produits associés')}</h2></div><div class="pgrid">${related.map(pcard).join('')}</div>`:''}
   </div>`,'shop');
 };
 A.pdpImg = (el)=>{ S.ui.pdp.img=+el.dataset.v; render(); };
@@ -161,7 +164,7 @@ viewConfirm = function(ref){
       <div class="sumbox" style="margin-top:8px"><div class="ln"><span>${t('Livraison')} · ${esc(wName(o.wilaya))} · ${o.delivery==='home'?t('À domicile'):t('Bureau de livraison (stop desk)')}</span><span class="num">${o.freeShip? t('Gratuite') : dzd(feeOf(o))}</span></div><div class="ln tot"><span>${t('Total à payer à la livraison')}</span><span class="num">${dzd(orderTotal(o))}</span></div></div>
       <p class="small muted">${esc(o.customer.name)} · <span dir="ltr">${esc(o.customer.phone)}</span> · ${esc(cName(o.commune))}</p>
     </div>`:''}
-    <div class="row wrap" style="margin-top:14px;justify-content:center"><a class="btn" href="#/suivi">${t('Suivre ma commande')}</a><a class="btn kraft" href="#/boutique">${t('Continuer mes achats')}</a></div>
+    <div class="row wrap" style="margin-top:14px;justify-content:center"><a class="btn kraft" href="#/boutique">${t('Continuer mes achats')}</a></div>
   </div>`,'shop');
 };
 /* suivi public : le serveur ne répond que si téléphone et numéro de commande correspondent */

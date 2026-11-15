@@ -5,4 +5,8 @@ if (preg_match('#^/(data|tests|\.git)(/|$)|^/(config\.php|router\.php|.*\.(sqlit
 	http_response_code(403);
 	exit('Interdit');
 }
+if (preg_match('#^/admin/?$#', $p)) {
+	require __DIR__ . '/index.php';
+	return true;
+}
 return false;
