@@ -8,7 +8,7 @@ produits, stock, achats, fournisseur, finance, équipe. Backend PHP, base SQLite
 Il faut **PHP 8.1 ou plus** avec les extensions `pdo_sqlite` (ou `pdo_mysql`), `curl` et `fileinfo`.
 
 1. Envoyer tous les fichiers dans le dossier du site (hébergement mutualisé : `public_html`).
-2. Ouvrir `https://votre-site/#/erp` : créer le compte administrateur.
+2. Ouvrir `https://votre-site/admin` : créer le compte administrateur.
 3. Choisir **Démarrer avec le vrai catalogue** (91 produits, 69 wilayas, aucune commande) ou
    **Charger la démonstration** (données fictives, pour découvrir).
 
@@ -50,6 +50,10 @@ boutique / équipe, droits par rôle, conflit d'écriture, anti-doublon.
 | `assets/delivery.js` | Module livraison : catalogue de 114 sociétés, clés API, tarifs par wilaya |
 | `assets/catalog.js`, `assets/products/` | Catalogue réel repris de packlik.shop : photos, descriptions, prix des 91 produits |
 | `assets/brand/` | Logo, icône et favicon PackLik |
+| `assets/erp-plus.js` | Catégories avec photo, produits (corbeille, actions groupées, grammage), éditeur de description riche, fournisseurs multiples, compta automatique |
+| `assets/documents.js` | Facture, facture proforma, bon de livraison, décharge : remplis depuis la commande, modifiables, imprimables |
+| `assets/shop-plus.js` | Mini-panier, panier avec formulaire, slides, réglages du formulaire et de la fiche produit, textes modifiables (ERP › Boutique) |
+| `AGENTS.md`, `MEMOIRE.md` | Fiche pour les développeurs / agents, et journal de ce qui a été fait et où |
 
 ## Comment ça marche
 
@@ -90,3 +94,20 @@ Les comptes se créent dans **Équipe et accès** (e-mail + mot de passe de 8 ca
 - **Corbeille** : une commande supprimée est masquée partout et restaurable 30 jours ; elle reste en base
   (marquée), elle n'est pas effacée physiquement. Les commandes livrées ou encaissées ne se suppriment pas.
 - **SMS / WhatsApp automatiques** : mentionnés dans l'historique, aucun message n'est réellement envoyé.
+
+## Déployer sur Hostinger
+
+Hébergement mutualisé Hostinger (hPanel), PHP 8.1 ou plus :
+
+1. **hPanel › Sites web › Gérer › Avancé › GIT** : dépôt `https://github.com/cib3845-sys/erp-packlik.git`,
+   branche `main`, dossier vide (le site sera dans `public_html`). Cliquer **Créer**, puis **Déployer**.
+   Pour les mises à jour suivantes : **Déployer** à nouveau (ou activer le déploiement automatique, qui donne
+   une URL de webhook à coller dans GitHub › Settings › Webhooks).
+   Si le dépôt est privé, ajouter d’abord la clé SSH affichée par hPanel dans GitHub › Settings › Deploy keys
+   et utiliser l'adresse `git@github.com:cib3845-sys/erp-packlik.git`.
+2. **Sans Git** : hPanel › Gestionnaire de fichiers › `public_html` › envoyer le ZIP du dépôt et l'extraire.
+3. Vérifier dans hPanel › Avancé › Configuration PHP : version 8.1+, extensions `pdo_sqlite` (ou `pdo_mysql`),
+   `curl`, `fileinfo`. Pour les vidéos, `upload_max_filesize` et `post_max_size` ≥ 40M.
+4. Les dossiers `data/` et `uploads/` ne sont pas dans Git : ils se créent au premier lancement et ne sont
+   jamais écrasés par un déploiement. Garder une copie de `data/app.sqlite` (ou utiliser MySQL via `config.php`).
+5. Ouvrir `https://votre-domaine/admin`.
