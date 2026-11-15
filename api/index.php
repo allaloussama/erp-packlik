@@ -149,6 +149,11 @@ switch ($route) {
 		$need(['admin', 'gerant']);
 		out(carrier_send($in));
 
+	case 'carrier.cancel':
+		$post || fail(405, 'POST requis');
+		$need(['admin', 'gerant']);
+		out(carrier_cancel($in));
+
 	case 'carrier.track':
 		$post || fail(405, 'POST requis');
 		$need(STAFF);

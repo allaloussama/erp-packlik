@@ -222,6 +222,35 @@ function carrier_send(array $in): array {
 	return $res;
 }
 
+/**
+ * Annule le colis chez la société de livraison (avant ramassage) et retire le numéro de suivi de la commande.
+ * Formats repris des API publiques Yalidine / EcoTrack / Noest, à vérifier avec un vrai compte.
+ */
+function carrier_cancel(array $in): array {
+	$o = rec_data('orders', (string) ($in['orderId'] ?? '')) ?? fail(404, 'Commande introuvable.');
+	$tracking = (string) ($o['tracking'] ?? '');
+	if ($tracking === '') {
+		return ['ok' => true];
+	}
+	$slug = (string) ($o['carrier'] ?? '');
+	[, $cat, $acc] = carrier_ctx($slug);
+	if ($cat[1] === 'yalidine') {
+		carrier_http($slug, $cat, $acc, 'DELETE', '/parcels/' . rawurlencode($tracking));
+	} elseif ($cat[1] === 'noest') {
+		carrier_http($slug, $cat, $acc, 'POST', '/delete/order', ['api_token' => $acc['token'], 'user_guid' => $acc['guid'] ?? '', 'tracking' => $tracking]);
+	} else {
+		carrier_http($slug, $cat, $acc, 'DELETE', '/delete/order?tracking=' . rawurlencode($tracking));
+	}
+	tx(function (PDO $db) use ($o) {
+		$cur = rec_data('orders', (string) $o['id']);
+		$cur['tracking'] = '';
+		$cur['label'] = '';
+		$cur['trackUrl'] = '';
+		rec_put($db, 'orders', (string) $o['id'], $cur, next_rev($db));
+	});
+	return ['ok' => true];
+}
+
 /** Étape ERP correspondant au dernier statut du transporteur. */
 function carrier_step(string $key, string $label): string {
 	$s = unaccent($key . ' ' . $label);

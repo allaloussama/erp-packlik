@@ -387,3 +387,45 @@ document.addEventListener('dragstart', e=>{ const r=e.target.closest && e.target
 document.addEventListener('dragover', e=>{ const r=e.target.closest && e.target.closest('.mn-row'); if(!r || !mnDrag) return; e.preventDefault(); document.querySelectorAll('.mn-row.over-top,.mn-row.over-bot').forEach(x=>x.classList.remove('over-top','over-bot')); const b=r.getBoundingClientRect(); r.classList.add(e.clientY < b.top+b.height/2? 'over-top':'over-bot'); });
 document.addEventListener('drop', e=>{ const r=e.target.closest && e.target.closest('.mn-row'); if(!r || !mnDrag) return; e.preventDefault(); const f=menuFlat().filter(k=>k!==mnDrag); let j=f.indexOf(r.dataset.mk); if(j<0) j=f.length; else if(r.classList.contains('over-bot')) j++; f.splice(j,0,mnDrag); mnDrag=null; mnSave(f); });
 document.addEventListener('dragend', ()=>{ mnDrag=null; document.querySelectorAll('.mn-row').forEach(x=>x.classList.remove('dragging','over-top','over-bot')); });
+
+/* ============================================================
+   COMMANDES : historique visible, raccourci « fiche d'appel », annulation d'envoi complète
+   ============================================================ */
+KCOLS.conf.splice(KCOLS.conf.findIndex(c=>c[0]==='actions'), 0, ['history','Historique',1]);
+KCOLS.track.splice(KCOLS.track.findIndex(c=>c[0]==='actions'), 0, ['history','Historique',1]);
+function histCell(o){ const h=o.history[o.history.length-1]; if(!h) return '<span class="muted">—</span>';
+  return `<button class="khist" data-a="kTimeline" data-id="${o.id}" title="${t('Voir tout l\'historique')}"><span class="khist-a">${esc(t(h.action))}</span><span class="khist-m">${ago(h.at)} · ${esc(String(t(h.who)).split(' ')[0])} · ${o.history.length} ${t('étapes')}</span></button>`; }
+const callBtn = o => `<button class="kico kcall" data-a="kCall" data-id="${o.id}" title="${t('Fiche d\'appel')}" aria-label="${t('Fiche d\'appel')}">${ic('headset','sm')}</button>`;
+const _kConfCellH = kConfCell;
+kConfCell = (o,c)=> c.key==='history'? histCell(o) : c.key==='actions'? _kConfCellH(o,c).replace('<div class="kacts">', '<div class="kacts">'+callBtn(o)) : _kConfCellH(o,c);
+const _kTrackCellH = kTrackCell;
+kTrackCell = (o,c)=> c.key==='history'? histCell(o) : _kTrackCellH(o,c);
+/* historique complet : chronologie avec auteur, date et note */
+A.kTimeline = el=>{
+  const o=ORDERS.find(x=>x.id===+el.dataset.id); if(!o) return; const c=CBY[o.customerId]||{};
+  openModal(modalTpl(t('Historique de la commande')+' · '+esc(o.ref), `<div class="khead"><b>${esc(c.name||'—')}</b><span class="muted small" dir="ltr">${esc(c.phone||'')}</span><span class="kpill" style="${kPillStyle(kColor(o))}">${esc(kLabel(o))}</span></div>
+    <ol class="ktl2">${o.history.slice().reverse().map(h=>`<li style="--c:${kHistColor(h)}"><div class="ktl2-d"><b>${fDate(h.at)}</b><span>${fTime(h.at)}</span></div><div class="ktl2-b"><b>${esc(t(h.action))}</b>${h.note? `<p>${esc(t(h.note))}</p>`:''}<small>${esc(t(h.who))}</small></div></li>`).join('') || `<li>${t('Aucun événement')}</li>`}</ol>`,
+    `<button class="btn" data-a="closeModal">${t('Fermer')}</button>${kCanConf(o) && PRE_ST.includes(o.status)? `<button class="btn primary" data-a="kCall" data-id="${o.id}">${ic('headset','sm')} ${t('Fiche d\'appel')}</button>`:''}`));
+};
+/* annuler l'envoi : le colis est supprimé chez la société de livraison, la commande revient
+   dans « Commandes à confirmer » avec le statut de départ (En attente) */
+async function cancelShipment(o){
+  if(!kCancellable(o)) return false;
+  if(carrierHasApi(carrierOf(o)) && o.tracking){
+    try{ await api('carrier.cancel', {orderId:o.id}); await syncNow(); }
+    catch(e){ if(!confirm(o.ref+' — '+e.message+'\n\n'+t('Annuler quand même dans l\'ERP ? Le colis restera à supprimer dans l\'espace de la société de livraison.'))) return false; }
+  }
+  expand(o.items).forEach(i=>{ const p=PBY[i.pid]; if(!p) return; if(p.variants && i.v){ const v=p.variants.find(x=>x.id===i.v); if(v) v.stock+=i.q; } else p.stock+=i.q; stockMove(i.pid,'retour',i.q,o.ref,'Envoi annulé'); });
+  const was=kCarrierName(carrierOf(o));
+  o.tracking=''; o.label=''; o.trackUrl=''; o.parcels=null; o.courierId=null; o.cashWithCourier=false; delete o.feeFixed; delete o.dhdFixed; ['sent','picked','transit','outfor','failed','toprep','ready','confirmed'].forEach(k=>delete o.times[k]);
+  const pend=kList('conf').find(x=>x.kind==='pending'); o.confStatus = pend? pend.id : ''; o.unreachN=0; o.nextCall=null; o.cancelReason=''; o.statusNote=''; o.lockedBy=null; delete o.prevStatus;
+  o.status='calling'; setStatus(o,'new', t('Envoi annulé et supprimé chez')+' '+was+' — '+t('retour aux commandes à confirmer'));
+  o.history[o.history.length-1].color='red';
+  return true;
+}
+A.kCancelShipGo = async el=>{ const o=ORDERS.find(x=>x.id===+el.dataset.id); closeModal(); if(await cancelShipment(o)) toast(o.ref+' : '+t('envoi annulé, commande remise « En attente » dans Commandes à confirmer'),'ok'); render(); };
+A.kCancelSel = async()=>{ const u=S.ui.kt; let n=0; for(const o of ORDERS.filter(o=>u.sel.has(o.id))){ if(await cancelShipment(o)) n++; } u.sel.clear(); toast(n+' '+t('envoi(s) annulé(s)'), n?'ok':'bad'); render(); };
+A.kCancelShip = el=>{ const o=ORDERS.find(x=>x.id===+el.dataset.id); if(!kCanShip()) return; if(!kCancellable(o)){ toast(t('Envoi impossible à annuler à cette étape'),'bad'); return; }
+  const api_=carrierHasApi(carrierOf(o)) && o.tracking;
+  openModal(modalTpl(t('Annuler l\'envoi')+' · '+esc(o.ref), `<ul class="small" style="margin:0;padding-inline-start:18px;line-height:1.8"><li>${api_? t('Le colis est supprimé chez')+' <b>'+esc(kCarrierName(carrierOf(o)))+'</b>' : t('Le numéro de suivi est retiré de la commande')}</li><li>${t('La commande revient dans « Commandes à confirmer » avec le statut « En attente »')}</li><li>${t('Le stock est réintégré')}</li></ul>`,
+    `<button class="btn" data-a="closeModal">${t('Garder l\'envoi')}</button><button class="btn red" data-a="kCancelShipGo" data-id="${o.id}">${ic('undo','sm')} ${t('Annuler l\'envoi')}</button>`)); };
