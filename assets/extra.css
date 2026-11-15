@@ -544,3 +544,128 @@ button.kpill:hover,button.kmpill:hover{filter:none;background:color-mix(in srgb,
 .kseg2{justify-content:flex-start;align-self:stretch;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:0;gap:6px}
 .kseg2 button{border-radius:0;padding:10px 4px 9px;margin-inline-end:14px;color:#5B6672;border-bottom:2px solid transparent}
 .kseg2 button.on{background:none;box-shadow:none;color:#121920;border-bottom-color:var(--kraft)}
+
+/* ---------- menu de l'admin : réorganisation ---------- */
+.mn-start{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;color:#8996A5;padding:8px;font:inherit;font-size:12px;cursor:pointer;border-radius:8px}
+.mn-start:hover{color:#fff;background:#1B2530}
+.mn-edit{display:flex;flex-direction:column;gap:2px;padding:0 8px 10px}
+.mn-help{font-size:11.5px;color:#8996A5;padding:6px 6px 8px}
+.mn-row{display:flex;align-items:center;gap:8px;padding:7px 6px;border-radius:8px;color:#C3CBD5;font-size:13px;background:#18212B;border:1px solid transparent;cursor:grab;user-select:none}
+.mn-row.mn-g{background:transparent;border-color:#2B3745;margin-top:8px}
+.mn-row.dragging{opacity:.4}
+.mn-row.over-top{box-shadow:0 -2px 0 var(--kraft)}
+.mn-row.over-bot{box-shadow:0 2px 0 var(--kraft)}
+.mn-grip{color:#6C7888;display:inline-flex}
+.mn-row .lbl{display:inline!important;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mn-gname{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px dashed #3A4757;color:#fff;font:inherit;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 0}
+.mn-arr{display:flex;gap:1px;margin-inline-start:auto}
+.mn-arr button{width:22px;height:22px;display:grid;place-items:center;background:none;border:0;color:#8996A5;border-radius:5px;cursor:pointer}
+.mn-arr button:hover:not(:disabled){background:#2B3745;color:#fff}
+.mn-arr button:disabled{opacity:.25}
+.mn-acts{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0 0}
+
+/* ---------- formulaire : produits modifiables, champs réglables ---------- */
+.tj-cod-grid>.full{grid-column:1/-1}
+.tj-req{color:var(--red)}
+.tj-summary .tj-line{display:flex;align-items:center;gap:10px;justify-content:flex-start;padding:6px 0;border-bottom:1px solid #ecebe6}
+.tj-line>img,.tj-line>svg{width:40px!important;height:40px!important;border-radius:8px;flex:none;object-fit:cover}
+.tj-ln-nm{display:block;font-size:13px;font-weight:600;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tj-ln-q{display:block;margin-top:4px}
+.tj-ln-del{width:28px;height:28px;flex:none;display:grid;place-items:center;border:0;border-radius:7px;background:transparent;color:#6B7682;cursor:pointer}
+button.tj-ln-del:hover{background:#FDECEA;color:var(--red)}
+.cart-solo{max-width:620px;margin:0 auto}
+.ff-row{display:flex;gap:6px;border:1px solid var(--line);border-radius:10px;padding:8px;background:#fff}
+.ff-row.off{opacity:.6}
+.ff-move{display:flex;flex-direction:column}
+.ff-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.ff-top{display:flex;gap:6px;align-items:center}
+.ff-top .input{flex:1}
+.ff-top .select{width:150px}
+
+/* ============================================================
+   Éditeur de pages (plein écran) et aperçu
+   ============================================================ */
+body.pe-lock{overflow:hidden}
+#pe-root{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;background:#E7E9EC;font-size:13px}
+.pe-top{height:52px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:#121920;color:#fff}
+.pe-brand{display:flex;align-items:center;gap:8px;font-size:14px;margin-inline-end:6px}
+.pe-pagesel{height:34px;border-radius:8px;border:1px solid #2B3745;background:#1B2530;color:#fff;padding:0 10px;font:inherit;min-width:220px}
+.pe-devs{display:flex;gap:2px;background:#1B2530;border-radius:8px;padding:3px}
+.pe-devs button{width:34px;height:28px;border:0;border-radius:6px;background:none;color:#8996A5;display:grid;place-items:center;cursor:pointer}
+.pe-devs button.on{background:#FD6400;color:#121920}
+.pe-tb{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:8px;border:1px solid #2B3745;background:none;color:#DDE3EA;font:inherit;font-weight:600;cursor:pointer;text-decoration:none}
+.pe-tb:hover{background:#1B2530;color:#fff}
+.pe-done{background:#FD6400;border-color:#FD6400;color:#121920}
+.pe-done:hover{background:#FF7A1F;color:#121920}
+.pe-body{flex:1;min-height:0;display:flex}
+.pe-stage{flex:1;min-width:0;display:flex;justify-content:center;overflow:auto;padding:18px}
+#pe-frame{border:0;background:#fff;border-radius:10px;box-shadow:0 10px 40px rgba(18,25,32,.18);height:100%;transition:width .3s cubic-bezier(.16,1,.3,1)}
+#pe-frame.dev-desk{width:100%}#pe-frame.dev-tab{width:820px}#pe-frame.dev-mob{width:390px}
+.pe-panel{width:340px;flex:none;background:#fff;border-inline-start:1px solid #D9DEE3;display:flex;flex-direction:column;min-height:0}
+.pe-empty-panel{padding:28px 22px;display:flex;flex-direction:column;gap:10px;color:#4A5561;line-height:1.5}
+.pe-empty-panel b{color:#121920;font-size:15px}
+.pe-empty-panel>.ico{color:var(--kraft)}
+.pe-tips{display:flex;flex-direction:column;gap:8px;margin-top:10px;font-size:12px;color:#6B7682}
+.pe-tips div{display:flex;gap:8px;align-items:center}
+.pe-head{padding:12px 14px;border-bottom:1px solid #E6EAEE;display:flex;flex-direction:column;gap:10px}
+.pe-head small{display:block;color:#6B7682;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.pe-head b{font-size:14px}
+.pe-acts{display:flex;flex-wrap:wrap;gap:4px}
+.pe-acts button{height:30px;min-width:30px;padding:0 8px;display:inline-flex;align-items:center;gap:4px;border:1px solid #D9DEE3;border-radius:7px;background:#fff;color:#2B3540;font:inherit;font-size:12px;cursor:pointer}
+.pe-acts button:hover:not(:disabled){border-color:#121920}
+.pe-acts button.on{background:#121920;color:#fff;border-color:#121920}
+.pe-acts button:disabled{opacity:.35}
+.pe-scroll{flex:1;overflow:auto}
+.pe-grp{border-bottom:1px solid #EEF0F2}
+.pe-grp summary{padding:12px 14px;font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between}
+.pe-grp summary::after{content:"+";color:#8996A5;font-weight:400}
+.pe-grp[open] summary::after{content:"−"}
+.pe-grp summary::-webkit-details-marker{display:none}
+.pe-grp-b{padding:0 14px 14px;display:flex;flex-direction:column;gap:10px}
+.pe-f{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.pe-f.col{flex-direction:column;align-items:stretch}
+.pe-f>span:first-child{color:#4A5561;font-size:12px;flex:none}
+.pe-f select,.pe-f input:not([type=color]):not([type=checkbox]),.pe-f textarea{height:32px;border:1px solid #D9DEE3;border-radius:7px;padding:0 8px;font:inherit;font-size:12.5px;background:#fff;min-width:0;width:100%}
+.pe-f textarea{height:auto;padding:8px;resize:vertical}
+.pe-f select{max-width:170px}
+.pe-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pe-2 .pe-f{flex-direction:column;align-items:stretch;gap:4px}
+.pe-2 .pe-f select{max-width:none}
+.pe-num{position:relative;display:block}
+.pe-num i{position:absolute;inset-inline-end:8px;top:50%;transform:translateY(-50%);font-style:normal;color:#8996A5;font-size:11px;pointer-events:none}
+.pe-col{display:flex;align-items:center;gap:4px}
+.pe-col input{width:44px;height:30px;border:1px solid #D9DEE3;border-radius:7px;padding:2px;background:#fff;cursor:pointer}
+.pe-col button{width:26px;height:26px;border:0;background:none;color:#8996A5;border-radius:6px;cursor:pointer;display:grid;place-items:center}
+.pe-col button:disabled{opacity:.3}
+.pe-seg{display:inline-flex;border:1px solid #D9DEE3;border-radius:7px;overflow:hidden;margin-inline-start:4px}
+.pe-seg button{height:28px;min-width:30px;padding:0 7px;border:0;background:#fff;color:#2B3540;font:inherit;font-size:11.5px;cursor:pointer;display:grid;place-items:center}
+.pe-seg button+button{border-inline-start:1px solid #EEF0F2}
+.pe-seg button.on{background:#121920;color:#fff}
+.pe-addgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.pe-addgrid button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border:1px dashed #C9D0D7;border-radius:8px;background:#FAFBFC;font:inherit;font-size:12px;cursor:pointer}
+.pe-addgrid button:hover{border-color:var(--kraft);color:var(--kraft-d);background:#FFF6EF}
+.pe-note{margin:0;font-size:12px;color:#6B7682;background:#F4F5F6;border-radius:8px;padding:8px 10px}
+.pe-pages{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.pe-pcard{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.pe-pthumb{width:100%;height:84px;border-radius:8px;background:linear-gradient(135deg,#FFF1E6,#F4F5F6);display:grid;place-items:center;color:var(--kraft-d);margin-bottom:4px}
+.pe-pcard .btn{margin-top:6px}
+/* blocs ajoutés par l'éditeur */
+.pe-blk{margin:18px auto;max-width:1240px;padding:0 16px}
+.pe-blk-h{font-size:28px;margin:0}
+.pe-blk-t{font-size:15px;line-height:1.7;color:var(--ink2)}
+.pe-blk-i img{max-width:100%;height:auto;border-radius:12px;display:block}
+.pe-blk-v iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:12px}
+.pe-empty{border:1px dashed var(--line);border-radius:12px;padding:30px;text-align:center;color:var(--muted)}
+/* animations */
+@keyframes pe-fade{from{opacity:0}to{opacity:1}}
+@keyframes pe-up{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+@keyframes pe-down{from{opacity:0;transform:translateY(-28px)}to{opacity:1;transform:none}}
+@keyframes pe-left{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:none}}
+@keyframes pe-right{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+@keyframes pe-zoom{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+@keyframes pe-pop{0%{opacity:0;transform:scale(.85)}60%{opacity:1;transform:scale(1.03)}100%{transform:none}}
+/* aperçu dans l'éditeur */
+html.pe-preview [data-pe]:hover{outline:1px dashed #FD6400;outline-offset:-1px;cursor:pointer}
+html.pe-preview .pe-selected{outline:2px solid #FD6400!important;outline-offset:-2px}
+html.pe-preview .wa-float,html.pe-preview .edit-bar{display:none}
+@media (max-width:900px){.pe-panel{width:290px}.pe-pagesel{min-width:0}.pe-brand{display:none}}

@@ -345,3 +345,45 @@ viewAccounting = function(){
   return h;
 };
 ERP_VIEWS.admin.compta = ()=>viewAccounting();
+
+/* ============================================================
+   MENU DE L'ADMIN RÉORGANISABLE : glisser-déposer (ou flèches) des rubriques et des groupes.
+   Ordre enregistré dans SETTINGS.menuOrder : ['g:Nom du groupe', 'dashboard', 'produits', …].
+   ============================================================ */
+const MENU_BASE = MENUS.admin.map(([g,items])=>[g, items.slice()]);
+const menuItemsAll = () => Object.fromEntries(MENU_BASE.flatMap(g=>g[1]).concat(MENUS.admin.flatMap(g=>g[1])).map(i=>[i[0], i]));
+function menuFlat(){ return MENUS.admin.flatMap(([g,items],i)=>[ ...(g||i? ['g:'+g] : []), ...items.map(x=>x[0]) ]); }
+function applyMenuOrder(){
+  const order=SETTINGS.menuOrder; if(!Array.isArray(order) || !order.length) return;
+  const all=menuItemsAll(), seen=new Set(), groups=[['',[]]];
+  order.forEach(k=>{ if(k.startsWith('g:')) groups.push([k.slice(2),[]]); else if(all[k] && !seen.has(k)){ groups[groups.length-1][1].push(all[k]); seen.add(k); } });
+  Object.keys(all).filter(k=>!seen.has(k)).forEach(k=>groups[groups.length-1][1].push(all[k])); // rubriques ajoutées depuis : à la fin
+  MENUS.admin.splice(0, MENUS.admin.length, ...groups.filter((g,i)=>g[1].length || g[0]));
+}
+const _erpShellMenu = erpShell;
+erpShell = function(page, title, sub, body, actions){
+  if(S.role!=='admin') return _erpShellMenu(page, title, sub, body, actions);
+  applyMenuOrder();
+  let h=_erpShellMenu(page, title, sub, body, actions);
+  const ed=S.ui.menuEdit;
+  if(ed){ // mode réorganisation : chaque ligne se déplace, les liens ne naviguent plus
+    const all=menuItemsAll(), flat=menuFlat();
+    const nav = flat.map((k,i)=>{ const isG=k.startsWith('g:'), it=all[k];
+      return `<div class="mn-row ${isG?'mn-g':''}" draggable="true" data-mk="${esc(k)}"><span class="mn-grip" aria-hidden="true">${ic('drag','sm')}</span>${isG? `<input class="mn-gname" value="${esc(k.slice(2))}" data-mg="${i}" aria-label="${t('Nom du groupe')}">` : `${ic(it[1])}<span class="lbl">${t(it[2])}</span>`}<span class="mn-arr"><button data-a="mnMove" data-i="${i}" data-v="-1" aria-label="${t('Monter')}" ${i?'':'disabled'}>${ic('arrowU','sm')}</button><button data-a="mnMove" data-i="${i}" data-v="1" aria-label="${t('Descendre')}" ${i<flat.length-1?'':'disabled'}>${ic('arrowD','sm')}</button>${isG?`<button data-a="mnDelG" data-i="${i}" aria-label="${t('Supprimer le groupe')}">${ic('x','sm')}</button>`:''}</span></div>`; }).join('');
+    h=h.replace(/<nav>[\s\S]*?<\/nav>/, ()=>`<nav class="mn-edit"><div class="mn-help">${t('Glissez les rubriques pour changer leur place.')}</div>${nav}<div class="mn-acts"><button class="btn sm" data-a="mnAddG">${ic('plus','sm')} ${t('Groupe')}</button><button class="btn sm" data-a="mnReset">${ic('refresh','sm')} ${t('Par défaut')}</button><button class="btn sm primary" data-a="mnDone">${ic('check','sm')} ${t('Terminer')}</button></div></nav>`);
+  }
+  return h.replace('<div class="foot">', `<div class="foot">${ed?'':`<button class="mn-start" data-a="mnStart">${ic('drag','sm')}<span class="lbl">${t('Réorganiser le menu')}</span></button>`}`);
+};
+const mnSave = flat=>{ SETTINGS.menuOrder=flat; render(); };
+A.mnStart = ()=>{ S.ui.menuEdit=true; render(); };
+A.mnDone = ()=>{ S.ui.menuEdit=false; toast(t('Menu enregistré'),'ok'); render(); };
+A.mnReset = ()=>{ if(!confirm(t('Remettre le menu dans l\'ordre par défaut ?'))) return; delete SETTINGS.menuOrder; MENUS.admin.splice(0, MENUS.admin.length, ...MENU_BASE.map(([g,i])=>[g,i.slice()])); render(); };
+A.mnMove = el=>{ const f=menuFlat(), i=+el.dataset.i, j=i+(+el.dataset.v); [f[i],f[j]]=[f[j],f[i]]; mnSave(f); };
+A.mnAddG = ()=>{ mnSave(menuFlat().concat('g:'+t('Nouveau groupe'))); };
+A.mnDelG = el=>{ const f=menuFlat(); f.splice(+el.dataset.i,1); mnSave(f); };
+document.addEventListener('change', e=>{ const el=e.target.closest('[data-mg]'); if(!el) return; const f=menuFlat(); f[+el.dataset.mg]='g:'+el.value.trim(); mnSave(f); });
+let mnDrag=null;
+document.addEventListener('dragstart', e=>{ const r=e.target.closest && e.target.closest('.mn-row'); if(!r) return; mnDrag=r.dataset.mk; e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain', mnDrag); r.classList.add('dragging'); });
+document.addEventListener('dragover', e=>{ const r=e.target.closest && e.target.closest('.mn-row'); if(!r || !mnDrag) return; e.preventDefault(); document.querySelectorAll('.mn-row.over-top,.mn-row.over-bot').forEach(x=>x.classList.remove('over-top','over-bot')); const b=r.getBoundingClientRect(); r.classList.add(e.clientY < b.top+b.height/2? 'over-top':'over-bot'); });
+document.addEventListener('drop', e=>{ const r=e.target.closest && e.target.closest('.mn-row'); if(!r || !mnDrag) return; e.preventDefault(); const f=menuFlat().filter(k=>k!==mnDrag); let j=f.indexOf(r.dataset.mk); if(j<0) j=f.length; else if(r.classList.contains('over-bot')) j++; f.splice(j,0,mnDrag); mnDrag=null; mnSave(f); });
+document.addEventListener('dragend', ()=>{ mnDrag=null; document.querySelectorAll('.mn-row').forEach(x=>x.classList.remove('dragging','over-top','over-bot')); });

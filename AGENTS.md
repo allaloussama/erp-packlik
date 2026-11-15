@@ -29,6 +29,7 @@ Les scripts se chargent dans l'ordre de `index.php` ; chaque fichier **surcharge
 | `assets/erp-plus.js` | Catégories avec photo, produits (corbeille, actions groupées, grammage), éditeur riche, fournisseurs multiples, compta automatique, colonnes Source/Plateforme/Fournisseur |
 | `assets/documents.js` | Facture, proforma, bon de livraison, décharge (sur `o.docs`) |
 | `assets/shop-plus.js` | Mini-panier, panier + formulaire, slides, réglages formulaire/fiche produit, textes modifiables, page ERP « Boutique » |
+| `assets/page-editor.js` | Éditeur de pages : repères `data-pe`, styles / animations / déplacements / blocs par page (`SETTINGS.site.pages`), aperçu dans un cadre relié par `window.peBridge` |
 | `assets/extra.css` | Styles ajoutés (dont le design des commandes) |
 
 ## Règles à respecter
@@ -44,7 +45,9 @@ Les scripts se chargent dans l'ordre de `index.php` ; chaque fichier **surcharge
    En français, « DHD » est remplacé à l'affichage par « la société de livraison » (l'ERP n'est plus lié à DHD).
 6. **Produit déjà vendu** : ne jamais le supprimer de `PRODUCTS` (les commandes s'y réfèrent) → corbeille.
 7. Vérifier chaque fichier JS modifié : `node --check assets/<fichier>.js`, puis `php tests/smoke.php`.
-8. Envoi de fichiers : `api/?r=upload` — JPG/PNG/WEBP 4 Mo, MP4/WEBM 40 Mo, rangés dans `uploads/` (PHP désactivé).
+8. **JSON côté serveur** : décoder les documents avec `jdec()` (garde `{}`), jamais `json_decode(…, true)` pour ce qui repart au navigateur.
+9. Les données de départ sont écrites dans `index.php` (`pk-boot`) ; `boot()` est dans `api/lib.php`.
+10. Envoi de fichiers : `api/?r=upload` — JPG/PNG/WEBP 4 Mo, MP4/WEBM 40 Mo, rangés dans `uploads/` (PHP désactivé).
 
 ## Déploiement
 

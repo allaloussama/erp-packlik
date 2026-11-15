@@ -273,9 +273,24 @@ function fail(int $code, string $msg): never {
 	out(['error' => $msg], $code);
 }
 
+/**
+ * JSON décodé en tableaux PHP, sauf les objets vides qui restent des objets : sinon `{}` revient au
+ * navigateur sous forme `[]`, et ce qu'on y ajoute ensuite (réglages, styles…) n'est jamais enregistré.
+ */
+function jdec(string $s) {
+	return keep_objects(json_decode($s));
+}
+function keep_objects($v) {
+	if ($v instanceof stdClass) {
+		$a = get_object_vars($v);
+		return $a ? array_map('keep_objects', $a) : $v;
+	}
+	return is_array($v) ? array_map('keep_objects', $v) : $v;
+}
+
 function input(): array {
 	$raw = file_get_contents('php://input');
-	$j = $raw !== '' ? json_decode($raw, true) : [];
+	$j = $raw !== '' ? jdec($raw) : [];
 	return is_array($j) ? $j : [];
 }
 
@@ -294,4 +309,33 @@ function throttle(string $bucket, int $max, int $window): void {
 		fail(429, 'Trop de tentatives. Réessayez plus tard.');
 	}
 	$db->prepare('INSERT INTO throttle (ip, bucket, ts) VALUES (?,?,?)')->execute([client_ip(), $bucket, $now]);
+}
+
+/** État initial : session, jeton, et tous les documents que le rôle peut lire. */
+function boot(?array $u): array {
+	$db = db();
+	$rev = cur_rev();
+	if ($u) {
+		$rows = $db->query('SELECT coll, id, data, rev FROM records WHERE deleted=0');
+	} else {
+		$rows = $db->query("SELECT coll, id, data, rev FROM records WHERE deleted=0 AND coll IN ('products','wilayas','carriers','kv','pixels')");
+	}
+	$data = [];
+	foreach ($rows as $r) {
+		if ($u && !can($u, $r['coll'], 0)) {
+			continue;
+		}
+		$d = out_doc($r['coll'], jdec($r['data']), $u);
+		if ($d !== null) {
+			$data[$r['coll']][] = [$r['id'], (int) $r['rev'], $d];
+		}
+	}
+	return [
+		'user' => $u ? ['id' => $u['id'], 'name' => $u['name'], 'role' => $u['role']] : null,
+		'csrf' => $u ? csrf() : null,
+		'needSetup' => (int) $db->query('SELECT COUNT(*) FROM auth')->fetchColumn() === 0,
+		'empty' => (int) $db->query("SELECT COUNT(*) FROM records WHERE coll='products'")->fetchColumn() === 0,
+		'rev' => $rev,
+		'data' => $data,
+	];
 }

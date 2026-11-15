@@ -53,6 +53,7 @@ boutique / équipe, droits par rôle, conflit d'écriture, anti-doublon.
 | `assets/erp-plus.js` | Catégories avec photo, produits (corbeille, actions groupées, grammage), éditeur de description riche, fournisseurs multiples, compta automatique |
 | `assets/documents.js` | Facture, facture proforma, bon de livraison, décharge : remplis depuis la commande, modifiables, imprimables |
 | `assets/shop-plus.js` | Mini-panier, panier avec formulaire, slides, réglages du formulaire et de la fiche produit, textes modifiables (ERP › Boutique) |
+| `assets/page-editor.js` | Éditeur de pages de la boutique (ERP › Boutique › Pages) |
 | `AGENTS.md`, `MEMOIRE.md` | Fiche pour les développeurs / agents, et journal de ce qui a été fait et où |
 
 ## Comment ça marche

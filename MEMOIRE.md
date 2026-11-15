@@ -2,6 +2,17 @@
 
 Journal des changements, du plus récent au plus ancien. La fiche agent (`AGENTS.md`) explique comment le code est construit.
 
+## 15 novembre 2026 (2) — menu, formulaire, chargement, éditeur de pages
+
+| Demande | Ce qui a été fait | Où |
+| --- | --- | --- |
+| Changer la place des rubriques du menu admin | « Réorganiser le menu » en bas du menu : glisser-déposer ou flèches, groupes renommables, ajout/suppression de groupes, retour par défaut ; enregistré dans `SETTINGS.menuOrder` | `assets/erp-plus.js` (fin) |
+| « Ajouter au panier » → dans le formulaire, supprimable | Le formulaire liste les produits (quantité +/−, croix pour retirer) ; sur une fiche produit, « Ajouter au panier » d'un autre produit l'ajoute au formulaire ; la page Panier n'est plus que le formulaire | `assets/shop-plus.js` (`codForm`) |
+| Plus d'écran « Chargement » | Les données de départ sont écrites dans la page (`<script type="application/json" id="pk-boot">`) : plus d'appel `boot` à l'ouverture ; compression gzip ajoutée au `.htaccess` | `index.php`, `api/lib.php` (`boot` déplacé), `assets/backend.js`, `.htaccess` |
+| Ajouter / modifier les champs du formulaire | ERP › Boutique › Formulaire : renommer, texte d'exemple, déplacer, obligatoire, affiché, pleine largeur ; ajouter des champs (texte, texte long, nombre, e-mail, date, liste de choix, case à cocher) joints à la note de la commande. Nom, téléphone, wilaya, commune, livraison restent obligatoires | `assets/shop-plus.js` |
+| Éditeur de pages professionnel | ERP › Boutique › Pages : éditeur plein écran, aperçu ordinateur / tablette / mobile, clic sur un élément → texte, police (dont Google Fonts), taille, graisse, interligne, couleurs, fond (couleur ou image), bordure, arrondi, ombre, opacité, marges, animation à l'apparition (fondu, montée, zoom…), masquer (partout / mobile / ordinateur), monter / descendre, ajouter un bloc (titre, texte, bouton, image, vidéo, espace), annuler / rétablir. Bouton « Modifier la page » sur la boutique | `assets/page-editor.js` |
+| Bug trouvé en route | Le serveur transformait les objets vides `{}` en listes `[]` : tout ce qu'on y ajoutait ensuite (réglages de la boutique…) était perdu. Corrigé (`jdec`) | `api/lib.php`, `api/index.php` |
+
 ## 15 novembre 2026 — série de demandes du propriétaire
 
 | Demande | Ce qui a été fait | Où |

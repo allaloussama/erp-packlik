@@ -160,35 +160,6 @@ switch ($route) {
 
 /* ================================================================== */
 
-/** État initial : session, jeton, et tous les documents que le rôle peut lire. */
-function boot(?array $u): array {
-	$db = db();
-	$rev = cur_rev();
-	if ($u) {
-		$rows = $db->query('SELECT coll, id, data, rev FROM records WHERE deleted=0');
-	} else {
-		$rows = $db->query("SELECT coll, id, data, rev FROM records WHERE deleted=0 AND coll IN ('products','wilayas','carriers','kv','pixels')");
-	}
-	$data = [];
-	foreach ($rows as $r) {
-		if ($u && !can($u, $r['coll'], 0)) {
-			continue;
-		}
-		$d = out_doc($r['coll'], json_decode($r['data'], true), $u);
-		if ($d !== null) {
-			$data[$r['coll']][] = [$r['id'], (int) $r['rev'], $d];
-		}
-	}
-	return [
-		'user' => $u ? ['id' => $u['id'], 'name' => $u['name'], 'role' => $u['role']] : null,
-		'csrf' => $u ? csrf() : null,
-		'needSetup' => (int) $db->query('SELECT COUNT(*) FROM auth')->fetchColumn() === 0,
-		'empty' => (int) $db->query("SELECT COUNT(*) FROM records WHERE coll='products'")->fetchColumn() === 0,
-		'rev' => $rev,
-		'data' => $data,
-	];
-}
-
 /**
  * Synchronisation : applique les écritures du client puis renvoie tout ce qui a changé depuis `since`.
  * Une écriture est refusée (et l'état serveur renvoyé) si le rôle n'a pas le droit ou si le document
@@ -255,7 +226,7 @@ function sync(array $u, array $in): array {
 		if (!can($u, $r['coll'], 0)) {
 			continue;
 		}
-		$d = $r['deleted'] ? null : out_doc($r['coll'], json_decode($r['data'], true), $u);
+		$d = $r['deleted'] ? null : out_doc($r['coll'], jdec($r['data']), $u);
 		$changes[] = [$r['coll'], $r['id'], (int) $r['rev'], $d];
 	}
 	return ['rev' => $rev, 'changes' => $changes, 'rejected' => $rejected];

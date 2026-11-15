@@ -203,7 +203,8 @@ render = function(){
 };
 async function bootApp(){
   let b;
-  try{ b = await api('boot'); }
+  const pre = document.getElementById('pk-boot'); // données déjà dans la page : pas d'écran de chargement
+  try{ b = pre? JSON.parse(pre.textContent) : await api('boot'); if(pre) pre.remove(); }
   catch(e){ document.getElementById('app').innerHTML = `<div class="empty" style="padding:80px 20px"><b>${esc(e.message)}</b><div class="small">Vérifiez la configuration du serveur (PHP, base de données) puis rechargez.</div></div>`; return; }
   NET.csrf=b.csrf; NET.rev=b.rev; NET.needSetup=b.needSetup;
   const list=[]; Object.entries(b.data).forEach(([c,rows])=>rows.forEach(([id,rev,d])=>list.push([c,id,rev,d])));

@@ -5,7 +5,8 @@
    accès à l'administration par /admin.
    Réglages : SETTINGS.site = {slides, form, pdp, texts:{fr,ar,en}} (module ERP « Boutique »).
    ============================================================ */
-const site = () => SETTINGS.site || (SETTINGS.site = {});
+/* un réglage vide peut revenir du serveur sous forme de liste [] : on le remet en objet */
+const site = () => { const o=x=>x && typeof x==='object' && !Array.isArray(x); if(!o(SETTINGS.site)) SETTINGS.site={}; const s=SETTINGS.site; ['texts','form','pdp'].forEach(k=>{ if(k in s && !o(s[k])) s[k]={}; }); if(o(s.texts)) Object.keys(s.texts).forEach(l=>{ if(!o(s.texts[l])) s.texts[l]={}; }); return s; };
 
 /* ---------- textes modifiables : chaque texte affiché peut être remplacé, par langue ---------- */
 const TSEEN = new Map(); // texte affiché → texte d'origine, pour l'édition directe
@@ -45,29 +46,88 @@ viewCart = function(){
   if(route().q.form) setTimeout(()=>{ const f=document.getElementById('tjCod'); if(f){ f.scrollIntoView({behavior:'smooth'}); const i=document.getElementById('coName'); if(i) i.focus({preventScroll:true}); } history.replaceState(null,'','#/panier'); }, 60);
   return shopShell(`<div class="container" style="margin-top:20px">
     <h1 style="font-size:24px;margin-bottom:14px">${t('Panier')}</h1>
-    <div class="cart-cod">
-      <div class="card"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>${t('Produit')}</th><th>${t('Prix')}</th><th>${t('Quantité')}</th><th class="r">${t('Total')}</th><th></th></tr></thead><tbody>
-      ${S.cart.map((it,i)=>{ const p=PBY[it.pid]; if(!p) return ''; const v=it.v&&p.variants? (p.variants.find(x=>x.id===it.v)||{}).label:''; return `<tr><td><div class="row">${prodArt(p,44)}<div><a href="#/produit/${p.id}"><b>${esc(p.name)}</b></a>${v?`<div class="small muted">${t('Variante')} : ${esc(v)}</div>`:''}</div></div></td><td class="num">${dzd(it.price)}</td><td><div class="qty sm"><button data-a="cartQ" data-i="${i}" data-v="-1" aria-label="${t('moins')}">−</button><input value="${it.q}" readonly aria-label="${t('Quantité')}"><button data-a="cartQ" data-i="${i}" data-v="1" aria-label="${t('plus')}">+</button></div></td><td class="r num"><b>${dzd(it.price*it.q)}</b></td><td><button class="btn icon sm ghost" data-a="cartDel" data-i="${i}" aria-label="${t('Supprimer')}">${ic('trash','sm')}</button></td></tr>`; }).join('')}
-      </tbody></table></div><div class="card-b"><a href="#/boutique" class="btn">${ic('chevR','sm flip')} ${t('Continuer mes achats')}</a></div></div>
-      <div>${codForm(S.cart, {})}</div>
-    </div></div>`,'shop');
+    <div class="cart-solo">${codForm(S.cart, {})}<p style="text-align:center"><a href="#/boutique" class="btn">${ic('chevR','sm flip')} ${t('Continuer mes achats')}</a></p></div>
+</div>`,'shop');
 };
 
-/* ---------- formulaire de commande réglable ---------- */
-const FORM_DEF = {title:'Commandez maintenant, payez à la livraison', sub:'Remplissez vos informations, nous vous appelons pour confirmer', button:'Commander maintenant', address:true, addCart:true, assure:true, color:''};
+/* ---------- formulaire de commande : champs réglables, produits du panier modifiables dans le formulaire ----------
+   SETTINGS.site.form = {title, sub, button, color, assure, addCart, fields:[{key, label, placeholder, type, required, show, full, options}]}
+   Nom, téléphone, wilaya, commune et mode de livraison restent obligatoires (le serveur en a besoin) ;
+   les champs ajoutés sont joints à la note de la commande. */
+const FORM_DEF = {title:'Commandez maintenant, payez à la livraison', sub:'Remplissez vos informations, nous vous appelons pour confirmer', button:'Commander maintenant', addCart:true, assure:true, color:''};
+const FIELDS_DEF = [
+  {key:'name', label:'Nom complet', placeholder:'Nom et prénom', type:'text', required:true, show:true, lock:true},
+  {key:'phone', label:'Téléphone', placeholder:'05 XX XX XX XX', type:'tel', required:true, show:true, lock:true},
+  {key:'wilaya', label:'Wilaya', type:'select', required:true, show:true, lock:true},
+  {key:'commune', label:'Commune', type:'select', required:true, show:true, lock:true},
+  {key:'delivery', label:'Mode de livraison', type:'delivery', required:true, show:true, lock:true, full:true},
+  {key:'address', label:'Adresse (facultatif)', placeholder:'Quartier, rue, repère…', type:'text', required:false, show:true, full:true}
+];
 const formCfg = () => ({...FORM_DEF, ...(site().form||{})});
-const _codForm = codForm;
+function formFields(){
+  const saved=(site().form||{}).fields;
+  if(!Array.isArray(saved) || !saved.length) return FIELDS_DEF.map(f=>({...f}));
+  const out=saved.map(f=>{ const d=FIELDS_DEF.find(x=>x.key===f.key); return d? {...d, ...f, lock:d.lock, type:d.type, ...(d.lock?{required:true, show:true}:{})} : {...f}; });
+  FIELDS_DEF.forEach(d=>{ if(!out.some(f=>f.key===d.key)) out.push({...d}); });
+  return out;
+}
 codForm = function(items, opts){
-  const f=formCfg(); let h=_codForm(items, {...opts, addCart: f.addCart? opts.addCart : false});
-  const rep=(a,b)=>{ if(a!==b) h=h.split(a).join(b); };
-  rep(`<strong>${t(FORM_DEF.title)}</strong>`, `<strong>${esc(t(f.title))}</strong>`);
-  rep(`<span>${t(FORM_DEF.sub)}</span>`, `<span>${esc(t(f.sub))}</span>`);
-  rep(`>${t(FORM_DEF.button)}</button>`, `>${esc(t(f.button))}</button>`);
-  if(!f.address) h=h.replace(/<div class="tj-field [^"]*"><label for="coA">[\s\S]*?<\/div>/, '');
-  if(!f.assure) h=h.replace(/<ul class="tj-assure">[\s\S]*?<\/ul>/, '');
-  if(f.color) h=h.replace('<button class="tj-submit"', `<button class="tj-submit" style="background:${esc(f.color)};border-color:${esc(f.color)}"`);
-  return h;
+  const f=formCfg(), co=S.ui.co; co.cf=co.cf||{};
+  if(!WBY[co.wilaya] || !WBY[co.wilaya].active){ const w=WILAYAS.find(x=>x.active); co.wilaya = w? w.id : co.wilaya; }
+  const q=codQuote(items, co); if(!q.desk && co.delivery==='desk'){ co.delivery='home'; q.fee=q.feeH; }
+  const err=k=>co.err[k]? `<small class="err">${t(co.err[k])}</small>`:'';
+  const ph=x=>x.placeholder? `placeholder="${esc(t(x.placeholder))}"`:'';
+  const dtype=(v,label,sub,fee,off)=>`<label class="tj-dtype ${off?'off':''}"><input type="radio" name="tjdl" value="${v}" ${co.delivery===v?'checked':''} ${off?'disabled':''} data-ch="codD"><span class="dot"></span><span class="txt"><strong>${t(label)}</strong><small>${t(sub)}</small></span><b class="num">${q.free? t('Gratuite') : dzd(fee)}</b></label>`;
+  const fieldHtml = x=>{
+    const req = x.required? ' <span class="tj-req">*</span>' : '', cls=`tj-field ${co.err[x.key]?'bad':''} ${x.full?'full':''}`, L=esc(t(x.label));
+    switch(x.key){
+      case 'name': return `<div class="${cls}"><label for="coName">${L}${req}</label><span class="tj-inp-ic">${ic('user','sm')}<input class="tj-inp" id="coName" data-co="name" value="${esc(co.name)}" autocomplete="name" required ${ph(x)}></span>${err('name')}</div>`;
+      case 'phone': return `<div class="${cls}"><label for="coPhone">${L}${req}</label><span class="tj-inp-ic">${ic('phone','sm')}<input class="tj-inp" id="coPhone" data-co="phone" value="${esc(co.phone)}" type="tel" inputmode="numeric" maxlength="14" dir="ltr" autocomplete="tel" required ${ph(x)}></span>${err('phone')}</div>`;
+      case 'wilaya': return `<div class="${cls}"><label for="coW">${L}${req}</label><select class="tj-inp" id="coW" data-ch="codW">${WILAYAS.filter(w=>w.active).map(w=>`<option value="${w.id}" ${w.id===+co.wilaya?'selected':''}>${w.code} - ${esc(wName(w.id))}</option>`).join('')}</select></div>`;
+      case 'commune': return `<div class="${cls}"><label for="coC">${L}${req}</label><select class="tj-inp" id="coC" data-co="commune">${communeOptions(co.wilaya, co.commune)}</select>${err('commune')}</div>`;
+      case 'delivery': return `<fieldset class="tj-group full"><legend>${L}</legend><div class="tj-delivery">${dtype('home','À domicile','Livré jusqu\'à votre porte',q.feeH,false)}${dtype('desk','Bureau de livraison (stop desk)','Retrait au bureau le plus proche',q.feeD,!q.desk)}</div></fieldset>`;
+      case 'address': return `<div class="${cls}"><label for="coA">${L}${req}</label><span class="tj-inp-ic">${ic('pin','sm')}<input class="tj-inp" id="coA" data-co="address" value="${esc(co.address)}" autocomplete="street-address" ${ph(x)}></span>${err('address')}</div>`;
+    }
+    const id='cf_'+x.key, v=co.cf[x.key]??'';
+    if(x.type==='textarea') return `<div class="${cls}"><label for="${id}">${L}${req}</label><textarea class="tj-inp" id="${id}" data-cf="${esc(x.key)}" rows="3" ${ph(x)}>${esc(v)}</textarea>${err(x.key)}</div>`;
+    if(x.type==='select') return `<div class="${cls}"><label for="${id}">${L}${req}</label><select class="tj-inp" id="${id}" data-cf="${esc(x.key)}"><option value="">${t('— Choisir —')}</option>${(x.options||[]).map(o=>`<option ${o===v?'selected':''}>${esc(t(o))}</option>`).join('')}</select>${err(x.key)}</div>`;
+    if(x.type==='checkbox') return `<div class="${cls}"><label class="check"><input type="checkbox" data-cf="${esc(x.key)}" ${v?'checked':''}> ${L}${req}</label>${err(x.key)}</div>`;
+    return `<div class="${cls}"><label for="${id}">${L}${req}</label><input class="tj-inp" id="${id}" data-cf="${esc(x.key)}" value="${esc(v)}" type="${x.type==='number'?'number':x.type==='date'?'date':x.type==='email'?'email':'text'}" ${ph(x)}>${err(x.key)}</div>`;
+  };
+  const main = opts.product? items[0] : null;
+  const line = (i, idx)=>{ const p=PBY[i.pid]; if(!p) return ''; const v=i.v&&p.variants? ' ('+esc((p.variants.find(x=>x.id===i.v)||{}).label||'')+')':''; const ci=S.cart.indexOf(i);
+    return `<div class="tj-line">${prodArt(p,40)}<div class="grow" style="min-width:0"><b class="tj-ln-nm">${esc(p.name)}${v}</b><span class="tj-ln-q">${ci>=0? `<span class="qty sm"><button type="button" data-a="cartQ" data-i="${ci}" data-v="-1" aria-label="${t('moins')}">−</button><input value="${i.q}" readonly aria-label="${t('Quantité')}"><button type="button" data-a="cartQ" data-i="${ci}" data-v="1" aria-label="${t('plus')}">+</button></span>` : `<span class="muted small">${i.q} × ${dzd(i.price)}</span>`}</span></div><b class="num">${dzd(i.price*i.q)}</b>${ci>=0? `<button type="button" class="tj-ln-del" data-a="cartDel" data-i="${ci}" aria-label="${t('Retirer du formulaire')}" title="${t('Retirer')}">${ic('x','sm')}</button>` : '<span class="tj-ln-del"></span>'}</div>`; };
+  return `<form class="tj-cod" id="tjCod" data-sub="cod" novalidate aria-label="${t('Formulaire de commande')}">
+    <div class="tj-cod-title"><span class="ic" ${f.color?`style="background:${esc(f.color)}"`:''}>${ic('cash','lg')}</span><span><strong>${esc(t(f.title))}</strong><span>${esc(t(f.sub))}</span></span></div>
+    <div class="tj-cod-grid">${formFields().filter(x=>x.show!==false).map(fieldHtml).join('')}</div>
+    <input class="tj-hp" type="text" id="coHp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <div class="tj-summary" aria-live="polite">
+      <p class="tj-sum-title">${t('Vos produits')}</p>
+      ${items.length? items.map(line).join('') : `<div class="muted small">${t('Aucun produit')}</div>`}
+      <div><span>${t('Livraison')} · ${esc(wName(co.wilaya))}</span><span class="num">${q.free? t('Gratuite') : dzd(q.fee)}</span></div>
+      <div class="total"><strong>${t('Total à payer à la livraison')}</strong><strong class="num">${dzd(q.sub+q.fee)}</strong></div>
+    </div>
+    <button class="tj-submit" type="submit" ${items.length && opts.ok!==false?'':'disabled'} ${f.color?`style="background:${esc(f.color)};border-color:${esc(f.color)}"`:''}>${opts.ok===false? t('Produit indisponible') : esc(t(f.button))}</button>
+    ${opts.addCart && f.addCart? `<button class="tj-addcart" type="button" data-a="pdpAdd">${ic('cart','sm')} ${t('Ajouter au panier')}</button>`:''}
+    ${f.assure? `<ul class="tj-assure"><li>${ic('cash','sm')} ${t('Paiement à la livraison')}</li><li>${ic('shield','sm')} ${t('Vérification avant paiement')}</li><li>${ic('truck','sm')} ${t('Livraison 69 wilayas')}</li></ul>`:''}
+  </form>`;
 };
+S.ui.co.withCart = true; // les produits ajoutés au panier font partie du formulaire
+document.addEventListener('input', e=>{ const el=e.target.closest('[data-cf]'); if(el){ S.ui.co.cf=S.ui.co.cf||{}; S.ui.co.cf[el.dataset.cf]= el.type==='checkbox'? el.checked : el.value; } });
+document.addEventListener('change', e=>{ const el=e.target.closest('[data-cf]'); if(el){ S.ui.co.cf=S.ui.co.cf||{}; S.ui.co.cf[el.dataset.cf]= el.type==='checkbox'? el.checked : el.value; } });
+const _subCod = SUB.cod;
+SUB.cod = async form=>{
+  const co=S.ui.co, fs=formFields().filter(x=>x.show!==false); co.cf=co.cf||{};
+  const custom=fs.filter(x=>!FIELDS_DEF.some(d=>d.key===x.key)), addr=fs.find(x=>x.key==='address');
+  const miss=custom.filter(x=>x.required && !co.cf[x.key]); const addrMiss = addr && addr.required && !val('coA').trim();
+  if(miss.length || addrMiss){ co.err={}; miss.forEach(x=>co.err[x.key]='Champ obligatoire'); if(addrMiss) co.err.address='Champ obligatoire'; co.name=val('coName'); co.phone=val('coPhone'); co.commune=val('coC'); co.address=val('coA'); render(); toast(t('Merci de corriger le formulaire'),'bad'); return; }
+  co.note = custom.filter(x=>co.cf[x.key]!=null && co.cf[x.key]!=='' && co.cf[x.key]!==false).map(x=>x.label+' : '+(co.cf[x.key]===true? t('Oui') : co.cf[x.key])).join(' · ');
+  if(!fs.some(x=>x.key==='address')) co.address='';
+  return _subCod(form);
+};
+/* sur une fiche produit, « Ajouter au panier » d'un autre produit l'ajoute au formulaire de la page */
+const _addCartForm = A.addCart;
+A.addCart = el=>{ if(route().parts[0]!=='produit') return _addCartForm(el); const p=PBY[+el.dataset.id]; if(!p) return; addToCart(p.id, p.minQty||1, null); fbq('AddToCart',{id:p.id}); render(); document.getElementById('toasts').replaceChildren(); toast(t('Ajouté au formulaire de commande')+' : '+esc(p.name),'ok'); const f=document.querySelector('.tj-summary'); if(f) f.scrollIntoView({behavior:'smooth', block:'center'}); };
 
 /* ---------- fiche produit : ordre des blocs ---------- */
 const PDP_BLOCKS = [['badges','Badges et catégories'],['title','Nom du produit'],['price','Prix'],['short','Description courte'],['meta','Conditionnement, référence, stock'],['pack','Contenu du pack'],['form','Formulaire de commande'],['desc','Description complète']];
@@ -89,18 +149,7 @@ const _viewHomeSite = viewHome;
 viewHome = function(){ const h=_viewHomeSite(), hero=heroHtml(); return hero? h.replace(/<section class="hero"[\s\S]*?<\/section>/, ()=>hero) : h; };
 
 /* ---------- modifier les textes directement sur la page (admin) ---------- */
-function editBar(){ if(S.role!=='admin') return ''; return `<div class="edit-bar ${S.ui.edit?'on':''}">${S.ui.edit? `<span>${ic('edit','sm')} ${t('Cliquez sur un texte pour le modifier')}</span><a class="btn sm" href="#/erp/site">${ic('gear','sm')} ${t('Slides, formulaire, fiche produit')}</a><button class="btn sm primary" data-a="editToggle">${ic('check','sm')} ${t('Terminer')}</button>` : `<button class="btn sm primary" data-a="editToggle">${ic('edit','sm')} ${t('Modifier la page')}</button>`}</div>`; }
-A.editToggle = ()=>{ S.ui.edit=!S.ui.edit; document.body.classList.toggle('editing-page', !!S.ui.edit); render(); };
-function textAt(e){ const r = document.caretRangeFromPoint? document.caretRangeFromPoint(e.clientX, e.clientY) : (document.caretPositionFromPoint && (p=>p&&{startContainer:p.offsetNode})(document.caretPositionFromPoint(e.clientX, e.clientY))); const n=r && r.startContainer; return n && n.nodeType===3? n.nodeValue.trim() : (e.target.childElementCount===0? e.target.textContent.trim() : ''); }
-document.addEventListener('click', e=>{
-  if(!S.ui.edit || S.role!=='admin' || route().parts[0]==='erp' || e.target.closest('.edit-bar,#ov,.mc,.mc-bg')) return;
-  const txt=textAt(e); e.preventDefault(); e.stopPropagation();
-  const key = txt && TSEEN.get(txt);
-  if(!key){ toast(txt? t('Ce texte vient d\'une fiche (produit, catégorie, slide) : modifiez-le dans l\'ERP.') : t('Cliquez directement sur un texte.'),'bad'); return; }
-  S.ui.te={key};
-  openModal(modalTpl(t('Modifier le texte'), `<p class="small muted" style="margin-top:0">${t('Texte d\'origine')} : « ${esc(key)} » · ${t('Langue')} : <b>${S.lang.toUpperCase()}</b></p><textarea class="input" id="teV" rows="4" ${S.lang==='ar'?'dir="rtl"':''}>${esc(txt)}</textarea>`,
-    `<button class="btn" data-a="teReset">${t('Revenir au texte d\'origine')}</button><button class="btn" data-a="closeModal">${t('Annuler')}</button><button class="btn primary" data-a="teSave">${t('Enregistrer')}</button>`));
-}, true);
+function editBar(){ return ''; } // bouton « Modifier la page » : voir page-editor.js
 function setText(key, v, lang){ const s=site(); s.texts=s.texts||{}; const L=lang||S.lang; s.texts[L]={...(s.texts[L]||{})}; if(v==null || v==='') delete s.texts[L][key]; else s.texts[L][key]=v; queueSync(); }
 A.teSave = ()=>{ setText(S.ui.te.key, val('teV').trim()); closeModal(); toast(t('Texte enregistré'),'ok'); render(); };
 A.teReset = ()=>{ setText(S.ui.te.key, null); closeModal(); render(); };
@@ -124,11 +173,20 @@ function viewSite(){
         <div class="row wrap" style="gap:6px"><button class="btn sm" data-a="slImg" data-i="${i}">${ic('upload','sm')} ${t(x.img?'Changer la photo':'Ajouter une photo')}</button>${x.img?`<button class="btn sm ghost" data-a="slImgDel" data-i="${i}">${t('Retirer la photo')}</button>`:''}<label class="check small"><input type="checkbox" data-sl="${i}" data-k="on" ${x.on!==false?'checked':''}> ${t('Affichée')}</label><span class="grow"></span><button class="btn icon sm ghost" data-a="slMove" data-i="${i}" data-v="-1" ${i?'':'disabled'} aria-label="${t('Monter')}">${ic('arrowU','sm')}</button><button class="btn icon sm ghost" data-a="slMove" data-i="${i}" data-v="1" ${i<sl.length-1?'':'disabled'} aria-label="${t('Descendre')}">${ic('arrowD','sm')}</button><button class="btn icon sm ghost" data-a="slDel" data-i="${i}" aria-label="${t('Supprimer')}">${ic('trash','sm')}</button></div>
       </div></div>`).join('') || `<div class="empty">${ic('grid')}<div>${t('Les slides par défaut sont affichées. Partez d\'elles ou ajoutez la vôtre.')}</div></div>`}</div>`;
   }
-  if(u.tab==='form'){ const f=formCfg(); const inp=(k,l)=>`<div class="field"><label>${t(l)}<input class="input" data-sf="${k}" value="${esc(f[k])}"></label></div>`; const chk=(k,l)=>`<label class="check"><input type="checkbox" data-sf="${k}" ${f[k]?'checked':''}> ${t(l)}</label>`;
+  if(u.tab==='form'){ const f=formCfg(), fs=formFields(); const inp=(k,l)=>`<div class="field"><label>${t(l)}<input class="input" data-sf="${k}" value="${esc(f[k])}"></label></div>`; const chk=(k,l)=>`<label class="check"><input type="checkbox" data-sf="${k}" ${f[k]?'checked':''}> ${t(l)}</label>`;
+    const TYPES=[['text','Texte court'],['textarea','Texte long'],['number','Nombre'],['email','E-mail'],['date','Date'],['select','Liste de choix'],['checkbox','Case à cocher']];
+    const rows = fs.map((x,i)=>`<div class="ff-row ${x.show===false?'off':''}">
+      <div class="ff-move"><button class="btn icon sm ghost" data-a="ffMove" data-i="${i}" data-v="-1" ${i?'':'disabled'} aria-label="${t('Monter')}">${ic('arrowU','sm')}</button><button class="btn icon sm ghost" data-a="ffMove" data-i="${i}" data-v="1" ${i<fs.length-1?'':'disabled'} aria-label="${t('Descendre')}">${ic('arrowD','sm')}</button></div>
+      <div class="ff-main"><div class="ff-top"><input class="input" data-ff="${i}" data-k="label" value="${esc(x.label)}" aria-label="${t('Nom du champ')}">${x.lock? `<span class="badge">${t('Obligatoire')}</span>` : FIELDS_DEF.some(d=>d.key===x.key)? '' : `<select class="select" data-ff="${i}" data-k="type" aria-label="${t('Type')}">${TYPES.map(([k,l])=>`<option value="${k}" ${x.type===k?'selected':''}>${t(l)}</option>`).join('')}</select>`}</div>
+        ${['wilaya','commune','delivery','checkbox','select'].includes(x.key)||['checkbox','select'].includes(x.type)? '' : `<input class="input" data-ff="${i}" data-k="placeholder" value="${esc(x.placeholder||'')}" placeholder="${t('Texte d\'exemple dans le champ')}">`}
+        ${x.type==='select' && !x.lock? `<input class="input" data-ff="${i}" data-k="options" value="${esc((x.options||[]).join(', '))}" placeholder="${t('Choix séparés par des virgules')}">`:''}
+        <div class="row wrap" style="gap:14px"><label class="check small"><input type="checkbox" data-ff="${i}" data-k="show" ${x.show!==false?'checked':''} ${x.lock?'disabled':''}> ${t('Affiché')}</label><label class="check small"><input type="checkbox" data-ff="${i}" data-k="required" ${x.required?'checked':''} ${x.lock?'disabled':''}> ${t('Obligatoire')}</label><label class="check small"><input type="checkbox" data-ff="${i}" data-k="full" ${x.full?'checked':''}> ${t('Pleine largeur')}</label>${FIELDS_DEF.some(d=>d.key===x.key)? '' : `<button class="btn sm ghost" data-a="ffDel" data-i="${i}">${ic('trash','sm')} ${t('Supprimer')}</button>`}</div></div></div>`).join('');
     inner = `<div class="card-b g2"><div class="col" style="gap:12px">${inp('title','Titre du formulaire')}${inp('sub','Sous-titre')}${inp('button','Texte du bouton « Commander »')}<div class="field"><label>${t('Couleur du bouton')}<input class="input" type="color" data-sf="color" value="${esc(f.color||'#FD6400')}" style="height:40px;padding:3px"></label></div>
-      ${chk('address','Afficher le champ Adresse')}${chk('addCart','Afficher le bouton « Ajouter au panier » sous le formulaire')}${chk('assure','Afficher les garanties (paiement à la livraison, vérification, 69 wilayas)')}
-      <p class="xs muted" style="margin:0">${t('Le même formulaire sert sur la fiche produit et dans le panier. Nom, téléphone, wilaya et commune restent obligatoires.')}</p></div>
-      <div class="sl-form-prev">${codForm([], {})}</div></div>`; }
+      ${chk('addCart','Afficher le bouton « Ajouter au panier » sous le formulaire')}${chk('assure','Afficher les garanties (paiement à la livraison, vérification, 69 wilayas)')}
+      <div class="row between"><b>${t('Champs du formulaire')}</b><div class="row"><button class="btn sm" data-a="ffReset">${ic('refresh','sm')} ${t('Par défaut')}</button><button class="btn sm primary" data-a="ffAdd">${ic('plus','sm')} ${t('Ajouter un champ')}</button></div></div>
+      <div class="col" style="gap:8px">${rows}</div>
+      <p class="xs muted" style="margin:0">${t('Nom, téléphone, wilaya, commune et mode de livraison sont toujours demandés (nécessaires à la livraison) : vous pouvez les renommer et les déplacer. Les champs ajoutés sont joints à la note de la commande.')}</p></div>
+      <div><div class="sl-form-prev">${codForm(PRODUCTS.filter(p=>p.status==='actif').slice(0,1).map(p=>({pid:p.id, v:null, q:1, price:p.price})), {})}</div></div></div>`; }
   if(u.tab==='pdp'){ const l=pdpLayout(); const rest=PDP_BLOCKS.filter(b=>!l.order.includes(b[0]));
     inner = `<div class="card-b g2"><div class="col" style="gap:10px"><b>${t('Ordre des blocs à côté des photos')}</b>
       ${l.order.map((k,i)=>`<div class="pdp-blk"><span class="grow">${t((PDP_BLOCKS.find(b=>b[0]===k)||[k,k])[1])}</span><button class="btn icon sm ghost" data-a="pdpMove" data-i="${i}" data-v="-1" ${i?'':'disabled'} aria-label="${t('Monter')}">${ic('arrowU','sm')}</button><button class="btn icon sm ghost" data-a="pdpMove" data-i="${i}" data-v="1" ${i<l.order.length-1?'':'disabled'} aria-label="${t('Descendre')}">${ic('arrowD','sm')}</button><button class="btn icon sm ghost" data-a="pdpHide" data-v="${k}" aria-label="${t('Masquer')}">${ic('eye','sm')}</button></div>`).join('')}
@@ -164,3 +222,11 @@ const pdpSet = order=>{ const s=site(); s.pdp={...(s.pdp||{}), order}; slSave();
 A.pdpMove = el=>{ const o=pdpLayout().order.slice(), i=+el.dataset.i, j=i+(+el.dataset.v); [o[i],o[j]]=[o[j],o[i]]; pdpSet(o); };
 A.pdpHide = el=>pdpSet(pdpLayout().order.filter(k=>k!==el.dataset.v));
 A.pdpShow = el=>pdpSet(pdpLayout().order.concat(el.dataset.v));
+
+const ffSave = fs=>{ const s=site(); s.form={...(s.form||{}), fields:fs.map(({lock,...x})=>x)}; slSave(); };
+document.addEventListener('change', e=>{ const el=e.target.closest('[data-ff]'); if(!el) return; const fs=formFields(), x=fs[+el.dataset.ff], k=el.dataset.k;
+  x[k] = el.type==='checkbox'? el.checked : k==='options'? el.value.split(',').map(o=>o.trim()).filter(Boolean) : el.value; ffSave(fs); });
+A.ffMove = el=>{ const fs=formFields(), i=+el.dataset.i, j=i+(+el.dataset.v); [fs[i],fs[j]]=[fs[j],fs[i]]; ffSave(fs); };
+A.ffAdd = ()=>{ const fs=formFields(); fs.push({key:'f'+uid(), label:t('Nouveau champ'), placeholder:'', type:'text', required:false, show:true, full:false}); ffSave(fs); };
+A.ffDel = el=>{ const fs=formFields(); fs.splice(+el.dataset.i,1); ffSave(fs); };
+A.ffReset = ()=>{ if(!confirm(t('Revenir aux champs par défaut ?'))) return; const s=site(); if(s.form) delete s.form.fields; slSave(); };
