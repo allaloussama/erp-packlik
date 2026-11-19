@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "shop.packlik.packlik"
-    compileSdk = 34
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
