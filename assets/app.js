@@ -871,7 +871,7 @@ function barsList(rows, money){ const max=Math.max(1,...rows.map(r=>r.v)); retur
 /* ============================================================
    BOUTIQUE EN LIGNE (copie de packlik.shop, branchée sur l'ERP)
    ============================================================ */
-S.ui.shop = {cat:null, min:'', max:'', sort:'pop', per:12, page:1, q:'', tab:'new'};
+S.ui.shop = {cat:null, min:'', max:'', sort:'pop', shown:24, q:'', tab:'new'};
 
 function cartCount(){ return S.cart.reduce((s,i)=>s+i.q,0); }
 function cartTotal(){ return S.cart.reduce((s,i)=>s+i.price*i.q,0); }
@@ -963,8 +963,7 @@ function viewShop(){
   if(sh.sort==='desc') list.sort((a,b)=>b.price-a.price);
   if(sh.sort==='new') list.sort((a,b)=>b.id-a.id);
   if(sh.sort==='pop') list.sort((a,b)=>bestScore(b)-bestScore(a));
-  const pages = Math.max(1, Math.ceil(list.length/sh.per)); if(sh.page>pages) sh.page=pages;
-  const view = list.slice((sh.page-1)*sh.per, sh.page*sh.per);
+  const view = list.slice(0, sh.shown);
   const cat = CATS.find(c=>c.id===sh.cat);
   return shopShell(`<div class="container">
     <div class="row small muted" style="margin-top:16px"><a href="#/">${t('Accueil')}</a> ${ic('chevR','sm flip')} <a href="#/boutique">${t('Boutique')}</a>${cat?' '+ic('chevR','sm flip')+' '+esc(catName(cat)):''}</div>
@@ -980,10 +979,9 @@ function viewShop(){
         <div class="toolbar">
           <h1 style="font-size:22px" class="grow">${cat? esc(catName(cat)) : sh.q? t('Résultats pour')+' « '+esc(sh.q)+' »' : t('Boutique')} <span class="muted small" style="font-weight:500">· ${list.length} ${t('produits')}</span></h1>
           <label class="row small">${t('Trier')} <select class="select" style="width:auto" data-ch="shopSort">${[['pop','Popularité'],['new','Nouveautés'],['asc','Prix croissant'],['desc','Prix décroissant']].map(([k,l])=>`<option value="${k}" ${sh.sort===k?'selected':''}>${t(l)}</option>`).join('')}</select></label>
-          <div class="seg" aria-label="${t('Par page')}">${[9,12,18,24].map(n=>`<button class="${sh.per===n?'on':''}" data-a="perPage" data-v="${n}">${n}</button>`).join('')}</div>
         </div>
         ${view.length? `<div class="pgrid">${view.map(pcard).join('')}</div>` : `<div class="card empty">${ic('search')}<div><b>${t('Aucun produit trouvé')}</b></div><div class="small">${t('Essayez une autre recherche ou une autre catégorie.')}</div><a href="#/boutique" class="btn sm" style="margin-top:10px">${t('Voir tous les produits')}</a></div>`}
-        ${pages>1? `<nav class="pager" aria-label="pagination">${Array.from({length:pages},(_,i)=>`<button class="${sh.page===i+1?'on':''}" data-a="page" data-v="${i+1}" aria-label="Page ${i+1}">${i+1}</button>`).join('')}</nav>`:''}
+        ${view.length < list.length ? `<div id="shopSentinel" style="height:1px"></div>` : ''}
       </section>
     </div></div>`,'shop');
 }
@@ -2348,7 +2346,7 @@ function render(){
     const p0 = parts[0];
     if(!p0) html = viewHome();
     else if(p0==='boutique'){ if(lastPath.split('/')[1]!=='boutique' && lastPath.split('/')[1]!=='categorie'){ /* garder les filtres */ } sh.cat=null; html = viewShop(); }
-    else if(p0==='categorie'){ if(sh.cat!==parts[1]){ sh.page=1; } sh.cat=parts[1]; html = viewShop(); }
+    else if(p0==='categorie'){ if(sh.cat!==parts[1]){ sh.shown=24; } sh.cat=parts[1]; html = viewShop(); }
     else if(p0==='recherche'){ html = viewShop(); }
     else if(p0==='produit'){ html = viewProduct(+parts[1]); fbq('ViewContent',{id:+parts[1]}); }
     else if(p0==='panier') html = viewCart();
@@ -2371,6 +2369,12 @@ function render(){
   renderOverlay();
   if(keep){ const el = document.querySelector(`[data-in="${keep}"]`); if(el){ el.focus(); try{ el.setSelectionRange(caret,caret); }catch(e){} } }
   const cur = location.hash; if(cur!==lastPath){ if(!keep) window.scrollTo(0,0); lastPath = cur; }
+  // infinite scroll sentinel
+  const sentinel = document.getElementById('shopSentinel');
+  if(sentinel){
+    const obs = new IntersectionObserver(entries=>{ if(entries[0].isIntersecting){ obs.disconnect(); S.ui.shop.shown+=24; render(); } }, {rootMargin:'200px'});
+    obs.observe(sentinel);
+  }
 }
 window.addEventListener('hashchange', ()=>{ const {parts}=route(); if(S.drawer && !(parts[0]==='erp' && parts[1]==='appel')){ unlockOrder(drawerOrder()); S.drawer=null; } S.mOpen=false; render(); });
 
@@ -2422,10 +2426,8 @@ const A = {
   buyNow:(el)=>{ const p=PBY[+el.dataset.id]; if(!canOrder(p)){ toast(t('Produit en rupture'),'bad'); return; } if(!S.cart.find(i=>i.pid===p.id)) addToCart(p.id,1,null); location.hash='#/commande'; },
   fav:(el)=>{ const id=+el.dataset.id; S.favs.has(id)? S.favs.delete(id) : S.favs.add(id); render(); },
   cmp:(el)=>{ const id=+el.dataset.id; if(S.compare.has(id)) S.compare.delete(id); else { if(S.compare.size>=4){ toast(t('4 produits maximum'),'bad'); return; } S.compare.add(id); toast(t('Ajouté à la comparaison'),'ok'); } render(); },
-  priceFilter:()=>{ S.ui.shop.min=val('pmin'); S.ui.shop.max=val('pmax'); S.ui.shop.page=1; render(); },
+  priceFilter:()=>{ S.ui.shop.min=val('pmin'); S.ui.shop.max=val('pmax'); S.ui.shop.shown=24; render(); },
   priceReset:()=>{ S.ui.shop.min=''; S.ui.shop.max=''; render(); },
-  perPage:(el)=>{ S.ui.shop.per=+el.dataset.v; S.ui.shop.page=1; render(); },
-  page:(el)=>{ S.ui.shop.page=+el.dataset.v; render(); window.scrollTo(0,0); },
   pdpVar:(el)=>{ S.ui.pdp.v=el.dataset.v; render(); },
   pdpQ:(el)=>{ S.ui.pdp.q=Math.max(1,(+val('pdpQ')||1)+(+el.dataset.v)); render(); },
   pdpAdd:()=>{ const p=PBY[S.ui.pdp.id]; addToCart(p.id, Math.max(1,+val('pdpQ')||1), S.ui.pdp.v); render(); },
@@ -2665,7 +2667,7 @@ function openPOModal(rows){ if(!rows.length) rows=[{pid:5,q:50}]; openModal(moda
 const CH = {
   role:(el)=>{ const o=drawerOrder(); unlockOrder(o); S.drawer=null; S.role=el.value; S.ui.conf.sel.clear(); toast(t('Vous êtes maintenant')+' : '+t(ROLE_LABEL[S.role]),'ok'); location.hash='#/erp/'+ROLE_HOME[S.role]; render(); },
   agentAs:(el)=>{ S.agentId=+el.value; S.drawer=null; location.hash='#/erp/mafile'; render(); },
-  shopSort:(el)=>{ S.ui.shop.sort=el.value; render(); },
+  shopSort:(el)=>{ S.ui.shop.sort=el.value; S.ui.shop.shown=24; render(); },
   pdpQset:(el)=>{ S.ui.pdp.q=Math.max(1,+el.value||1); },
   coWilaya:(el)=>{ saveCoFields(); S.ui.co.wilaya=+el.value; S.ui.co.commune=''; render(); },
   mWilaya:(el)=>{ const s=document.getElementById('mC'); if(s) s.innerHTML=communeOptions(+el.value,''); },
@@ -2733,7 +2735,7 @@ const IN = {
   addQ:(el)=>{ S.drawer.addQ=el.value; if(S.drawer.page) render(); else { renderOverlay(); const i=document.getElementById('addQ'); if(i){ i.focus(); i.setSelectionRange(i.value.length,i.value.length); } } },
 };
 const SUB = {
-  shopSearch:()=>{ S.ui.shop.q=val('shopQ').trim(); S.ui.shop.page=1; S.ui.shop.cat=null; location.hash='#/recherche'; render(); },
+  shopSearch:()=>{ S.ui.shop.q=val('shopQ').trim(); S.ui.shop.shown=24; S.ui.shop.cat=null; location.hash='#/recherche'; render(); },
   placeOrder:()=>placeOrder(),
   track:()=>{ const phone=val('trP').replace(/\s/g,''), ref=val('trR').trim().toUpperCase(); const o=ORDERS.find(x=>x.ref===ref && CBY[x.customerId].phone.replace(/\s/g,'')===phone); S.ui.track={phone:val('trP'), ref:val('trR'), found:o?o.id:null, err:o?'':'Aucune commande ne correspond à ce téléphone et ce numéro.'}; render(); },
   contact:()=>{ toast(t('Message envoyé — nous vous répondons rapidement'),'ok'); ['ctN','ctP','ctM'].forEach(id=>document.getElementById(id).value=''); },
