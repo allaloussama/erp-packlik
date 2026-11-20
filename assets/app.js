@@ -212,6 +212,7 @@ const PRODUCTS = RAW_PRODUCTS.split('\n').map((line,i)=>{
   };
 });
 PRODUCTS.forEach(p=>{ p.priceHistory = [{at:NOW-120*DAY, sale:Math.round(p.price*0.94/10)*10, cost:Math.round(p.cost*0.95/10)*10},{at:NOW-40*DAY, sale:p.price, cost:p.cost}]; });
+const PBY = Object.fromEntries(PRODUCTS.map(p=>[p.id,p]));
 // Real weight (g) and supplier cost from product catalogue CSV
 {const W={2:{weight:300},4:{cost:1500},5:{weight:4600,cost:2200},7:{weight:1600,cost:2000},
   12:{cost:1500},13:{weight:3800,cost:1950},14:{weight:4200,cost:2350},15:{cost:2450},
@@ -226,7 +227,6 @@ PRODUCTS.forEach(p=>{ p.priceHistory = [{at:NOW-120*DAY, sale:Math.round(p.price
   79:{cost:250},80:{weight:1400,cost:550},81:{weight:1400,cost:550},
   89:{cost:1800},91:{weight:400,cost:400},92:{cost:600}};
  Object.entries(W).forEach(([id,patch])=>{ if(PBY[+id]) Object.assign(PBY[+id],patch); });}
-const PBY = Object.fromEntries(PRODUCTS.map(p=>[p.id,p]));
 PBY[41].variants = [{id:'3kg',label:'3 KG',price:1500,cost:1030,stock:180},{id:'5kg',label:'5 KG',price:2300,cost:1590,stock:96}];
 PBY[47].status = 'devis';
 [30,44].forEach(id=>PBY[id].lastSale = NOW - 41*DAY); // produits dormants
