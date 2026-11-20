@@ -45,7 +45,7 @@ function codForm(items, opts){
       ${field('coName','name','Nom complet','user','autocomplete="name" required placeholder="'+t('Nom et prénom')+'"')}
       ${field('coPhone','phone','Téléphone','phone','type="tel" inputmode="numeric" maxlength="14" dir="ltr" autocomplete="tel" required placeholder="05 XX XX XX XX"')}
       <div class="tj-field"><label for="coW">${t('Wilaya')}</label><select class="tj-inp" id="coW" data-ch="codW">${WILAYAS.filter(w=>w.active).map(x=>`<option value="${x.id}" ${x.id===+co.wilaya?'selected':''}>${x.code} - ${esc(wName(x.id))}</option>`).join('')}</select></div>
-      <div class="tj-field ${co.err.commune?'bad':''}"><label for="coC">${t('Commune')}</label><select class="tj-inp" id="coC" data-co="commune">${communeOptions(co.wilaya, co.commune)}</select>${co.err.commune?`<small class="err">${t(co.err.commune)}</small>`:''}</div>
+      <div class="tj-field ${co.err.commune?'bad':''}" ${co.delivery==='desk'?'hidden':''}><label for="coC">${t('Commune')}</label><select class="tj-inp" id="coC" data-co="commune">${communeOptions(co.wilaya, co.commune)}</select>${co.err.commune?`<small class="err">${t(co.err.commune)}</small>`:''}</div>
     </div>
     <fieldset class="tj-group"><legend>${t('Mode de livraison')}</legend><div class="tj-delivery">
       ${dtype('home','À domicile','Livré jusqu\'à votre porte',q.feeH,false)}
@@ -75,7 +75,7 @@ SUB.cod = async(form)=>{
   co.err={};
   if(co.name.length<3) co.err.name='Veuillez saisir votre nom';
   if(!validPhone(co.phone)) co.err.phone='Numéro invalide : 05, 06 ou 07 suivi de 8 chiffres';
-  if(!co.commune) co.err.commune='Veuillez indiquer la commune';
+  if(co.delivery!=='desk' && !co.commune) co.err.commune='Veuillez indiquer la commune';
   if(Object.keys(co.err).length){ render(); toast(t('Merci de corriger le formulaire'),'bad'); const bad=document.querySelector('.tj-field.bad .tj-inp'); if(bad) bad.focus(); return; }
   const btn=form.querySelector('.tj-submit'); btn.disabled=true; btn.textContent=t('Envoi en cours…'); // pas de double commande au double clic
   try{

@@ -2052,7 +2052,7 @@ function viewExpedition(){
     ${card(t('Envoyés aujourd\'hui'), `<div class="tbl-wrap"><table class="tbl"><tbody>${sentToday.map(o=>`<tr><td><b>${o.ref}</b></td><td>${esc(t(carrierOf(o).name))}</td><td dir="ltr" class="small">${o.tracking}${parcelsOf(o).length>1?' · '+parcelsOf(o).length+' '+t('colis'):''}</td><td>${esc(wName(o.wilaya))}</td><td class="r num">${kg(orderWeight(o))}</td><td class="r num">${dzd(orderTotal(o))}</td><td><button class="btn sm" data-a="printLabel" data-id="${o.id}">${ic('print','sm')} ${t('Étiquette')}</button></td></tr>`).join('') || emptyRow(7,'Aucun envoi aujourd\'hui','truck')}</tbody></table></div>`, sentToday.length?`<button class="btn sm" data-a="bordereau">${ic('print','sm')} ${t('Bordereau de remise')}</button>`:'')}`;
   return erpShell('expedition', t('Expédition'), t('Société de livraison, poids, colis, étiquettes et bordereau'), body);
 }
-function preSendCheck(o){ const e=[]; if(needsSplit(o)) e.push('Poids trop élevé : découper la commande'); if(!carrierOf(o).connected) e.push('Société non connectée'); if(!validPhone(CBY[o.customerId].phone)) e.push('Téléphone invalide'); if(!o.commune) e.push('Commune manquante'); expand(o.items).forEach(i=>{ if(PBY[i.pid].stock < i.q) e.push('Stock insuffisant'); }); return [...new Set(e)]; }
+function preSendCheck(o){ const e=[]; if(needsSplit(o)) e.push('Poids trop élevé : découper la commande'); if(!carrierOf(o).connected) e.push('Société non connectée'); if(!validPhone(CBY[o.customerId].phone)) e.push('Téléphone invalide'); if(o.delivery!=='desk' && !o.commune) e.push('Commune manquante'); expand(o.items).forEach(i=>{ if(PBY[i.pid].stock < i.q) e.push('Stock insuffisant'); }); return [...new Set(e)]; }
 function viewReturns(){
   const list = ORDERS.filter(o=>['returning','returned'].includes(o.status));
   const body = card(t('Retours'), `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>${t('N°')}</th><th>${t('Client')}</th><th>${t('Wilaya')}</th><th>${t('Produits')}</th><th>${t('Motif')}</th><th class="r">${t('Perte estimée')}</th><th>${t('Statut')}</th><th></th></tr></thead><tbody>${list.map(o=>{ const a=o.attempts[o.attempts.length-1]; return `<tr><td><b>${o.ref}</b></td><td>${custCell(o)}</td><td>${esc(wName(o.wilaya))}</td><td>${itemsSummary(o.items)}</td><td class="small">${a? t(FBY[a.reason].fr):'—'}</td><td class="r num down">${dzd(returnLoss(o))}</td><td>${stBadge(o)}</td><td>${o.status==='returning'?`<button class="btn sm" data-a="receiveReturn" data-id="${o.id}">${ic('undo','sm')} ${t('Réceptionner')}</button>`:''}</td></tr>`; }).join('') || emptyRow(8,'Aucun retour','check')}</tbody></table></div>`);
@@ -2473,14 +2473,16 @@ const A = {
   addLine:(el)=>{ const o=drawerOrder(); const p=PBY[+el.dataset.id]; const v=p.variants?p.variants[0]:null; const ex=o.items.find(i=>i.pid===p.id); if(ex) ex.q++; else o.items.push({pid:p.id, v:v?v.id:null, q:1, price:v?v.price:p.price, cost:v?v.cost:p.cost, up:true}); S.drawer.addQ=''; toast(t('Ajouté')+' : '+esc(p.name)+' (+'+dzd(v?v.price:p.price)+')','ok'); render(); },
   logCall:(el)=>{ const o=curOrder(el); o.calls++; hist(o,'Appel sortant','','blue'); setTimeout(render,50); },
   resConfirm:()=>{ const o=drawerOrder(); const c=CBY[o.customerId]; const err=[];
-    if(!validPhone(c.phone)) err.push(t('téléphone invalide')); if(!o.commune) err.push(t('commune manquante'));
+    if(!validPhone(c.phone)) err.push(t('téléphone invalide')); if(o.delivery!=='desk' && !o.commune) err.push(t('commune manquante'));
     expand(o.items).forEach(i=>{ const s=stockInfo(i.pid); if(s.available<i.q && !PBY[i.pid].onDemand) err.push(t('stock insuffisant')+' : '+PBY[i.pid].name); });
     if(err.length){ toast(t('Impossible de confirmer')+' : '+err.join(', '),'bad'); return; }
     const limit = S.role==='agent'? SETTINGS.discountAgent : S.role==='manager'? SETTINGS.discountManager : 100;
     if(o.discount>limit){ o.discountPending=true; hist(o,'Remise à valider',o.discount+' % > '+limit+' %','amber'); }
     o.calls = Math.max(1,o.calls); o.lockedBy=null; delete o.prevStatus; o.times.confirmed=Date.now(); o.status='calling';
     setStatus(o,'toprep', upsellGain(o)>0? 'Confirmée avec upsell +'+dzd(upsellGain(o)) : 'Confirmée'); o.history[o.history.length-1].action='Confirmée → À préparer'; o.history[o.history.length-1].color='green';
-    toast(o.ref+' '+t('confirmée')+(upsellGain(o)>0? ' · upsell +'+dzd(upsellGain(o)):''),'ok'); afterResult(); },
+    toast(o.ref+' '+t('confirmée')+(upsellGain(o)>0? ' · upsell +'+dzd(upsellGain(o)):''),'ok');
+    if(orderWeight(o)>20) setTimeout(()=>toast('⚠ '+t('Commande lourde')+' ('+kg(orderWeight(o))+') — '+t('découpage recommandé'),'bad'),400);
+    afterResult(); },
   resUnreach:()=>{ const o=drawerOrder(); o.calls++; o.unreachN=Math.min(3,(o.unreachN||0)+1); const delays=[30*MIN,2*HOUR,null]; let next; if(o.unreachN<3) next=Date.now()+delays[o.unreachN-1]; else { const d=new Date(); d.setDate(d.getDate()+1); d.setHours(9,30,0,0); next=d.getTime(); }
     o.nextCall=next; o.lockedBy=null; delete o.prevStatus; o.status='calling'; setStatus(o,'unreach','Rappel auto : '+fDT(next)+' · SMS/WhatsApp envoyé'); toast(t('Injoignable')+' '+o.unreachN+' — '+t('rappel programmé à')+' '+fTime(next),'ok'); afterResult(); },
   resCallback:()=>{ const d=new Date(Date.now()+2*HOUR); const v = d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
