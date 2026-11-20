@@ -210,7 +210,7 @@ function peHtml(){
   else if(tab==='price') body = `
     <div class="grid3">${inp('price','Prix de vente (DZD)',num)}${inp('oldPrice','Prix avant remise (barré)',num)}${sc? inp('cost','Prix d\'achat (DZD)',num) : ''}</div>
     ${sc? `<div class="small">${t('Marge unitaire')} : <b id="peMargin" class="num">${peMargin()}</b></div>`:`<div class="lock-note">${ic('lock','sm')} ${t('Prix d\'achat et marges masqués pour votre rôle.')}</div>`}
-    <div class="grid3">${inp('badge','Texte de l\'offre (badge)','placeholder="'+t('ex. Promo, Nouveau')+'"')}${inp('minQty','Quantité minimale de commande',num)}${inp('weight','Poids unitaire (grammes)',num)}</div>
+    <div class="grid3">${inp('badge','Texte de l\'offre (badge)','placeholder="'+t('ex. Promo, Nouveau')+'"')}${inp('minQty','Quantité minimale de commande',num)}${inp('weight','Poids unitaire (kg)',num)}</div>
     <div class="grid3">${inp('stock','Quantité en stock',num)}${inp('threshold','Alerte sous (pièces)',num)}<label class="check" style="align-self:end;min-height:40px"><input type="checkbox" data-pe="onDemand" ${d.onDemand?'checked':''}> ${t('Vendre même sans stock (sur commande)')}</label></div>
     ${d.id? `<div class="small muted">${t('Un changement de stock ici est inscrit comme ajustement dans le journal de stock.')}</div>`:''}`;
   else if(tab==='opts') body = `

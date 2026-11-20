@@ -85,7 +85,7 @@ viewProducts = function(){
     ${list.map(p=>{ const s=stockInfo(p.id); const m=p.price-p.cost; return `<tr class="${u.sel.has(p.id)?'sel':''}">${canEdit?`<td><input type="checkbox" ${u.sel.has(p.id)?'checked':''} data-ch="pSel" data-id="${p.id}" aria-label="${esc(p.name)}"></td>`:''}<td class="small muted">${esc(p.sku||'')}</td><td><div class="row">${prodArt(p,34)}<div><b class="small">${esc(p.name)}</b><div class="xs muted">${p.pack} ${t('pièces')}${p.variants?' · '+p.variants.length+' '+t('variantes'):''}${p.packItems?' · '+t('pack'):''}</div></div></div></td>
       <td class="xs">${p.cats.slice(0,3).map(c=>esc(catName(CATS.find(x=>x.id===c)||{fr:c,ar:c}))).join(', ')}${p.cats.length>3?' +'+(p.cats.length-3):''}</td>
       <td>${canEdit? `<select class="kcell" data-ch="pSup" data-id="${p.id}" aria-label="${t('Fournisseur')}">${SUPPLIERS.map(x=>`<option value="${x.id}" ${x.id===supOf(p.id)?'selected':''}>${esc(x.name)}</option>`).join('')}</select>` : esc(supName(supOf(p.id)))}</td>
-      <td class="r num">${p.weight? nf(p.weight)+' g' : '—'}</td>
+      <td class="r num">${p.weight? (p.weight/1000).toFixed(2).replace(/\.?0+$/,'')+' kg' : '—'}</td>
       <td class="r num">${p.price? dzd(p.price): t('sur devis')}</td>${sc?`<td class="r num">${p.cost?dzd(p.cost):'—'}</td><td class="r num">${p.price? `<b class="up">${dzd(m)}</b><div class="xs muted">${fmtPct(pct(m,p.price))}</div>`:'—'}</td>`:''}
       <td class="r num ${s.available<=p.threshold?'down':''}"><b>${s.available}</b></td><td><span class="badge ${p.status==='actif'?'green':p.status==='rupture'||p.status==='corbeille'?'red':p.status==='devis'?'amber':''}">${t(p.status)}</span></td>
       ${canEdit?`<td><div class="row" style="gap:2px;flex-wrap:nowrap">${trash? `<button class="btn icon sm ghost" data-a="pOne" data-v="restore" data-id="${p.id}" aria-label="${t('Restaurer')}">${ic('undo','sm')}</button>` : `<button class="btn icon sm ghost" data-a="prodEdit" data-id="${p.id}" aria-label="${t('Modifier')}">${ic('edit','sm')}</button><button class="btn icon sm ghost" data-a="prodDup" data-id="${p.id}" aria-label="${t('Dupliquer')}">${ic('copy','sm')}</button><button class="btn icon sm ghost" data-a="pOne" data-v="trash" data-id="${p.id}" aria-label="${t('Mettre à la corbeille')}">${ic('archive','sm')}</button>`}<button class="btn icon sm ghost" data-a="pOne" data-v="purge" data-id="${p.id}" aria-label="${t('Supprimer')}">${ic('trash','sm')}</button></div></td>`:''}</tr>`; }).join('') || emptyRow(12, trash?'La corbeille est vide':'Aucun produit', trash?'archive':'box')}
@@ -125,7 +125,7 @@ function prodBulkEdit(ps){
     <div class="field"><label>${t('Ajouter la catégorie')}<select class="select" id="pbCat"><option value="">—</option>${CATS.map(c=>`<option value="${c.id}">${esc(catName(c))}</option>`).join('')}</select></label></div>
     <div class="field"><label>${t('Retirer la catégorie')}<select class="select" id="pbCatOff"><option value="">—</option>${CATS.map(c=>`<option value="${c.id}">${esc(catName(c))}</option>`).join('')}</select></label></div>
     <div class="field"><label>${t('Prix de vente : variation en %')}<input class="input num" id="pbPct" type="number" placeholder="ex. 10 ou -5"></label></div>
-    <div class="field"><label>${t('Grammage (g)')}<input class="input num" id="pbW" type="number" min="0"></label></div>
+    <div class="field"><label>${t('Poids (kg)')}<input class="input num" id="pbW" type="number" min="0" step="0.01"></label></div>
   </div>`, `<button class="btn" data-a="closeModal">${t('Annuler')}</button><button class="btn primary" data-a="pbSave">${t('Appliquer')}</button>`));
 }
 A.pbSave = ()=>{
@@ -135,7 +135,7 @@ A.pbSave = ()=>{
     if(cat && !p.cats.includes(cat)) p.cats.push(cat);
     if(off){ p.cats=p.cats.filter(c=>c!==off); if(!p.cats.length) p.cats=['tout']; }
     if(pc!=='' && +pc){ const f=1+(+pc)/100; if(p.price){ p.price=Math.round(p.price*f); p.priceHistory=(p.priceHistory||[]).concat({at:Date.now(), sale:p.price, cost:p.cost}); } (p.variants||[]).forEach(v=>v.price=Math.round(v.price*f)); }
-    if(w!=='') p.weight=+w||0;
+    if(w!=='') p.weight=(+w||0)*1000;
   });
   log('Modification groupée', S.ui.pbe.length+' produits', ''); S.ui.prod.sel.clear(); closeModal(); syncCats(); toast(t('Produits modifiés'),'ok'); render();
 };
@@ -146,7 +146,7 @@ peHtml = function(){
   const d=S.ui.pe; let h=_peHtml();
   const num='type="number" min="0" inputmode="numeric"';
   if(d._tab==='gen') h = h.replace(`<fieldset class="tj-group"><legend>${t('Catégories')}</legend>`,
-    `<div class="grid2"><div class="field"><label>${t('Grammage (g) — poids d\'une unité vendue')}<input class="input" data-pe="weight" value="${esc(d.weight??'')}" ${num}></label></div><div class="field"><label>${t('Fournisseur')}<select class="select" data-pe-sup>${SUPPLIERS.map(s=>`<option value="${s.id}" ${s.id===(+d.supplierId||1)?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label></div></div>
+    `<div class="grid2"><div class="field"><label>${t('Poids (kg) — poids d\'une unité vendue')}<input class="input" data-pe="weight" value="${+d.weight? (d.weight/1000).toFixed(3).replace(/\.?0+$/,'') : ''}" ${num} step="0.001"></label></div><div class="field"><label>${t('Fournisseur')}<select class="select" data-pe-sup>${SUPPLIERS.map(s=>`<option value="${s.id}" ${s.id===(+d.supplierId||1)?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label></div></div>
     <fieldset class="tj-group"><legend>${t('Catégories')}</legend>`);
   if(d._tab==='price') h = h.replace(/<div class="field"><label>[^<]*<input class="input" data-pe="weight"[^>]*><\/label><\/div>/, '');
   if(d._tab==='desc') h = h.replace(/<div class="field"><label>[^<]*<textarea class="input" data-pe="desc"[\s\S]*?<\/textarea><\/label><\/div>/, `<div class="field"><label>${t('Description complète')}</label>${rteHtml(d.desc)}</div>`);
@@ -154,7 +154,7 @@ peHtml = function(){
 };
 document.addEventListener('change', e=>{ const el=e.target.closest('[data-pe-sup]'); if(el && S.ui.pe) S.ui.pe.supplierId=+el.value; });
 const _peSave = A.peSave;
-A.peSave = el=>{ const d=S.ui.pe; const rte=document.getElementById('rte'); if(rte) d.desc=rteClean(rte.innerHTML); const sup=+d.supplierId||1, id=d.id; const before=PRODUCTS.length; _peSave(el); const p = id? PBY[id] : (PRODUCTS.length>before? PRODUCTS[PRODUCTS.length-1] : null); if(p){ p.supplierId=sup; syncCats(); } };
+A.peSave = el=>{ const d=S.ui.pe; const rte=document.getElementById('rte'); if(rte) d.desc=rteClean(rte.innerHTML); d.weight=(+d.weight||0)*1000; const sup=+d.supplierId||1, id=d.id; const before=PRODUCTS.length; _peSave(el); const p = id? PBY[id] : (PRODUCTS.length>before? PRODUCTS[PRODUCTS.length-1] : null); if(p){ p.supplierId=sup; syncCats(); } };
 const _peTab = A.peTab; A.peTab = el=>{ const rte=document.getElementById('rte'); if(rte && S.ui.pe) S.ui.pe.desc=rteClean(rte.innerHTML); _peTab(el); };
 
 /* ---------- éditeur de texte riche (description) : gras, polices, tailles, couleurs, photo, vidéo ---------- */

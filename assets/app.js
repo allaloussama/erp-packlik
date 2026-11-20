@@ -212,6 +212,20 @@ const PRODUCTS = RAW_PRODUCTS.split('\n').map((line,i)=>{
   };
 });
 PRODUCTS.forEach(p=>{ p.priceHistory = [{at:NOW-120*DAY, sale:Math.round(p.price*0.94/10)*10, cost:Math.round(p.cost*0.95/10)*10},{at:NOW-40*DAY, sale:p.price, cost:p.cost}]; });
+// Real weight (g) and supplier cost from product catalogue CSV
+{const W={2:{weight:300},4:{cost:1500},5:{weight:4600,cost:2200},7:{weight:1600,cost:2000},
+  12:{cost:1500},13:{weight:3800,cost:1950},14:{weight:4200,cost:2350},15:{cost:2450},
+  16:{weight:1200,cost:800},17:{weight:1400,cost:1100},18:{weight:2000,cost:1400},
+  19:{weight:600,cost:500},22:{weight:1000},29:{weight:4000,cost:2600},
+  30:{weight:3300,cost:2200},31:{weight:3300,cost:2300},34:{weight:2800,cost:2000},
+  35:{weight:2800,cost:2000},36:{weight:2800,cost:2000},37:{weight:2800,cost:2000},
+  38:{weight:2800,cost:2000},39:{weight:2800,cost:2000},41:{weight:600,cost:300},
+  42:{weight:2300,cost:1200},51:{weight:600,cost:300},54:{weight:1850,cost:1000},
+  61:{weight:2100,cost:1600},63:{cost:1600},64:{weight:3100,cost:1500},
+  68:{weight:250,cost:450},71:{weight:1100,cost:1400},72:{weight:1100,cost:1350},
+  79:{cost:250},80:{weight:1400,cost:550},81:{weight:1400,cost:550},
+  89:{cost:1800},91:{weight:400,cost:400},92:{cost:600}};
+ Object.entries(W).forEach(([id,patch])=>{ if(PBY[+id]) Object.assign(PBY[+id],patch); });}
 const PBY = Object.fromEntries(PRODUCTS.map(p=>[p.id,p]));
 PBY[41].variants = [{id:'3kg',label:'3 KG',price:1500,cost:1030,stock:180},{id:'5kg',label:'5 KG',price:2300,cost:1590,stock:96}];
 PBY[47].status = 'devis';
