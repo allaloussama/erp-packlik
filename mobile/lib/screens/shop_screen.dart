@@ -21,11 +21,12 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
   late final _q = TextEditingController(text: widget.query ?? '');
   late String _cat = widget.category ?? 'tout';
   String _sort = 'pop';
+  int _shown = 24; // défilement infini comme le site : 24 produits, puis 24 de plus en bas de la liste
 
   @override
   void didUpdateWidget(ShopScreen old) {
     super.didUpdateWidget(old);
-    if (widget.category != null && widget.category != old.category) setState(() => _cat = widget.category!);
+    if (widget.category != null && widget.category != old.category) setState(() { _cat = widget.category!; _shown = 24; });
   }
 
   @override
@@ -60,15 +61,15 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
         title: TextField(
           controller: _q,
           textInputAction: TextInputAction.search,
-          onChanged: (_) => setState(() {}),
+          onChanged: (_) => setState(() => _shown = 24),
           decoration: InputDecoration(
             hintText: tr(lang, 'Rechercher un emballage…'), prefixIcon: const Icon(Icons.search), isDense: true,
-            suffixIcon: _q.text.isEmpty ? null : IconButton(icon: const Icon(Icons.close), onPressed: () => setState(_q.clear)),
+            suffixIcon: _q.text.isEmpty ? null : IconButton(icon: const Icon(Icons.close), onPressed: () => setState(() { _q.clear(); _shown = 24; })),
           ),
         ),
         actions: [
           PopupMenuButton<String>(
-            tooltip: tr(lang, 'Trier'), icon: const Icon(Icons.sort), initialValue: _sort, onSelected: (v) => setState(() => _sort = v),
+            tooltip: tr(lang, 'Trier'), icon: const Icon(Icons.sort), initialValue: _sort, onSelected: (v) => setState(() { _sort = v; _shown = 24; }),
             itemBuilder: (_) => [for (final (k, l) in [('pop', 'Pertinence'), ('new', 'Plus récents'), ('asc', 'Prix croissant'), ('desc', 'Prix décroissant')]) PopupMenuItem(value: k, child: Text(tr(lang, l)))],
           ),
         ],
@@ -78,7 +79,12 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
         return RefreshIndicator(
           color: kOrange,
           onRefresh: () => ref.refresh(catalogProvider.future),
-          child: ListView(padding: const EdgeInsets.only(bottom: 24), children: [
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (sn) {
+              if (sn.depth == 0 && sn.metrics.extentAfter < 400 && _shown < list.length) setState(() => _shown += 24);
+              return false;
+            },
+            child: ListView(padding: const EdgeInsets.only(bottom: 24), children: [
             SizedBox(
               height: 52,
               child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.fromLTRB(14, 10, 14, 4), children: [
@@ -89,14 +95,16 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
                     child: ChoiceChip(
                       label: Text('${cat.name(lang)} ${c.countIn(cat.id)}'), selected: _cat == cat.id, showCheckmark: false,
                       selectedColor: kInk, labelStyle: TextStyle(color: _cat == cat.id ? Colors.white : kInk, fontSize: 12.5, fontWeight: FontWeight.w600),
-                      onSelected: (_) => setState(() => _cat = cat.id),
+                      onSelected: (_) => setState(() { _cat = cat.id; _shown = 24; }),
                     ),
                   ),
               ]),
             ),
             Padding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 10), child: Text('${list.length} ${tr(lang, 'Produits').toLowerCase()}', style: const TextStyle(color: kMuted, fontSize: 12.5))),
-            if (list.isEmpty) Padding(padding: const EdgeInsets.all(40), child: Center(child: Text(tr(lang, 'Aucun produit'), style: const TextStyle(color: kMuted)))) else ProductGrid(products: list),
-          ]),
+            if (list.isEmpty) Padding(padding: const EdgeInsets.all(40), child: Center(child: Text(tr(lang, 'Aucun produit'), style: const TextStyle(color: kMuted)))) else ProductGrid(products: list.take(_shown).toList()),
+            if (_shown < list.length) const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator(color: kOrange))),
+            ]),
+          ),
         );
       }),
     );

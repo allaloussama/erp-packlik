@@ -79,7 +79,7 @@ class _CodFormState extends ConsumerState<CodForm> {
     setState(() => _sending = true);
     try {
       final r = await ref.read(apiProvider).order(
-            name: _name.text.trim(), phone: _phone.text.replaceAll(RegExp(r'\D'), ''), wilaya: _wilaya, commune: _commune ?? '',
+            name: _name.text.trim(), phone: _phone.text.replaceAll(RegExp(r'\D'), ''), wilaya: _wilaya, commune: _delivery == 'desk' ? '' : _commune ?? '',
             address: _address.text.trim(), delivery: _delivery, note: custom.map((f) => '${f.label} : ${_custom[f.key] == 'true' ? 'Oui' : _custom[f.key]}').join(' · '),
             items: items);
       ref.read(cartProvider.notifier).clear();
@@ -183,7 +183,9 @@ class _CodFormState extends ConsumerState<CodForm> {
               Expanded(child: Text(tr(lang, title), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
             ]),
             const SizedBox(height: 14),
-            for (final f in _fields) Padding(padding: const EdgeInsets.only(bottom: 12), child: field(f)),
+            for (final f in _fields)
+              // stop desk : retrait au bureau, la commune n'est pas demandée (comme sur le site)
+              if (!(f.key == 'commune' && _delivery == 'desk')) Padding(padding: const EdgeInsets.only(bottom: 12), child: field(f)),
             _Summary(catalog: c, items: items, mainLine: widget.main, fee: fee, free: free, wilaya: w?.name(lang) ?? '', lang: lang),
             const SizedBox(height: 12),
             FilledButton(

@@ -47,3 +47,11 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+// APK 32 bits (armeabi-v7a) demandé : les bibliothèques 64 bits sont retirées de la version release.
+// shortcut: un téléphone 64 bits seul (sans support 32 bits) ne pourra pas l'installer ; retirer ce bloc pour revenir à l'APK universel.
+androidComponents {
+    onVariants(selector().withBuildType("release")) { variant ->
+        variant.packaging.jniLibs.excludes.addAll(listOf("lib/arm64-v8a/**", "lib/x86_64/**", "lib/x86/**"))
+    }
+}

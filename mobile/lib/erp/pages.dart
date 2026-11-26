@@ -165,11 +165,47 @@ class _ProductsPageState extends State<ProductsPage> {
                   padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
                   itemCount: list.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (c, i) => ProductTile(store: st, p: list[i]),
+                  itemBuilder: (c, i) => ProductTile(
+                    store: st, p: list[i],
+                    trailing: ['admin', 'gerant'].contains(st.role) && list[i]['status'] != 'corbeille'
+                        ? IconButton(tooltip: 'Poids et prix d\'achat', onPressed: () => _quickEdit(list[i]), icon: const Icon(Icons.edit_outlined))
+                        : null,
+                  ),
                 ),
         ),
       ),
     ]);
+  }
+
+  /// Modification rapide depuis la liste (comme les cases du tableau Produits du site) :
+  /// poids en kg pour l'admin et le gérant, prix d'achat pour l'admin seul.
+  Future<void> _quickEdit(Doc p) async {
+    final st = widget.store, admin = st.role == 'admin';
+    final w = TextEditingController(text: n(p['weight']) > 0 ? kgTxt(n(p['weight']) / 1000) : ''), c = TextEditingController(text: n(p['cost']) > 0 ? '${ni(p['cost'])}' : '');
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(s(p['name']), maxLines: 2, overflow: TextOverflow.ellipsis),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: w, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Poids (kg)', isDense: true)),
+          if (admin) ...[
+            const SizedBox(height: 10),
+            TextField(controller: c, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Prix d\'achat (DZD)', isDense: true)),
+          ],
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Enregistrer')),
+        ],
+      ),
+    );
+    final kg = double.tryParse(w.text.trim().replaceAll(',', '.')), cost = int.tryParse(c.text.trim());
+    w.dispose();
+    c.dispose();
+    if (ok != true || !mounted) return;
+    if (kg != null && kg >= 0 && (kg * 1000).round() != ni(p['weight'])) st.setProductWeight(p, kg);
+    if (admin && cost != null && cost >= 0 && cost != ni(p['cost'])) st.setProductCost(p, cost);
+    toast(context, '${s(p['name'])} : ${kg == null ? '—' : '${kgTxt(kg)} kg'}${admin && cost != null ? ' · ${money(cost)}' : ''}');
   }
 }
 
@@ -191,7 +227,7 @@ class ProductTile extends StatelessWidget {
           child: SizedBox(width: 52, height: 52, child: img.isEmpty ? const ColoredBox(color: Color(0xFFFFF1E6), child: Icon(Icons.inventory_2_outlined, color: kOrange)) : Image.network(img, fit: BoxFit.cover, errorBuilder: (_, _, _) => const Icon(Icons.image_not_supported_outlined))),
         ),
         title: Text(s(p['name']), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-        subtitle: Text('${s(p['sku']).isEmpty ? '' : '${s(p['sku'])} · '}${n(p['price']) > 0 ? money(n(p['price'])) : 'Sur devis'}\nDispo ${si.available} · réservé ${si.reserved} · chez la société ${si.atDhd}',
+        subtitle: Text('${s(p['sku']).isEmpty ? '' : '${s(p['sku'])} · '}${n(p['price']) > 0 ? money(n(p['price'])) : 'Sur devis'}${n(p['weight']) > 0 ? ' · ${kgTxt(n(p['weight']) / 1000)} kg' : ''}\nDispo ${si.available} · réservé ${si.reserved} · chez la société ${si.atDhd}',
             style: TextStyle(color: low ? kRed : kMuted, fontSize: 12.5)),
         isThreeLine: true,
         trailing: trailing ?? const Icon(Icons.chevron_right),
@@ -216,11 +252,12 @@ class _ProductScreenState extends State<ProductScreen> {
   late final _cost = TextEditingController(text: '${ni(p['cost'])}');
   late final _stock = TextEditingController(text: '${ni(p['stock'])}');
   late final _thr = TextEditingController(text: '${ni(p['threshold'])}');
+  late final _weight = TextEditingController(text: n(p['weight']) > 0 ? kgTxt(n(p['weight']) / 1000) : '');
   late String _status = s(p['status']).isEmpty ? 'actif' : s(p['status']);
 
   @override
   void dispose() {
-    for (final c in [_name, _price, _cost, _stock, _thr]) {
+    for (final c in [_name, _price, _cost, _stock, _thr, _weight]) {
       c.dispose();
     }
     super.dispose();
@@ -267,6 +304,8 @@ class _ProductScreenState extends State<ProductScreen> {
                 Expanded(child: TextField(controller: _thr, enabled: canEdit, keyboardType: TextInputType.number, decoration: dec('Seuil d\'alerte'))),
               ]),
               const SizedBox(height: 10),
+              TextField(controller: _weight, enabled: canEdit, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: dec('Poids (kg) — poids d\'une unité vendue')),
+              const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 initialValue: statuses.contains(_status) ? _status : 'actif',
                 decoration: dec('Statut'),
@@ -278,7 +317,6 @@ class _ProductScreenState extends State<ProductScreen> {
           if (hasVariants)
             for (final v in l(p['variants']).map(m)) Row2(s(v['label']), '${money(n(v['price']))} · stock ${ni(v['stock'])}'),
           Row2('Référence (SKU)', s(p['sku'])),
-          Row2('Grammage', p['weight'] == null ? '' : '${ni(p['weight'])} g'),
           Row2('Quantité minimum', '${max(1, ni(p['minQty']))}'),
           Row2('Vendus (30 j)', '${ni(p['sold30'])}'),
         ]),
@@ -300,11 +338,12 @@ class _ProductScreenState extends State<ProductScreen> {
                     child: FilledButton(
                       onPressed: () {
                         final price = int.tryParse(_price.text.trim()), cost = int.tryParse(_cost.text.trim()), stock = int.tryParse(_stock.text.trim()), thr = int.tryParse(_thr.text.trim());
-                        if (_name.text.trim().length < 2 || price == null || cost == null || stock == null || thr == null || price < 0 || cost < 0) {
+                        final wTxt = _weight.text.trim().replaceAll(',', '.'), kg = wTxt.isEmpty ? 0.0 : double.tryParse(wTxt);
+                        if (_name.text.trim().length < 2 || price == null || cost == null || stock == null || thr == null || kg == null || price < 0 || cost < 0 || kg < 0) {
                           toast(context, 'Vérifiez le nom et les nombres saisis', bad: true);
                           return;
                         }
-                        st.saveProduct(p, name: _name.text.trim(), price: price, cost: cost, stock: stock, status: _status, threshold: thr);
+                        st.saveProduct(p, name: _name.text.trim(), price: price, cost: cost, stock: stock, status: _status, threshold: thr, weight: (kg * 1000).round());
                         toast(context, 'Produit enregistré');
                         Navigator.of(context).maybePop();
                       },

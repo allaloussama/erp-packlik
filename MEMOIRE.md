@@ -2,6 +2,20 @@
 
 Journal des changements, du plus récent au plus ancien. La fiche agent (`AGENTS.md`) explique comment le code est construit.
 
+## 26 novembre 2026 — changements du site (20-23 nov.) portés dans l'application, APK 32 bits
+
+| Demande (site) | Dans l'application | Où |
+| --- | --- | --- |
+| Poids des produits en kg (stockés en grammes) | Fiche produit : champ « Poids (kg) » ; liste Produits : poids affiché | `mobile/lib/erp/pages.dart` |
+| Modification rapide poids / prix d'achat dans le tableau Produits | Bouton crayon sur chaque produit : poids (admin, gérant), prix d'achat (admin seul) ; journal « Poids produit » / « Prix d'achat » | `pages.dart` (`_quickEdit`), `rules.dart` (`setProductWeight`, `setProductCost`) |
+| Stop desk : pas de commune | Formulaire de commande : commune masquée et non demandée au bureau ; confirmation et contrôle avant envoi ne la demandent plus pour le bureau | `mobile/lib/widgets/cod_form.dart`, `rules.dart` (`confApply`, `preSendCheck`) |
+| Alerte commande lourde | Après confirmation, avertissement si la commande dépasse 20 kg | `mobile/lib/erp/orders.dart` (`_conf`) |
+| Découpage des colis manuel + frais par colis | Fiche commande › Livraison : nombre de colis, « Découper la commande » / « Modifier le découpage » (admin, gérant). Écran : recalcul selon le kg max, ajout d'un colis, déplacement d'une quantité vers un autre colis, poids et frais (base + surpoids) par colis, total, annulation du découpage | `mobile/lib/erp/split_page.dart`, `rules.dart` (`proposeParcels`, `saveSplit`, `resetSplit`) |
+| Boutique en défilement infini | 24 produits, puis 24 de plus en arrivant en bas (remis à 24 au changement de catégorie, tri ou recherche) | `mobile/lib/screens/shop_screen.dart` |
+| APK 32 bits | La version release ne garde que `armeabi-v7a` (bibliothèques 64 bits retirées) ; l'action GitHub la construit (artifact `packlik-apk`) | `mobile/android/app/build.gradle.kts` |
+
+Non porté : les poids / prix d'achat de démonstration ajoutés à `assets/app.js` (données de démo du navigateur) ; l'application lit les produits du serveur.
+
 ## 15 novembre 2026 (5) — ERP natif dans l'application mobile
 
 | Demande | Ce qui a été fait | Où |

@@ -4,6 +4,7 @@ import '../config.dart';
 import '../theme.dart';
 import 'docs.dart';
 import 'rules.dart';
+import 'split_page.dart';
 import 'store.dart';
 import 'ui.dart';
 
@@ -208,6 +209,11 @@ class _OrderScreenState extends State<OrderScreen> {
       return;
     }
     toast(context, '${s(x['ref'])} : ${s(d['label'])}');
+    final kg = st.orderWeight(x);
+    if (d['kind'] == 'confirm' && kg > 20) {
+      final msg = ScaffoldMessenger.of(context);
+      Future.delayed(const Duration(milliseconds: 400), () => msg.showSnackBar(SnackBar(content: Text('⚠ Commande lourde (${kg.toString().replaceAll('.', ',')} kg) — découpage recommandé'), backgroundColor: kRed)));
+    }
     if (['confirm', 'cancel', 'callback', 'fail'].contains(d['kind'])) Navigator.of(context).maybePop();
   }
 
@@ -377,6 +383,18 @@ class _OrderScreenState extends State<OrderScreen> {
                 Row2('Société de livraison', st.carrierName(cr)),
                 if (x['courierId'] != null) Row2('Livreur', s(st.cub[ni(x['courierId'])]?['name'])),
                 Row2('Numéro de suivi', s(x['tracking']), ltr: true),
+                Row2('Colis', st.parcelsOf(x).length > 1 ? '${st.parcelsOf(x).length} (${st.parcelsOf(x).map((p) => '${n(p['weight']).toString().replaceAll('.', ',')} kg').join(' + ')})' : '1'),
+                if (st.needsSplit(x)) Row2('À découper', '> ${kgTxt(n(cr['maxParcelKg']))} kg par colis'),
+                if ((st.needsSplit(x) || st.parcelsOf(x).length > 1) && ['admin', 'gerant'].contains(st.role))
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(42)),
+                      onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => SplitPage(store: st, order: x))),
+                      icon: const Icon(Icons.layers_outlined, size: 18),
+                      label: Text(st.parcelsOf(x).length > 1 ? 'Modifier le découpage' : 'Découper la commande'),
+                    ),
+                  ),
                 Row2('Finance', s(st.finDef(x)['label'])),
                 Row2('Confirmé par', st.agentName(x['agentId'])),
               ]),

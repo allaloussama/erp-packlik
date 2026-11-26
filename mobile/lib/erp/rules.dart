@@ -157,6 +157,8 @@ String money(num v) {
   final x = v.round().abs().toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ' ');
   return '${v < 0 ? '− ' : ''}$x DZD';
 }
+/// Nombre de kg sans zéros inutiles, comme le site : 2.50 → « 2.5 », 3.00 → « 3 ».
+String kgTxt(num v) => v.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
 bool validPhone(String p) => RegExp(r'^0[567]\d{8}$').hasMatch(p.replaceAll(RegExp(r'\s'), ''));
 String digits(String p) => p.replaceAll(RegExp(r'\D'), '');
 String waUrl(String p) {
@@ -263,6 +265,54 @@ extension Rules on ErpStore {
     final c = carrierOf(o);
     return parcelsOf(o).fold<int>(0, (t, p) => t + baseShip(o, c) + (modules['weight'] == true ? extraKg(c, n(p['weight']).toDouble()) * ni(c['extraPerKg']) : 0));
   }
+  /// proposeParcels() du site : unités triées de la plus lourde, rangées dans le premier colis où elles tiennent.
+  List<Doc> proposeParcels(Doc o, double maxKg) {
+    final units = <({int pid, double w})>[for (final i in expand(l(o['items']))) for (var k = 0; k < i.q; k++) (pid: i.pid, w: unitWeightKg(i.pid))]..sort((a, b) => b.w.compareTo(a.w));
+    final out = <Doc>[];
+    for (final u in units) {
+      var p = out.where((x) => n(x['weight']) + u.w <= maxKg + 1e-9).firstOrNull;
+      if (p == null) out.add(p = {'n': out.length + 1, 'weight': 0.0, 'items': <Doc>[]});
+      p['weight'] = ((n(p['weight']) + u.w) * 100).round() / 100;
+      final items = p['items'] as List<Doc>;
+      final it = items.where((x) => x['pid'] == u.pid).firstOrNull;
+      if (it != null) {
+        it['q'] = ni(it['q']) + 1;
+      } else {
+        items.add({'pid': u.pid, 'q': 1});
+      }
+    }
+    return out;
+  }
+
+  double parcelWeight(List<dynamic> items) => (items.fold<double>(0, (t, i) => t + unitWeightKg(ni(m(i)['pid'])) * ni(m(i)['q'])) * 100).round() / 100;
+
+  /// Frais d'un colis chez la société : base + surpoids (fenêtre de découpage du site).
+  int parcelShip(Doc o, double kg) {
+    final c = carrierOf(o);
+    return baseShip(o, c) + extraKg(c, kg) * ni(c['extraPerKg']);
+  }
+
+  /// splitSave du site : colis vides retirés, poids de chaque colis recalculé.
+  void saveSplit(Doc o, List<Doc> parcels) {
+    final pp = <Doc>[
+      for (final p in parcels.where((p) => l(p['items']).isNotEmpty))
+        {'weight': parcelWeight(l(p['items'])), 'items': [for (final it in l(p['items'])) {'pid': ni(m(it)['pid']), 'q': ni(m(it)['q'])}]},
+    ];
+    for (var i = 0; i < pp.length; i++) {
+      pp[i]['n'] = i + 1;
+    }
+    o['parcels'] = pp.length > 1 ? pp : null;
+    hist(o, 'Commande découpée', '${pp.length} colis : ${pp.map((p) => '${n(p['weight']).toString().replaceAll('.', ',')} kg').join(' + ')}', 'blue');
+    log('Découpage colis', s(o['ref']), '${pp.length} colis');
+    touch();
+  }
+
+  void resetSplit(Doc o) {
+    o['parcels'] = null;
+    hist(o, 'Découpage annulé', '', 'amber');
+    touch();
+  }
+
   bool needsSplit(Doc o) => modules['weight'] == true && !(l(o['parcels']).length > 1) && orderWeight(o) > n(carrierOf(o)['maxParcelKg']);
   int orderTotal(Doc o) => orderSub(o) - discountAmt(o) + feeOf(o);
   int returnLoss(Doc o) => dhdFeeOf(o) * 2 + ni(settings['adCostPerDelivered'] ?? 700);
@@ -294,7 +344,7 @@ extension Rules on ErpStore {
     }
     if (needsSplit(o)) e.add('Poids trop élevé : découper la commande');
     if (!validPhone(s(customerOf(o)['phone']))) e.add('Téléphone invalide');
-    if (s(o['commune']).isEmpty) e.add('Commune manquante');
+    if (o['delivery'] != 'desk' && s(o['commune']).isEmpty) e.add('Commune manquante');
     for (final i in expand(l(o['items']))) {
       final p = pby[i.pid];
       if (p != null && ni(p['stock']) < i.q && p['onDemand'] != true) e.add('Stock insuffisant');
@@ -532,7 +582,7 @@ extension Actions on ErpStore {
       case 'confirm':
         final err = <String>[];
         if (!validPhone(s(customerOf(o)['phone']))) err.add('téléphone invalide');
-        if (s(o['commune']).isEmpty) err.add('commune manquante');
+        if (o['delivery'] != 'desk' && s(o['commune']).isEmpty) err.add('commune manquante');
         for (final i in expand(l(o['items']))) {
           final p = pby[i.pid];
           if (p != null && stockInfo(i.pid).available < i.q && p['onDemand'] != true) err.add('stock insuffisant : ${s(p['name'])}');
@@ -687,7 +737,7 @@ extension Actions on ErpStore {
   }
 
   /// Fiche produit (tajer.js) : prix et stock modifiés depuis la fiche.
-  void saveProduct(Doc p, {required String name, required int price, required int cost, required int stock, required String status, required int threshold}) {
+  void saveProduct(Doc p, {required String name, required int price, required int cost, required int stock, required String status, required int threshold, int? weight}) {
     final oldPrice = ni(p['price']), oldCost = ni(p['cost']);
     if (price != oldPrice || cost != oldCost) {
       if (p['priceHistory'] is! List) p['priceHistory'] = <dynamic>[];
@@ -702,7 +752,22 @@ extension Actions on ErpStore {
     p['cost'] = cost;
     p['status'] = status;
     p['threshold'] = threshold;
+    if (weight != null) p['weight'] = weight;
     log('Produit modifié', s(p['sku']).ifEmpty(name));
+    touch();
+  }
+
+  /// CH.pWeight du site : saisi en kg, gardé en grammes.
+  void setProductWeight(Doc p, double kg) {
+    p['weight'] = (kg * 1000).round();
+    log('Poids produit', s(p['sku']), '${kgTxt(kg)} kg');
+    touch();
+  }
+
+  /// CH.pCost du site (prix d'achat, admin seulement).
+  void setProductCost(Doc p, int cost) {
+    p['cost'] = cost;
+    log('Prix d\'achat', s(p['sku']), money(cost));
     touch();
   }
 

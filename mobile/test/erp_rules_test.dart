@@ -225,4 +225,27 @@ void main() {
     expect(g.first.$2.map((i) => i.key), ['confirmer', 'dashboard']);
     expect(g.last.$2.length, kMenus['admin']!.fold<int>(0, (t, x) => t + x.$2.length) - 2);
   });
+  test('découpage des colis : proposition, déplacement manuel, frais par colis, stop desk sans commune', () async {
+    final st = await boot(role: 'admin');
+    final o = st.orderById(1)..['items'] = [{'pid': 1, 'q': 5, 'price': 1000, 'cost': 600}];
+    st.pby[1]!['weight'] = 1000; // 1 kg × 5
+    final p = st.proposeParcels(o, 2);
+    expect(p.length, 3);
+    expect(p.map((x) => x['weight']), [2, 2, 1]);
+    expect(st.parcelShip(o, 1), st.baseShip(o, st.carrierOf(o)));
+    st.saveSplit(o, [...p, {'n': 4, 'items': <Map<String, dynamic>>[]}]); // colis vide retiré
+    expect(st.parcelsOf(o).length, 3);
+    expect(st.parcelsOf(o).map((x) => x['n']), [1, 2, 3]);
+    expect(st.needsSplit(o), isFalse);
+    st.resetSplit(o);
+    expect(o['parcels'], isNull);
+    st.setProductWeight(st.pby[1]!, 2.5);
+    expect(st.pby[1]!['weight'], 2500);
+    expect(kgTxt(2.5), '2.5');
+    expect(kgTxt(3), '3');
+    final d = st.orderById(2)..['commune'] = '';
+    expect(st.preSendCheck(d).contains('Commune manquante'), isFalse); // stop desk
+    d['delivery'] = 'home';
+    expect(st.preSendCheck(d).contains('Commune manquante'), isTrue);
+  });
 }

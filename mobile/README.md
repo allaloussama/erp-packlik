@@ -31,7 +31,8 @@ l'application. Le menu de chaque rôle est celui du site, avec les mêmes compte
 | Fournisseur | Tableau de bord, **Paiements et commandes** (confirmer la réception), **Bons de commande** (confirmer avec la date), **Livraisons**, **Relevé de compte**, Ventes de mes produits (si l'admin l'a activé) |
 
 Fiche d'une commande : statut, client (appeler, WhatsApp, SMS, itinéraire), produits (quantités, retrait, ajout,
-domicile / bureau), totaux, statut de confirmation, note, livraison, tentatives, historique, et pour l'admin les documents.
+domicile / bureau), totaux, statut de confirmation, note, livraison (colis et découpage manuel en plusieurs colis avec les frais de
+chacun), tentatives, historique, et pour l'admin les documents. Au bureau (stop desk), la commune n'est pas demandée.
 
 Les règles sont celles du site, portées une à une (verrou pendant l'appel, rappels automatiques, contrôles avant
 confirmation, remise à valider, frais figés et suivi à l'envoi, stock, documents numérotés, argent chez le livreur,
@@ -54,7 +55,7 @@ L'APK est dans `build/app/outputs/flutter-apk/app-release.apk`. Sans `--dart-def
 `https://honeydew-jackal-507877.hostingersite.com/` (le site Hostinger) ; à changer quand le vrai domaine sera branché.
 
 **Construire sur GitHub** (sans rien installer) : chaque envoi sur `main` qui touche `mobile/` lance l'action
-« Application mobile » (`.github/workflows/mobile-apk.yml`) : analyse, tests, test de bout en bout, puis APK.
+« Application mobile » (`.github/workflows/mobile-apk.yml`) : analyse, tests, test de bout en bout, puis APK **32 bits** (armeabi-v7a, réglé dans `android/app/build.gradle.kts`).
 L'APK se télécharge dans l'onglet **Actions** › l'exécution › **Artifacts** › `packlik-apk`.
 
 Test de bout en bout contre un vrai serveur sur une base jetable (admin → agent → envoi → livreur → caisse → fournisseur) :
