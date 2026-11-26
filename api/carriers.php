@@ -126,12 +126,37 @@ function carrier_communes(string $slug, array $cat, array $acc, int $wid): array
 			return array_column((array) (carrier_http($slug, $cat, $acc, 'GET', '/communes/?wilaya_id=' . $wid . '&page_size=1000')['data'] ?? []), 'name');
 		}
 		if ($cat[1] === 'ecotrack') {
-			$r = carrier_http($slug, $cat, $acc, 'GET', '/get/communes');
-			$rows = isset($r['data']) ? (array) $r['data'] : $r;
-			return array_column(array_filter($rows, fn($c) => is_array($c) && (int) ($c['wilaya_id'] ?? 0) === $wid), 'nom');
+			return array_map('strval', array_keys(ecotrack_communes($slug, $cat, $acc, $wid)));
 		}
 		return [];
 	});
+}
+
+/** Communes EcoTrack de la wilaya : nom => 1 si un bureau stop desk y existe. */
+function ecotrack_communes(string $slug, array $cat, array $acc, int $wid): array {
+	return carrier_cached("eco_communes_{$slug}_{$wid}", function () use ($slug, $cat, $acc, $wid) {
+		$r = carrier_http($slug, $cat, $acc, 'GET', '/get/communes?wilaya_id=' . $wid);
+		$out = [];
+		foreach (isset($r['data']) ? (array) $r['data'] : $r as $c) {
+			if (is_array($c) && (int) ($c['wilaya_id'] ?? 0) === $wid && isset($c['nom'])) {
+				$out[(string) $c['nom']] = (int) ($c['has_stop_desk'] ?? 1); // champ absent : on laisse EcoTrack décider
+			}
+		}
+		return $out;
+	});
+}
+
+/** EcoTrack refuse le stop desk dans une commune sans bureau : garde la commune si elle en a un, sinon la première de la wilaya qui en a. */
+function ecotrack_desk_commune(string $commune, array $communes): ?string {
+	if (!empty($communes[$commune])) {
+		return $commune;
+	}
+	foreach ($communes as $name => $has) {
+		if ($has) {
+			return (string) $name;
+		}
+	}
+	return null;
 }
 
 function carrier_test(string $id): array {
@@ -193,6 +218,11 @@ function carrier_send(array $in): array {
 		}
 		$res = ['tracking' => (string) $row['tracking'], 'label' => (string) ($row['label'] ?? ''), 'url' => ''];
 	} else {
+		if ($desk && $cat[1] === 'ecotrack') {
+			$commune = ecotrack_desk_commune($commune, ecotrack_communes($slug, $cat, $acc, $wid))
+				?? fail(422, $cat[0] . ' : aucun bureau dans cette wilaya, choisissez la livraison à domicile.');
+			$address = $address ?: 'Stop desk ' . $commune;
+		}
 		$data = ['reference' => (string) $o['ref'], 'telephone' => $phone, 'adresse' => $address, 'commune' => $commune, 'produit' => $products, 'montant' => $amount, 'remarque' => $note, 'stop_desk' => $desk ? 1 : 0];
 		if ($cat[1] === 'noest') {
 			$data += ['api_token' => $acc['token'], 'user_guid' => $acc['guid'] ?? '', 'client' => $name, 'wilaya_id' => $wid, 'type_id' => 1, 'poids' => max(1, (int) ceil((float) ($in['weight'] ?? 1))), 'can_open' => 1];
