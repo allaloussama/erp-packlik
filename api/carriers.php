@@ -188,7 +188,7 @@ function carrier_send(array $in): array {
 	$phone = digits((string) $c['phone']);
 	$address = (string) ($o['address'] ?: $o['commune']);
 	$amount = (int) round((float) ($in['amount'] ?? 0));
-	$products = mb_substr((string) ($in['products'] ?? ''), 0, 250);
+	$products = 'Emballage'; // contenu affiché sur le bordereau du transporteur, le même pour toutes les commandes
 	$note = mb_substr((string) ($o['note'] ?? ''), 0, 250);
 	$commune = carrier_match_commune((string) $o['commune'], carrier_communes($slug, $cat, $acc, $wid));
 	$base = carrier_base($slug, $cat);
