@@ -470,7 +470,9 @@ async function shipOrders(list){
     const chk = preSendCheck(o); if(chk.length){ ko.push(o.ref+' : '+chk.map(t).join(', ')); continue; }
     const cr = carrierOf(o);
     if(carrierHasApi(cr) && !o.tracking){
-      try{ await syncNow(); await api('carrier.send', {orderId:o.id, amount:orderTotal(o), weight:orderWeight(o), products:expand(o.items).map(i=>i.q+'x '+PBY[i.pid].name).join(', ')}); await syncNow(); }
+      try{ await syncNow(); const r=await api('carrier.send', {orderId:o.id, amount:orderTotal(o), weight:orderWeight(o), products:expand(o.items).map(i=>i.q+'x '+PBY[i.pid].name).join(', ')});
+        Object.assign(o, {tracking:r.tracking, label:r.label, trackUrl:r.url}); // sinon une copie locale non synchronisée écrase le vrai suivi et le bordereau
+        await syncNow(); }
       catch(e){ ko.push(o.ref+' : '+e.message); continue; }
     }
     setStatus(o,'sent', cr.internal? 'Remis au livreur' : carrierHasApi(cr)? 'Colis créé chez '+cr.name+' par API' : 'Envoi enregistré (suivi saisi à la main)'); ok++;

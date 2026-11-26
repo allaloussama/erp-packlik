@@ -678,10 +678,12 @@ extension Actions on ErpStore {
       if (carrierHasApi(cr) && s(o['tracking']).isEmpty) {
         try {
           await syncNow();
-          await net.call('carrier.send', {
+          final r = await net.call('carrier.send', {
             'orderId': o['id'], 'amount': orderTotal(o), 'weight': orderWeight(o),
             'products': expand(l(o['items'])).map((i) => '${i.q}x ${s(pby[i.pid]?['name'])}').join(', '),
           });
+          // sinon une copie locale non synchronisée écrase le vrai suivi et le bordereau
+          if (r is Map) o.addAll({'tracking': s(r['tracking']), 'label': s(r['label']), 'trackUrl': s(r['url'])});
           await syncNow();
         } on ErpError catch (e) {
           ko.add('$ref : ${e.message}');
