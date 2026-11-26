@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../config.dart';
 import '../theme.dart';
+import 'dashboard_admin.dart';
 import 'orders.dart';
 import 'rules.dart';
 import 'store.dart';
@@ -23,6 +24,7 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (store.role == 'admin') return AdminDashboard(store: store, go: go);
     final st = store, os = st.orders, today = _dayStart(), month = today - 29 * kDay;
     int cnt(List<String> sts) => os.where((o) => sts.contains(o['status'])).length;
     final kpis = <Widget>[];
@@ -105,23 +107,24 @@ class BarChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final mx = values.fold<int>(1, max);
     return SizedBox(
-      height: 130,
+      height: 150,
       child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
         for (var i = 0; i < values.length; i++)
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2),
               child: Column(children: [
-                FittedBox(child: Text('${values[i]}', style: const TextStyle(fontSize: 9.5, color: kMuted))),
+                SizedBox(height: 12, child: FittedBox(child: Text(values.length > 16 && values[i] != mx ? '' : '${values[i]}', style: const TextStyle(fontSize: 9.5, color: kErpMuted)))),
                 const SizedBox(height: 2),
                 Expanded(
-                  child: Align(
+                  child: Container(
+                    decoration: BoxDecoration(color: kLine2, borderRadius: BorderRadius.circular(3)),
                     alignment: Alignment.bottomCenter,
-                    child: FractionallySizedBox(heightFactor: max(.02, values[i] / mx), child: Container(decoration: BoxDecoration(color: kOrange, borderRadius: BorderRadius.circular(3)))),
+                    child: FractionallySizedBox(heightFactor: max(.03, values[i] / mx), widthFactor: 1, child: Container(decoration: BoxDecoration(color: values[i] == mx ? kKraftD : kOrange, borderRadius: BorderRadius.circular(3)))),
                   ),
                 ),
-                const SizedBox(height: 3),
-                FittedBox(child: Text(labels[i], style: const TextStyle(fontSize: 9.5, color: kMuted))),
+                const SizedBox(height: 4),
+                SizedBox(height: 12, child: FittedBox(child: Text(labels[i].isEmpty ? ' ' : labels[i], style: const TextStyle(fontSize: 9.5, color: kErpMuted)))),
               ]),
             ),
           ),

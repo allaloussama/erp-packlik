@@ -128,30 +128,38 @@ class OrderCard extends StatelessWidget {
     final st = store, c = st.customerOf(o);
     final items = l(o['items']).map((x) => '${ni(m(x)['q'])} × ${s(st.pby[ni(m(x)['pid'])]?['name']).isEmpty ? '?' : s(st.pby[ni(m(x)['pid'])]!['name'])}').join(' · ');
     final next = o['nextCall'] != null && kConfSt.contains(o['status']) ? ' · rappel ${fDT(n(o['nextCall']))}' : '';
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => OrderScreen(store: st, id: ni(o['id'])))),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Text(s(o['ref']), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
-              const SizedBox(width: 8),
-              Expanded(child: Align(alignment: AlignmentDirectional.centerStart, child: Pill(st.kLabel(o), st.kColor(o)))),
-              const SizedBox(width: 8),
-              Text(money(st.orderTotal(o)), style: const TextStyle(fontWeight: FontWeight.w900)),
+    // design des commandes du site : carte blanche dense, filet de couleur du statut à gauche
+    return Container(
+      decoration: cardBox(),
+      clipBehavior: Clip.antiAlias,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => OrderScreen(store: st, id: ni(o['id'])))),
+          child: Container(
+            decoration: BoxDecoration(border: BorderDirectional(start: BorderSide(color: st.kColor(o), width: 3))),
+            padding: const EdgeInsetsDirectional.fromSTEB(13, 11, 12, 11),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Text(s(o['ref']), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
+                const SizedBox(width: 8),
+                Expanded(child: Align(alignment: AlignmentDirectional.centerStart, child: Pill(st.kLabel(o), st.kColor(o)))),
+                const SizedBox(width: 8),
+                Text(money(st.orderTotal(o)), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, fontFeatures: [FontFeature.tabularFigures()])),
+              ]),
+              const SizedBox(height: 8),
+              Row(children: [
+                Expanded(child: Text(s(c['name']).isEmpty ? '—' : s(c['name']), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5))),
+                if (s(c['phone']).isNotEmpty) Text(s(c['phone']), textDirection: TextDirection.ltr, style: const TextStyle(color: kErpMuted, fontSize: 13, fontFeatures: [FontFeature.tabularFigures()])),
+              ]),
+              const SizedBox(height: 2),
+              Text([st.wName(o['wilaya']), s(o['commune'])].where((x) => x.isNotEmpty && x != '—').join(' · '), style: const TextStyle(fontSize: 12.5, color: kInk2)),
+              if (items.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 3), child: Text(items, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12.5, color: kErpMuted))),
+              const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(height: 1)),
+              Text('${fDT(n(o['created']))}${s(o['platform']).isNotEmpty ? ' · ${s(o['platform'])}' : ''}${st.agentName(o['agentId']).isNotEmpty ? ' · ${st.agentName(o['agentId'])}' : ''}$next',
+                  maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11.5, color: kErpMuted)),
             ]),
-            const SizedBox(height: 8),
-            Text(s(c['name']).isEmpty ? '—' : s(c['name']), style: const TextStyle(fontWeight: FontWeight.w700)),
-            if (s(c['phone']).isNotEmpty) Text(s(c['phone']), textDirection: TextDirection.ltr, style: const TextStyle(color: kMuted)),
-            const SizedBox(height: 4),
-            Text([st.wName(o['wilaya']), s(o['commune'])].where((x) => x.isNotEmpty && x != '—').join(' · '), style: const TextStyle(fontSize: 13)),
-            if (items.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: Text(items, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12.5, color: kMuted))),
-            const SizedBox(height: 6),
-            Text('${fDT(n(o['created']))}${s(o['platform']).isNotEmpty ? ' · ${s(o['platform'])}' : ''}${st.agentName(o['agentId']).isNotEmpty ? ' · ${st.agentName(o['agentId'])}' : ''}$next',
-                style: const TextStyle(fontSize: 11.5, color: kMuted)),
-          ]),
+          ),
         ),
       ),
     );

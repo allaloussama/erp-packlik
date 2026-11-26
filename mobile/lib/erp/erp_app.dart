@@ -99,22 +99,25 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final st = widget.store;
     return Scaffold(
-      appBar: AppBar(title: const Text('Espace équipe')),
+      appBar: AppBar(backgroundColor: kErpBg, shape: const Border(), title: const Text('Espace équipe')),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              const Center(child: BrandMark(dark: false)),
+              const SizedBox(height: 22),
+              Container(
+                decoration: cardBox(),
+                child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
                 child: AutofillGroup(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                    Image.asset('assets/icon.png', height: 64),
-                    const SizedBox(height: 12),
-                    const Text('PackLik ERP', textAlign: TextAlign.center, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-                    const Text('Connectez-vous pour continuer', textAlign: TextAlign.center, style: TextStyle(color: kMuted)),
-                    const SizedBox(height: 20),
+                    const Text('Connexion', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 2),
+                    const Text('Utilisez le même compte que sur le site.', style: TextStyle(color: kErpMuted, fontSize: 13)),
+                    const SizedBox(height: 18),
                     if (st.bootError != null && _err == null)
                       Padding(padding: const EdgeInsets.only(bottom: 10), child: Text(st.bootError!, style: const TextStyle(color: kRed))),
                     TextField(controller: _email, keyboardType: TextInputType.emailAddress, autofillHints: const [AutofillHints.username, AutofillHints.email], textInputAction: TextInputAction.next, decoration: const InputDecoration(labelText: 'E-mail', prefixIcon: Icon(Icons.mail_outline))),
@@ -125,11 +128,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     if (_err != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(_err!, style: const TextStyle(color: kRed))),
                     const SizedBox(height: 18),
-                    FilledButton(onPressed: _busy ? null : _go, child: _busy ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4)) : const Text('Se connecter')),
+                    FilledButton(onPressed: _busy ? null : _go, child: _busy ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white)) : const Text('Se connecter')),
                   ]),
                 ),
+                ),
               ),
-            ),
+              const SizedBox(height: 16),
+              const Text('Vous restez connecté après la fermeture de l\'application.', textAlign: TextAlign.center, style: TextStyle(color: kErpMuted, fontSize: 12)),
+            ]),
           ),
         ),
       ),
@@ -294,63 +300,158 @@ class _ErpShellState extends State<ErpShell> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final st = widget.store;
-    final cnt = st.counters();
     final item = _item(_page);
+    final name = s(st.me['name']);
     return Scaffold(
       appBar: AppBar(
-        title: Text(item?.label ?? 'PackLik ERP', style: const TextStyle(fontWeight: FontWeight.w800)),
+        title: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+          Text(item?.label ?? 'PackLik ERP', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+          Text('${fDate(now())} · ${kRoleLabel[st.role] ?? st.role}', style: const TextStyle(fontSize: 11.5, color: kErpMuted, fontWeight: FontWeight.w500)),
+        ]),
         actions: [
-          if (st.offline) const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Tooltip(message: 'Hors ligne', child: Icon(Icons.cloud_off, color: kRed))),
-          IconButton(tooltip: 'Actualiser', onPressed: st.syncNow, icon: const Icon(Icons.sync)),
+          if (st.offline) const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Tooltip(message: 'Hors ligne', child: Icon(Icons.cloud_off, color: kRed, size: 20))),
+          IconButton(tooltip: 'Actualiser', onPressed: st.syncNow, icon: const Icon(Icons.sync, size: 21)),
+          Padding(padding: const EdgeInsetsDirectional.only(end: 12, start: 2), child: Avatar(name)),
         ],
       ),
       drawer: Drawer(
+        backgroundColor: kSide,
+        width: 284,
+        shape: const RoundedRectangleBorder(),
         child: SafeArea(
-          child: Column(children: [
-            ListTile(
-              contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              leading: CircleAvatar(backgroundColor: kOrange, foregroundColor: kInk, child: Text(s(st.me['name']).isEmpty ? '?' : s(st.me['name'])[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900))),
-              title: Text(s(st.me['name']), style: const TextStyle(fontWeight: FontWeight.w800)),
-              subtitle: Text(kRoleLabel[st.role] ?? st.role),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: ListView(padding: const EdgeInsets.symmetric(vertical: 6), children: [
-                for (final g in st.menusFor(st.role)) ...[
-                  if (g.$1.isNotEmpty) Padding(padding: const EdgeInsets.fromLTRB(18, 14, 18, 4), child: Text(g.$1.toUpperCase(), style: const TextStyle(fontSize: 11.5, letterSpacing: .6, color: kMuted, fontWeight: FontWeight.w800))),
-                  for (final i in g.$2)
-                    ListTile(
-                      dense: true,
-                      selected: i.key == _page,
-                      selectedTileColor: const Color(0xFFFFF1E6),
-                      selectedColor: kInk,
-                      leading: Icon(i.icon, color: i.key == _page ? kOrange : kMuted),
-                      title: Text(i.label, style: TextStyle(fontWeight: i.key == _page ? FontWeight.w800 : FontWeight.w600, fontSize: 14)),
-                      trailing: i.badge.isNotEmpty && (cnt[i.badge] ?? 0) > 0
-                          ? Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: kOrange, borderRadius: BorderRadius.circular(10)), child: Text('${cnt[i.badge]}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)))
-                          : null,
-                      onTap: () {
-                        Navigator.pop(context);
-                        _go(i.key);
-                      },
-                    ),
-                ],
-              ]),
-            ),
-            const Divider(height: 1),
-            ListTile(leading: const Icon(Icons.storefront_outlined), title: const Text('Retour à la boutique'), onTap: () {
+          child: _SideMenu(
+            store: st,
+            page: _page,
+            onPick: (k) {
+              Navigator.pop(context);
+              _go(k);
+            },
+            onShop: () {
               Navigator.pop(context);
               Navigator.of(context).maybePop();
-            }),
-            ListTile(leading: const Icon(Icons.logout, color: kRed), title: const Text('Déconnexion', style: TextStyle(color: kRed)), onTap: () async {
+            },
+            onLogout: () async {
               Navigator.pop(context);
               if (await confirmDialog(context, 'Déconnexion', 'Se déconnecter de l\'espace équipe ?', ok: 'Se déconnecter', danger: true)) await st.logout();
-            }),
-          ]),
+            },
+          ),
         ),
       ),
       body: _body(st),
     );
+  }
+}
+
+/// Initiale de l'utilisateur dans un rond (.avatar du site).
+class Avatar extends StatelessWidget {
+  const Avatar(this.name, {super.key, this.size = 34});
+  final String name;
+  final double size;
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        alignment: Alignment.center,
+        decoration: const BoxDecoration(color: kKraftL, shape: BoxShape.circle),
+        child: Text(name.isEmpty ? '?' : name[0].toUpperCase(), style: TextStyle(color: const Color(0xFF8A3600), fontWeight: FontWeight.w800, fontSize: size * .38)),
+      );
+}
+
+/// Logo de l'espace équipe (.side .brand du site) : carré orange, nom, sous-titre.
+class BrandMark extends StatelessWidget {
+  const BrandMark({super.key, this.dark = true});
+  final bool dark;
+  @override
+  Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(color: kOrange, borderRadius: BorderRadius.circular(9)),
+          child: const Icon(Icons.inventory_2_outlined, color: Colors.white, size: 20),
+        ),
+        const SizedBox(width: 10),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+          Text('PackLik', style: TextStyle(color: dark ? Colors.white : kErpInk, fontWeight: FontWeight.w800, fontSize: 17, height: 1.1)),
+          Text('ERP · ESPACE ÉQUIPE', style: TextStyle(color: dark ? const Color(0xFF8996A5) : kErpMuted, fontWeight: FontWeight.w600, fontSize: 10.5, letterSpacing: .7)),
+        ]),
+      ]);
+}
+
+/// Menu latéral sombre, copie de .side du site : groupes en capitales, rubrique active en orange, compteurs.
+class _SideMenu extends StatelessWidget {
+  const _SideMenu({required this.store, required this.page, required this.onPick, required this.onShop, required this.onLogout});
+  final ErpStore store;
+  final String page;
+  final ValueChanged<String> onPick;
+  final VoidCallback onShop, onLogout;
+  static const _redCounters = {'fail', 'hard', 'low', 'myfail'}; // mêmes compteurs rouges que le site
+
+  Widget _row(IconData icon, String label, {bool on = false, int count = 0, bool red = false, Color? color, VoidCallback? onTap}) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+        child: Material(
+          color: on ? kOrange : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            hoverColor: kSideHover,
+            splashColor: Colors.white10,
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(children: [
+                Icon(icon, size: 19, color: on ? Colors.white : color ?? const Color(0xFF8996A5)),
+                const SizedBox(width: 12),
+                Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: on ? Colors.white : color ?? kSideText, fontSize: 13.5, fontWeight: on ? FontWeight.w700 : FontWeight.w500))),
+                if (count > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+                    decoration: BoxDecoration(color: on ? Colors.white24 : red ? kRed : kSideCount, borderRadius: BorderRadius.circular(999)),
+                    child: Text('$count', style: const TextStyle(color: Color(0xFFE6EAEF), fontSize: 11, fontWeight: FontWeight.w700)),
+                  ),
+              ]),
+            ),
+          ),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final st = store, cnt = st.counters(), name = s(st.me['name']);
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const Padding(padding: EdgeInsets.fromLTRB(16, 18, 16, 10), child: BrandMark()),
+      Expanded(
+        child: ListView(padding: const EdgeInsets.only(bottom: 10), children: [
+          for (final g in st.menusFor(st.role)) ...[
+            if (g.$1.isNotEmpty)
+              Padding(padding: const EdgeInsets.fromLTRB(20, 16, 18, 6), child: Text(g.$1.toUpperCase(), style: const TextStyle(fontSize: 10.5, letterSpacing: .8, color: kSideGroup, fontWeight: FontWeight.w700))),
+            for (final i in g.$2)
+              _row(i.icon, i.label, on: i.key == page, count: i.badge.isEmpty ? 0 : cnt[i.badge] ?? 0, red: _redCounters.contains(i.badge), onTap: () => onPick(i.key)),
+          ],
+        ]),
+      ),
+      Container(
+        decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFF232E3A)))),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: Row(children: [
+              Avatar(name, size: 32),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13.5)),
+                  Text(kRoleLabel[st.role] ?? st.role, style: const TextStyle(color: Color(0xFF8996A5), fontSize: 12)),
+                ]),
+              ),
+            ]),
+          ),
+          _row(Icons.storefront_outlined, 'Retour à la boutique', onTap: onShop),
+          _row(Icons.logout, 'Déconnexion', color: const Color(0xFFF0A39D), onTap: onLogout),
+        ]),
+      ),
+    ]);
   }
 }
 

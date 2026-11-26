@@ -85,6 +85,8 @@ Pour le Play Store : créer une clé de signature (`keytool`), la déclarer dans
 | `lib/erp/erp_app.dart` | ERP : connexion, menu du rôle, pages |
 | `lib/erp/orders.dart` | ERP : listes de commandes et fiche commande |
 | `lib/erp/pages.dart` | ERP : tableaux de bord, produits, stock, clients, équipe, journal, livreur |
+| `lib/erp/dashboard_admin.dart` | ERP : tableau de bord de l'admin, copie de celui du site (période, chiffres clés, trésorerie, entonnoir, tops, agents, alertes) |
+| `lib/theme.dart` › `erpTheme()` et `lib/erp/ui.dart` | Design de l'espace équipe : mêmes couleurs, menu sombre, cartes, badges, onglets et boutons que l'ERP du site (`assets/app.css`) |
 | `lib/erp/rules2.dart` | ERP : finance, caisses, fournisseurs, achats, performances, journal comptable, menu réorganisé |
 | `lib/erp/admin_pages.dart` | ERP : Livraison, Pixels, Modules, Répartition, Classement, Paramètres, Statistiques |
 | `lib/erp/finance_pages.dart` | ERP : Fournisseurs, Achats, Finance, Comptabilité |

@@ -24,6 +24,11 @@ class PackLikApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: packlikTheme(),
       routerConfig: appRouter,
+      // l'espace équipe (/erp et tous ses écrans) prend le thème de l'ERP du site
+      builder: (context, child) => ListenableBuilder(
+        listenable: appRouter.routerDelegate,
+        builder: (context, _) => appRouter.routerDelegate.currentConfiguration.uri.path.startsWith('/erp') ? Theme(data: erpTheme(), child: child!) : child!,
+      ),
       locale: Locale(lang),
       supportedLocales: const [Locale('fr'), Locale('ar')],
       localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],

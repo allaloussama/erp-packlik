@@ -81,7 +81,7 @@ void main() {
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.reset);
         final st = await tester.runAsync(() => _store(role)) as ErpStore;
-        await tester.pumpWidget(MaterialApp(theme: packlikTheme(), home: ErpShell(store: st)));
+        await tester.pumpWidget(MaterialApp(theme: erpTheme(), home: ErpShell(store: st)));
         await tester.pump();
         for (final g in kMenus[role]!) {
           for (final item in g.$2) {
@@ -112,7 +112,7 @@ void main() {
     for (final role in ['admin', 'agent', 'gerant', 'livreur']) {
       final st = await tester.runAsync(() => _store(role)) as ErpStore;
       for (final o in st.orders) {
-        await tester.pumpWidget(MaterialApp(theme: packlikTheme(), home: OrderScreen(store: st, id: ni(o['id']))));
+        await tester.pumpWidget(MaterialApp(theme: erpTheme(), home: OrderScreen(store: st, id: ni(o['id']))));
         await tester.pumpAndSettle();
         await tester.drag(find.byType(ListView).first, const Offset(0, -2000));
         await tester.pumpAndSettle();
