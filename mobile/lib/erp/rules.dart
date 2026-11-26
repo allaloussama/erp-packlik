@@ -303,7 +303,7 @@ extension Rules on ErpStore {
     }
     o['parcels'] = pp.length > 1 ? pp : null;
     hist(o, 'Commande découpée', '${pp.length} colis : ${pp.map((p) => '${n(p['weight']).toString().replaceAll('.', ',')} kg').join(' + ')}', 'blue');
-    log('Découpage colis', s(o['ref']), '${pp.length} colis');
+    this.log('Découpage colis', s(o['ref']), '${pp.length} colis'); // this. : sinon log() de dart:math
     touch();
   }
 
