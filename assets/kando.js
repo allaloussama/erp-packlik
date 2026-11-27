@@ -375,7 +375,7 @@ CH.kSel = el=>{ const u=kU(el.dataset.b), id=+el.dataset.id; el.checked? u.sel.a
 CH.kAll = el=>{ const u=kU(el.dataset.b); (u._ids||[]).forEach(id=> el.checked? u.sel.add(id) : u.sel.delete(id)); render(); };
 
 /* ---------- Commandes à confirmer ---------- */
-S.ui.kc = {q:'', date:'all', day:'', page:1, sel:new Set(), st:'', noPlat:false, noProd:false, src:'', plat:'', hour:'', store:'', wil:'', agent:'', pop:'', sheet:false, exp:new Set(), row:null};
+S.ui.kc = {q:'', date:'all', day:'', page:1, sel:new Set(), st:'', noPlat:false, noProd:false, src:'', plat:'', hour:'', store:'', wil:'', agent:'', pop:'', sheet:false, exp:new Set(), row:null, cur:null, open:false, more:false, view:(()=>{ try{ return localStorage.getItem('pk_kview')||'split'; }catch(e){ return 'split'; } })()};
 function kConfBase(){
   const u=S.ui.kc; let l = visibleOrders().filter(o=>PRE_ST.includes(o.status) && kInDate(o.created, u.date, u.day));
   if(u.q){ const q=u.q.toLowerCase(), qd=q.replace(/\s/g,''); l=l.filter(o=>{ const c=CBY[o.customerId]||{}; return o.ref.toLowerCase().includes(q) || (c.name||'').toLowerCase().includes(q) || (c.phone||'').replace(/\s/g,'').includes(qd) || o.items.some(i=>(PBY[i.pid]||{name:''}).name.toLowerCase().includes(q)) || wName(o.wilaya).toLowerCase().includes(q); }); }
@@ -440,9 +440,48 @@ viewConfList = function(){
       <button class="kchip ${u.noPlat?'on':''}" data-a="kcChip" data-v="_noplat"><span class="dot" style="background:#667080"></span>${t('Sans source')} <b>${base.filter(o=>!platformOf(o)).length}</b></button>
       <button class="kchip ${u.noProd?'on':''}" data-a="kcChip" data-v="_noprod"><span class="dot" style="background:#667080"></span>${t('Aucun produit')} <b>${base.filter(o=>!o.items.length).length}</b></button>
     </div>`;
-  const table = kTable('conf', rows, cols, kConfCell, u, o=>`--c:${kColor(o)}`, kRowDraft(cols));
-  return erpShell('confirmer', t('Commandes à confirmer'), '', `<div class="kboard">${bar}${table}</div>`);
+  const filtN = [u.src,u.plat,u.store,u.wil,u.agent].filter(Boolean).length + (u.hour!==''?1:0);
+  const tools = `<div class="kviewbar"><div class="kseg kview">${[['split','list','Une page'],['table','rows','Tableau']].map(([k,i,l])=>`<button class="${u.view===k?'on':''}" data-a="kView" data-v="${k}">${ic(i,'sm')} ${t(l)}</button>`).join('')}</div>
+    <button class="kbtn ${u.more||filtN?'brand':''}" data-a="kMore">${ic('filter','sm')} ${t('Filtres')}${filtN? ' ('+filtN+')':''}</button></div>`;
+  const barOut = bar.replace('<div class="kfilters">', `<div class="kfilters ${u.more||filtN?'':'kfold'}">`);
+  if(u.view==='table') return erpShell('confirmer', t('Commandes à confirmer'), '', `<div class="kboard">${tools}${barOut}${kTable('conf', rows, cols, kConfCell, u, o=>`--c:${kColor(o)}`, kRowDraft(cols))}</div>`);
+  if(!rows.some(o=>o.id===u.cur)) u.cur = rows[0]? rows[0].id : null;
+  const cur = ORDERS.find(o=>o.id===u.cur);
+  const allSel = rows.length>0 && rows.every(o=>u.sel.has(o.id));
+  const listH = `<div class="kl-h"><label class="kchk"><input type="checkbox" ${allSel?'checked':''} ${rows.length?'':'disabled'} data-ch="kAll" data-b="conf" aria-label="${t('Tout sélectionner')}"></label><span>${u._total} ${t('commande(s)')}</span>${selN? `<b class="kl-sel">${selN} ${t('sélectionnée(s)')}</b>`:''}</div>`;
+  return erpShell('confirmer', t('Commandes à confirmer'), '', `<div class="kboard ksplit">${tools}${barOut}
+    <div class="kspl ${u.open?'open':''}">
+      <div class="kl">${listH}<div class="kl-rows">${rows.map(o=>kRowItem(o,u)).join('') || `<div class="kempty">${t('Aucune commande')}</div>`}</div>${kPager('conf', u._total||0, u.page)}</div>
+      <section class="kp" aria-label="${t('Détail de la commande')}">${kPane(cur)}</section>
+    </div></div>`);
 };
+/* ---------- vue « une seule page » : liste à gauche, commande ouverte à droite (statut, infos, historique) ---------- */
+function kRowItem(o, u){
+  const c=CBY[o.customerId]||{}, p=o.items[0] && PBY[o.items[0].pid];
+  return `<div class="kli ${u.cur===o.id?'on':''}" style="--c:${kColor(o)}"><input type="checkbox" ${u.sel.has(o.id)?'checked':''} data-ch="kSel" data-b="conf" data-id="${o.id}" aria-label="${esc(o.ref)}">
+    <button class="kli-b" data-a="kOpen" data-id="${o.id}" ${u.cur===o.id?'aria-current="true"':''}>
+      <span class="kli-r"><b class="kli-n">${esc(c.name||'—')}</b><span class="num kli-t">${dzd(orderTotal(o))}</span></span>
+      <span class="kli-r kli-m"><span class="trunc">${esc(p? p.name : t('Aucun produit'))}${o.items.length>1? ' +'+(o.items.length-1):''}</span><span>${esc(wName(o.wilaya))}</span></span>
+      <span class="kli-r kli-m"><span class="kli-s">${esc(kLabel(o))}</span><span class="num" dir="ltr">${esc(o.ref)} · ${fTime(o.created)}</span></span>
+    </button></div>`;
+}
+function kHistList(o){ return `<ol class="ktl2">${o.history.slice().reverse().map(h=>`<li style="--c:${kHistColor(h)}"><div class="ktl2-d"><b>${fDate(h.at)}</b><span>${fTime(h.at)}</span></div><div class="ktl2-b"><b>${esc(t(h.action))}</b>${h.note? `<p>${esc(t(h.note))}</p>`:''}<small>${esc(t(h.who))}</small></div></li>`).join('') || `<li>${t('Aucun événement')}</li>`}</ol>`; }
+function kPane(o){
+  if(!o) return `<div class="kp-empty">${ic('pkg')}<p>${t('Aucune commande')}</p></div>`;
+  const c=CBY[o.customerId]||{}, disc=discountAmt(o), row=(k,v)=>`<div><dt>${t(k)}</dt><dd dir="auto">${v||'—'}</dd></div>`;
+  return `<button class="kp-back" data-a="kBack">${ic('chevL','sm')} ${t('Liste')}</button>
+    <header class="kp-h"><div class="kp-who"><span class="kp-ref num" dir="ltr">${esc(o.ref)} · ${fDT(o.created)}</span><h2>${esc(c.name||'—')}</h2><div class="row" style="gap:8px">${kPhone(o)}${kVerify(o)}</div></div>
+      <div class="kp-acts">${PRE_ST.includes(o.status) && kCanConf(o)? `<button class="btn primary sm" data-a="kCall" data-id="${o.id}">${ic('headset','sm')} ${t('Fiche d\'appel')}</button>`:''}${kCanConf(o)? `<button class="btn sm" data-a="kEdit" data-id="${o.id}">${ic('edit','sm')} ${t('Modifier')}</button>`:''}${kCanShip()? `<button class="btn sm" data-a="kSend" data-id="${o.id}" title="${t('Envoyer à la société de livraison')}">${ic('truck','sm')} ${t('Envoyer')}</button>`:''}<button class="kico" data-a="kMenu" data-k="more" data-id="${o.id}" title="${t('Plus')}" aria-label="${t('Plus')}">${ic('more','sm')}</button>${kCanDelete()? `<button class="kico red" data-a="kDel" data-id="${o.id}" title="${t('Supprimer')}" aria-label="${t('Supprimer')}">${ic('trash','sm')}</button>`:''}</div></header>
+    <div class="kp-sec">${kStatusBlock(o)}</div>
+    <div class="kp-sec"><h3>${t('Produit')}</h3><div class="kp-items">${o.items.map(i=>{ const p=PBY[i.pid]||{name:'—'}; return `<div class="kp-item">${p.id? prodArt(p,40):''}<span class="grow">${esc(p.name)}${i.v&&p.variants? ` <span class="muted">(${esc((p.variants.find(v=>v.id===i.v)||{}).label||'')})</span>`:''}</span><span class="num muted">${i.q} × ${dzd(i.price)}</span><b class="num">${dzd(i.q*i.price)}</b></div>`; }).join('') || `<p class="small muted">${t('Aucun produit')}</p>`}</div>
+      <dl class="kp-sum"><div><dt>${t('Livraison')}</dt><dd class="num">${o.freeShip? t('Gratuite') : dzd(feeOf(o))}</dd></div>${disc? `<div><dt>${t('Remise')}</dt><dd class="num">− ${dzd(disc)}</dd></div>`:''}<div class="tot"><dt>${t('Total')}</dt><dd class="num">${dzd(orderTotal(o))}</dd></div></dl></div>
+    <div class="kp-sec"><h3>${t('Livraison')}</h3><dl class="kp-dl">${row('Wilaya', esc(wName(o.wilaya)))}${row('Commune', esc(cName(o.commune)||''))}${row('Adresse', esc(o.address||''))}${row('Type de livraison', t(o.delivery==='home'?'Domicile':'Bureau'))}${row('Société de livraison', kCarrierSelect(o,false))}${row('Confirmé par', esc(agentName(o.agentId)))}${row('Source', esc(t(sourceMeta(o)[0]))+(PLAT[platformOf(o)]? ' · '+PLAT[platformOf(o)][0]:''))}${row('Poids (kg)', kg(orderWeight(o)))}</dl>${o.note? `<p class="kp-note">${ic('note','sm')} ${esc(o.note)}</p>`:''}</div>
+    <div class="kp-sec"><h3>${t('Historique')} <span class="muted">${o.history.length}</span></h3>${kHistList(o)}</div>`;
+}
+A.kOpen = el=>{ const u=S.ui.kc; u.cur=+el.dataset.id; u.open=true; render(); const p=document.querySelector('.kp'); if(p) p.scrollTop=0; if(matchMedia('(max-width:899px)').matches) window.scrollTo(0,0); };
+A.kBack = ()=>{ S.ui.kc.open=false; render(); };
+A.kView = el=>{ S.ui.kc.view=el.dataset.v; try{ localStorage.setItem('pk_kview', el.dataset.v); }catch(e){} render(); };
+A.kMore = ()=>{ S.ui.kc.more=!S.ui.kc.more; render(); };
 function kAssignPop(b, selN){ return `<div class="kpop" style="width:260px;padding:12px"><b class="xs">${t('Assigner un agent de confirmation')}</b>${selN? `<select class="select" id="kAssignSel" style="margin-top:8px"><option value="">—</option>${AGENTS.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join('')}<option value="0">${t('File commune')}</option></select><div class="row" style="gap:6px;margin-top:8px"><button class="btn sm grow" data-a="kPop" data-b="${b}" data-v="assign">${t('Annuler')}</button><button class="btn sm green grow" data-a="kAssign" data-b="${b}">${t('Enregistrer')}</button></div>` : `<p class="small muted" style="margin:8px 0 0">${t('Sélectionnez d\'abord des commandes')}</p>`}</div>`; }
 ['admin','manager','agent'].forEach(r=>ERP_VIEWS[r].confirmer = ()=>viewConfList());
 if(!MENUS.agent[0][1].some(x=>x[0]==='confirmer')) MENUS.agent[0][1].splice(1, 0, ['confirmer','headset','Commandes à confirmer','mine']);
@@ -518,8 +557,8 @@ function kStatusBlock(o){
     <div class="kpills">${kList('conf').map(d=>`<button class="kpill ${d.id===cur.id?'cur':''}" style="${kPillStyle(d.color)}" ${can?`data-a="kStatusSet" data-id="${o.id}" data-v="${esc(d.id)}"`:'disabled'}>${esc(t(d.label))}</button>`).join('')}</div>
     ${can? `<div class="row" style="gap:6px;margin-top:8px"><input class="input" id="kStNote" placeholder="${t('Note du statut (facultatif)')}" value="${esc(o.statusNote||'')}"><button class="btn sm" data-a="kStatusNote" data-id="${o.id}">${t('Enregistrer la note')}</button></div>`:''}</div>`;
 }
-A.kStatusSet = el=>{ const o=ORDERS.find(x=>x.id===+el.dataset.id); const n=document.getElementById('kStNote'); const note = n? n.value.trim() : undefined; if(S.modal) S.modal=null; kConfApply(o, el.dataset.v, note); };
-A.kStatusNote = el=>{ const o=ORDERS.find(x=>x.id===+el.dataset.id); o.statusNote=val('kStNote').trim(); hist(o, 'Note', o.statusNote); toast(t('Note enregistrée'),'ok'); if(S.modal && S.ui.kd===o.id) kDetail(o); else render(); };
+A.kStatusSet = el=>{ const o=ORDERS.find(x=>x.id===+el.dataset.id); const n=el.closest('.kstatusblock').querySelector('#kStNote'); /* la page et la fenêtre de détail peuvent avoir chacune ce champ */ const note = n? n.value.trim() : undefined; if(S.modal) S.modal=null; kConfApply(o, el.dataset.v, note); };
+A.kStatusNote = el=>{ const o=ORDERS.find(x=>x.id===+el.dataset.id); o.statusNote=el.closest('.kstatusblock').querySelector('#kStNote').value.trim(); hist(o, 'Note', o.statusNote); toast(t('Note enregistrée'),'ok'); if(S.modal && S.ui.kd===o.id) kDetail(o); else render(); };
 function kDetail(o){
   S.ui.kd=o.id; const c=CBY[o.customerId]||{};
   const f=[['Nom complet',c.name],['Téléphone',c.phone],['Adresse',o.address],['Société de livraison',kCarrierName(carrierOf(o))],['Type de livraison',o.delivery==='home'?t('Domicile'):t('Bureau')],['Wilaya',wName(o.wilaya)],['Commune',cName(o.commune)],['Finance',t(finDef(o).label)],['Prix de livraison',dzd(feeOf(o))],['Total',dzd(orderTotal(o))],['Confirmé par',agentName(o.agentId)],['Numéro de suivi',o.tracking]];

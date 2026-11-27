@@ -57,6 +57,14 @@ Règle : dans `theme.css`, toute nouvelle classe doit être unique (chercher le 
 
 Non fait : l’application mobile (`mobile/`) garde son apparence.
 
+## 26 novembre 2026 (2) — Commandes à confirmer sur une seule page
+
+| Demande | Ce qui a été fait | Où |
+| --- | --- | --- |
+| Voir la commande, changer le statut et voir l'historique au même endroit | Vue « Une page » (par défaut) : statuts en onglets en haut, liste compacte à gauche (nom, total, produit, wilaya, statut, heure), commande ouverte à droite : client et téléphone, actions (fiche d'appel, modifier, envoyer), boutons de statut + note, produits et total, livraison, historique. Sur téléphone : la liste, puis la commande en plein écran avec « Liste » pour revenir. Bouton « Tableau » pour l'ancienne vue (choix gardé dans le navigateur). Les filtres détaillés se replient derrière « Filtres » | `assets/kando.js` (`kRowItem`, `kPane`, `kHistList`), `assets/extra.css` (fin) |
+
+Non fait : l'application mobile (`mobile/`) garde son écran actuel.
+
 ## 26 novembre 2026 — changements du site (20-23 nov.) portés dans l'application, APK 32 bits
 
 | Demande (site) | Dans l'application | Où |

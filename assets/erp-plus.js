@@ -406,7 +406,7 @@ kTrackCell = (o,c)=> c.key==='history'? histCell(o) : _kTrackCellH(o,c);
 A.kTimeline = el=>{
   const o=ORDERS.find(x=>x.id===+el.dataset.id); if(!o) return; const c=CBY[o.customerId]||{};
   openModal(modalTpl(t('Historique de la commande')+' · '+esc(o.ref), `<div class="khead"><b>${esc(c.name||'—')}</b><span class="muted small" dir="ltr">${esc(c.phone||'')}</span><span class="kpill" style="${kPillStyle(kColor(o))}">${esc(kLabel(o))}</span></div>
-    <ol class="ktl2">${o.history.slice().reverse().map(h=>`<li style="--c:${kHistColor(h)}"><div class="ktl2-d"><b>${fDate(h.at)}</b><span>${fTime(h.at)}</span></div><div class="ktl2-b"><b>${esc(t(h.action))}</b>${h.note? `<p>${esc(t(h.note))}</p>`:''}<small>${esc(t(h.who))}</small></div></li>`).join('') || `<li>${t('Aucun événement')}</li>`}</ol>`,
+    ${kHistList(o)}`,
     `<button class="btn" data-a="closeModal">${t('Fermer')}</button>${kCanConf(o) && PRE_ST.includes(o.status)? `<button class="btn primary" data-a="kCall" data-id="${o.id}">${ic('headset','sm')} ${t('Fiche d\'appel')}</button>`:''}`));
 };
 /* annuler l'envoi : le colis est supprimé chez la société de livraison, la commande revient
