@@ -109,7 +109,7 @@ async function syncNow(){
   }
 }
 let syncTimer; function queueSync(){ clearTimeout(syncTimer); syncTimer=setTimeout(syncNow, 400); }
-function softRender(){ const ae=document.activeElement; if(S.modal || (ae && /INPUT|SELECT|TEXTAREA/.test(ae.tagName))) NET.pendingRender=true; else { NET.pendingRender=false; render(); } }
+function softRender(){ quietRender(); } // voir quietRender (app.js) : attend la fin du défilement et de la saisie
 
 /* Nouvelles commandes sans agent : la répartition (règles de app.js) tourne sur les postes d'encadrement. */
 function autoAssign(){

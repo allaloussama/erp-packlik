@@ -2,6 +2,13 @@
 
 Journal des changements, du plus récent au plus ancien. La fiche agent (`AGENTS.md`) explique comment le code est construit.
 
+## 27 novembre 2026 (7) — ERP sur téléphone : plus de « rechargement » en défilant ; arabe à chaque visite
+
+| Demande | Ce qui a été fait | Où |
+| --- | --- | --- |
+| Le problème de rechargement en défilant (produits, commandes) persiste | Vraie cause (vue en direct) : toutes les 30 s, l'ERP redessinait la page entière pour les comptes à rebours, sur **toutes** les pages, même en plein défilement ; la synchro aussi dès qu'une donnée change. Sur téléphone, redessiner pendant un glissement coupe l'élan et fait clignoter les photos. Maintenant : `quietRender()` — aucun rendu en arrière-plan pendant un défilement / toucher (attend 2 s de calme) ni pendant une saisie ; la minuterie de 30 s ne redessine que s'il y a un `.countdown` à l'écran ; `softRender()` passe par `quietRender()` | `assets/app.js` (`quietRender`, minuterie 30 s), `assets/backend.js` (`softRender`) |
+| L'arabe n'apparaissait pas par défaut | Le choix de langue était mémorisé pour toujours (un clic sur EN gardait l'anglais). Maintenant chaque nouvelle visite s'ouvre en arabe ; un autre choix ne dure que le temps de l'onglet (`sessionStorage`). Application mobile : arabe par défaut si aucune langue n'a été choisie | `assets/app.js` (`S.lang`, `A.lang`), `mobile/lib/state.dart` |
+
 ## 27 novembre 2026 (6) — Pixel Meta réellement relié (PageView, ViewContent, AddToCart, InitiateCheckout, Purchase)
 
 | Demande | Ce qui a été fait | Où |

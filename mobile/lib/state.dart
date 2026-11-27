@@ -24,7 +24,7 @@ final prefsProvider = Provider<SharedPreferences>((ref) => throw UnimplementedEr
 /// Langue de l'application (fr / ar), gardée sur le téléphone.
 class LangNotifier extends Notifier<String> {
   @override
-  String build() => ref.read(prefsProvider).getString('lang') ?? 'fr';
+  String build() => ref.read(prefsProvider).getString('lang') ?? 'ar'; // arabe par défaut (comme le site)
 
   void set(String l) {
     state = l;

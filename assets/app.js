@@ -530,7 +530,7 @@ const NOTIFS = [];
    NOYAU : i18n, icônes, formats, état, règles métier
    ============================================================ */
 const S = {
-  lang:(()=>{ try{ const l=localStorage.getItem('pk_lang'); return ['ar','fr','en'].includes(l)? l : 'ar'; }catch(e){ return 'ar'; } })(), // arabe par défaut, sinon le dernier choix du visiteur
+  lang:(()=>{ try{ const l=sessionStorage.getItem('pk_lang'); return ['ar','fr','en'].includes(l)? l : 'ar'; }catch(e){ return 'ar'; } })(), // arabe à chaque nouvelle visite ; un autre choix ne dure que le temps de l'onglet
   role:'admin', agentId:4, cart:[], favs:new Set([5,24]), compare:new Set(),
   period:'30', drawer:null, modal:null, erpCollapsed:false, mOpen:false,
   ui:{}, heroIdx:0, lastOrderRef:null, editCart:null
@@ -2367,6 +2367,17 @@ const ERP_VIEWS = {
 };
 const ROLE_HOME = {admin:'dashboard', gerant:'dashboard', manager:'dashboard', agent:'mafile', fournisseur:'dashboard'};
 let lastPath = '';
+/* Rendus en arrière-plan (synchro, comptes à rebours) : jamais pendant que l'utilisateur fait défiler ou touche l'écran,
+   ni pendant une saisie — sur téléphone, redessiner en plein défilement coupe l'élan et fait clignoter les photos (« la page se recharge »). */
+let lastUserMove = 0, quietTimer = null;
+['scroll','wheel','touchstart','touchmove','pointerdown'].forEach(ev=>document.addEventListener(ev, ()=>{ lastUserMove=Date.now(); }, {passive:true, capture:true}));
+function quietRender(){
+  clearTimeout(quietTimer);
+  const ae=document.activeElement;
+  if(S.modal || (ae && /INPUT|SELECT|TEXTAREA/.test(ae.tagName))){ NET.pendingRender=true; return; } // repris à la sortie du champ
+  const wait = 2000-(Date.now()-lastUserMove); if(wait>0){ quietTimer=setTimeout(quietRender, wait+50); return; }
+  NET.pendingRender=false; render();
+}
 /* chemin CSS d'un élément depuis la racine (pour le retrouver après un nouveau rendu) */
 function domPath(el, root){ const p=[]; for(; el && el!==root; el=el.parentElement){ p.unshift(el.tagName.toLowerCase()+':nth-child('+(Array.prototype.indexOf.call(el.parentElement.children, el)+1)+')'); } return ':scope > '+p.join(' > '); }
 function render(){
@@ -2452,7 +2463,7 @@ function rerender(){ render(); }
 
 /* ---------- actions (clic) ---------- */
 const A = {
-  lang:(el)=>{ S.lang = el.dataset.v; try{ localStorage.setItem('pk_lang', S.lang); }catch(e){} render(); },
+  lang:(el)=>{ S.lang = el.dataset.v; try{ sessionStorage.setItem('pk_lang', S.lang); }catch(e){} render(); },
   toggleSide:()=>{ if(window.innerWidth<=900) S.mOpen=!S.mOpen; else S.erpCollapsed=!S.erpCollapsed; render(); },
   notifs:()=>{ openModal(modalTpl(t('Notifications'), NOTIFS.length? NOTIFS.slice(0,20).map(n=>`<div class="row between" style="padding:8px 0;border-bottom:1px solid var(--line2)"><span class="small">${esc(n.txt)}</span><span class="xs muted">${ago(n.at)}</span></div>`).join('') : `<div class="empty">${ic('bell')}<div>${t('Aucune notification. Passez une commande sur la boutique pour la voir arriver ici.')}</div></div>`, `<button class="btn" data-a="clearNotifs">${t('Tout effacer')}</button>`)); },
   clearNotifs:()=>{ NOTIFS.length=0; closeModal(); render(); },
@@ -2815,5 +2826,5 @@ setInterval(()=>{
   // rappels à l'heure (agent)
   if(S.role==='agent') ORDERS.filter(o=>o.agentId===S.agentId && o.nextCall && CONF_ST.includes(o.status) && o.nextCall-Date.now()<5*MIN && !notified.has(o.id+'_'+o.nextCall)).forEach(o=>{ notified.add(o.id+'_'+o.nextCall); toast(t('Rappel')+' : '+o.ref+' · '+CBY[o.customerId].name+' '+t('à')+' '+fTime(o.nextCall)); });
   // rafraîchir les comptes à rebours si aucun champ n'est en cours d'édition
-  const ae=document.activeElement; if(location.hash.startsWith('#/erp') && !S.modal && !(ae && /INPUT|SELECT|TEXTAREA/.test(ae.tagName))) render();
+  if(location.hash.startsWith('#/erp') && document.querySelector('.countdown')) quietRender(); // seulement s'il y a un compte à rebours à l'écran
 }, 30000);
