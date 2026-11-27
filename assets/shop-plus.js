@@ -183,10 +183,18 @@ function pdpLayout(){ const l=site().pdp||{}; const order=(Array.isArray(l.order
 function defaultSlides(){ const img=id=>PBY[id] && (PBY[id].images||[])[0] || '';
   return [{badge:'Emballage personnalisé', title:'Prix compétitifs – emballage personnalisé selon votre marque', text:'Boîtes, barquettes, bowls, sacs craft et papier imprimés à votre logo, pour restaurants, fast-foods et pâtisseries.', button:'Contactez-nous', link:'#/contact', img:img(5), bg:'#F4F3F0', color:'#1B232B', on:true},
     {badge:'PACK PROMO', title:'Offres exclusives à ne pas manquer', text:'Des packs complets prêts à l\'emploi pour démarrer votre service à emporter au meilleur prix.', button:'Acheter', link:'#/categorie/pack-promo', img:img(45), bg:'#182028', color:'#FFFFFF', on:true}]; }
+const isVid = u => /\.(mp4|webm)(\?|$)/i.test(u||'');
+function bannerMedia(x){
+  const alt=esc(t(x.title||'')), one=(u,cls)=> isVid(u)? `<video class="${cls}" src="${esc(u)}" autoplay muted loop playsinline preload="metadata" aria-label="${alt}"></video>` : `<img class="${cls}" src="${esc(u)}" alt="${alt}">`;
+  if(!x.bannerM) return one(x.banner,'');
+  if(!isVid(x.banner) && !isVid(x.bannerM)) return `<picture><source media="(max-width:640px)" srcset="${esc(x.bannerM)}"><img src="${esc(x.banner)}" alt="${alt}"></picture>`;
+  return one(x.banner,'bn-d')+one(x.bannerM,'bn-m');
+}
 function heroHtml(){
   const sl=(site().slides||[]).filter(x=>x.on!==false); if(!sl.length) return null;
   if(S.heroIdx>=sl.length) S.heroIdx=0;
-  return `<section class="hero" aria-roledescription="carrousel">${sl.map((x,i)=>`<div class="slide ${S.heroIdx===i?'on':''}" style="background:${esc(x.bg||'#F4F3F0')};color:${esc(x.color||'#1B232B')}">
+  const href = x => esc(/^(#|https?:)/.test(x.link||'')? x.link : '#/');
+  return `<section class="hero" aria-roledescription="carrousel">${sl.map((x,i)=> x.banner? (x.link? `<a class="slide banner ${S.heroIdx===i?'on':''}" href="${href(x)}">${bannerMedia(x)}</a>` : `<div class="slide banner ${S.heroIdx===i?'on':''}">${bannerMedia(x)}</div>`) : `<div class="slide ${S.heroIdx===i?'on':''}" style="background:${esc(x.bg||'#F4F3F0')};color:${esc(x.color||'#1B232B')}">
       <div style="position:relative;z-index:1">${x.badge?`<span class="badge kraft">${esc(t(x.badge))}</span>`:''}<h2 style="margin-top:10px;color:inherit">${esc(t(x.title||''))}</h2>${x.text?`<p style="color:inherit;opacity:.85">${esc(t(x.text))}</p>`:''}${x.button?`<a href="${esc(/^(#|https?:)/.test(x.link||'')? x.link : '#/')}" class="btn primary lg">${esc(t(x.button))}</a>`:''}</div>
       <div class="art">${x.img? `<img src="${esc(x.img)}" alt="" style="width:100%;height:100%;object-fit:contain">`:''}</div></div>`).join('')}
     ${sl.length>1? `<div class="dots">${sl.map((_,i)=>`<button class="${S.heroIdx===i?'on':''}" data-a="hero" data-v="${i}" aria-label="Slide ${i+1}"></button>`).join('')}</div>`:''}</section>`;
@@ -212,10 +220,11 @@ function viewSite(){
     const sl = s.slides && s.slides.length? s.slides : null;
     inner = `<div class="card-b row between wrap"><span class="small muted">${t('Photo, badge, titre, texte, bouton, lien et couleurs de chaque slide. Les slides défilent toutes les 5 secondes.')}</span><div class="row">${sl?'':`<button class="btn" data-a="slInit">${ic('copy','sm')} ${t('Partir des slides actuelles')}</button>`}<button class="btn primary" data-a="slAdd">${ic('plus','sm')} ${t('Ajouter une slide')}</button></div></div>
     <div class="card-b col" style="gap:14px;padding-top:0">${(sl||[]).map((x,i)=>`<div class="sl-card ${x.on===false?'off':''}">
-      <div class="sl-prev" style="background:${esc(x.bg||'#F4F3F0')};color:${esc(x.color||'#1B232B')}"><div><small>${esc(x.badge||'')}</small><b>${esc(x.title||t('Titre'))}</b></div>${x.img?`<img src="${esc(x.img)}" alt="">`:''}</div>
+      ${x.banner? `<div class="sl-prev sl-banner">${isVid(x.banner)? `<video src="${esc(x.banner)}" muted autoplay loop playsinline></video>` : `<img src="${esc(x.banner)}" alt="">`}</div>` : `<div class="sl-prev" style="background:${esc(x.bg||'#F4F3F0')};color:${esc(x.color||'#1B232B')}"><div><small>${esc(x.badge||'')}</small><b>${esc(x.title||t('Titre'))}</b></div>${x.img?`<img src="${esc(x.img)}" alt="">`:''}</div>`}
       <div class="col grow" style="gap:8px;min-width:0">
         <div class="grid3">${slF(i,'badge','Badge')}${slF(i,'title','Titre')}${slF(i,'button','Texte du bouton')}</div>
         <div class="grid3">${slF(i,'text','Texte')}${slF(i,'link','Lien du bouton')}<div class="row" style="gap:8px;align-items:end"><label class="field" style="flex:1">${t('Fond')}<input class="input" type="color" data-sl="${i}" data-k="bg" value="${esc(x.bg||'#F4F3F0')}" style="height:38px;padding:3px"></label><label class="field" style="flex:1">${t('Texte')}<input class="input" type="color" data-sl="${i}" data-k="color" value="${esc(x.color||'#1B232B')}" style="height:38px;padding:3px"></label></div></div>
+        <div class="sl-bn row wrap" style="gap:6px"><b class="small">${t('Bannière plein cadre')}</b><button class="btn sm" data-a="slBanner" data-k="banner" data-i="${i}">${ic('upload','sm')} ${t(x.banner?'Changer (ordinateur)':'Image ou vidéo (ordinateur)')}</button>${x.banner?`<button class="btn sm" data-a="slBanner" data-k="bannerM" data-i="${i}">${ic('upload','sm')} ${t(x.bannerM?'Changer (téléphone)':'Version téléphone (facultatif)')}</button><button class="btn sm ghost" data-a="slBannerDel" data-i="${i}">${t('Retirer la bannière')}</button>`:''}<span class="xs muted">${t('Une image ou une vidéo MP4 faite dans n\x27importe quel outil remplace le texte et la photo ; le lien du bouton rend la bannière cliquable.')}</span></div>
         <div class="row wrap" style="gap:6px"><button class="btn sm" data-a="slImg" data-i="${i}">${ic('upload','sm')} ${t(x.img?'Changer la photo':'Ajouter une photo')}</button>${x.img?`<button class="btn sm ghost" data-a="slImgDel" data-i="${i}">${t('Retirer la photo')}</button>`:''}<label class="check small"><input type="checkbox" data-sl="${i}" data-k="on" ${x.on!==false?'checked':''}> ${t('Affichée')}</label><span class="grow"></span><button class="btn icon sm ghost" data-a="slMove" data-i="${i}" data-v="-1" ${i?'':'disabled'} aria-label="${t('Monter')}">${ic('arrowU','sm')}</button><button class="btn icon sm ghost" data-a="slMove" data-i="${i}" data-v="1" ${i<sl.length-1?'':'disabled'} aria-label="${t('Descendre')}">${ic('arrowD','sm')}</button><button class="btn icon sm ghost" data-a="slDel" data-i="${i}" aria-label="${t('Supprimer')}">${ic('trash','sm')}</button></div>
       </div></div>`).join('') || `<div class="empty">${ic('grid')}<div>${t('Les slides par défaut sont affichées. Partez d\'elles ou ajoutez la vôtre.')}</div></div>`}</div>`;
   }
@@ -257,6 +266,8 @@ A.slAdd = ()=>{ const s=site(); s.slides=(s.slides&&s.slides.length? s.slides : 
 A.slDel = el=>{ if(!confirm(t('Supprimer cette slide ?'))) return; site().slides.splice(+el.dataset.i,1); slSave(); };
 A.slMove = el=>{ const a=site().slides, i=+el.dataset.i, j=i+(+el.dataset.v); [a[i],a[j]]=[a[j],a[i]]; slSave(); };
 A.slImg = async el=>{ const f=await pickFile('image/jpeg,image/png,image/webp'); if(!f) return; try{ site().slides[+el.dataset.i].img=await uploadFile(f); slSave(); }catch(e){ toast(esc(e.message),'bad'); } };
+A.slBanner = async el=>{ const f=await pickFile('image/jpeg,image/png,image/webp,video/mp4,video/webm'); if(!f) return; try{ site().slides[+el.dataset.i][el.dataset.k]=await uploadFile(f); slSave(); }catch(e){ toast(esc(e.message),'bad'); } };
+A.slBannerDel = el=>{ const x=site().slides[+el.dataset.i]; x.banner=''; x.bannerM=''; slSave(); };
 A.slImgDel = el=>{ site().slides[+el.dataset.i].img=''; slSave(); };
 document.addEventListener('change', e=>{
   const sl=e.target.closest('[data-sl]'); if(sl){ const x=site().slides[+sl.dataset.sl]; x[sl.dataset.k] = sl.type==='checkbox'? sl.checked : sl.value; slSave(); return; }

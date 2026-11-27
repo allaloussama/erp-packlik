@@ -2,6 +2,15 @@
 
 Journal des changements, du plus récent au plus ancien. La fiche agent (`AGENTS.md`) explique comment le code est construit.
 
+## 27 novembre 2026 (3) — Bannières de slides, boutons téléphone, photo en plein écran
+
+| Demande | Ce qui a été fait | Où |
+| --- | --- | --- |
+| Importer un modèle Slider Revolution dans les slides | Impossible tel quel (extension WordPress payante, son moteur ne tourne pas ici). À la place : chaque slide peut devenir une **bannière plein cadre** — image ou vidéo MP4/WEBM envoyée depuis ERP › Boutique › Slides, avec une version téléphone facultative ; le lien du bouton rend la bannière cliquable. Champs `banner` / `bannerM` de la slide | `assets/shop-plus.js` (`bannerMedia`, `heroHtml`, `A.slBanner`, `A.slBannerDel`), `assets/theme.css` |
+| Photo de slide qui débordait (ordinateur) | La photo est un carré arrondi de 340 px max, photo entière sur fond blanc | `assets/theme.css` |
+| Boutons des cartes produit sur téléphone comme avant | « Ajouter au panier » et « Acheter maintenant » de nouveau en deux boutons pleine largeur avec leur texte (taille du texte adaptée à l'écran) | `assets/theme.css` |
+| Photo du produit en plein écran au clic | Visionneuse : flèches, clavier (← → Échap), glisser du doigt, compteur ; revient sur la dernière photo vue. Désactivée dans l'aperçu de l'éditeur de pages | `assets/tajer.js` (`lbOpen`), `assets/theme.css` (`.lb`) |
+
 ## 27 novembre 2026 (2) — Boutique optimisée pour téléphone (style WoodMart)
 
 | Demande | Ce qui a été fait | Où |
