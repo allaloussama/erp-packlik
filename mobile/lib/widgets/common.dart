@@ -8,16 +8,21 @@ import '../models.dart';
 import '../state.dart';
 import '../theme.dart';
 
+/// Fond gris clair des photos (thème moderne du site, assets/theme.css : --well).
+const kWell = Color(0xFFF4F3F0);
+
 /// Photo du site (ou pictogramme si le produit n'en a pas).
+/// [blend] : le fond blanc de la photo se fond dans le gris (comme `mix-blend-mode:multiply` sur le site).
 class NetImg extends StatelessWidget {
-  const NetImg(this.url, {super.key, this.fit = BoxFit.contain});
+  const NetImg(this.url, {super.key, this.fit = BoxFit.contain, this.blend = false});
   final String url;
   final BoxFit fit;
+  final bool blend;
 
   @override
   Widget build(BuildContext context) {
-    if (url.isEmpty) return const ColoredBox(color: Color(0xFFFFF1E6), child: Center(child: Icon(Icons.inventory_2_outlined, color: kOrange, size: 36)));
-    return Image.network(url, fit: fit,
+    if (url.isEmpty) return const ColoredBox(color: kWell, child: Center(child: Icon(Icons.inventory_2_outlined, color: kMuted, size: 36)));
+    return Image.network(url, fit: fit, color: blend ? kWell : null, colorBlendMode: blend ? BlendMode.multiply : null,
         errorBuilder: (_, _, _) => const ColoredBox(color: Color(0xFFF4F5F6), child: Center(child: Icon(Icons.image_not_supported_outlined, color: kMuted))),
         loadingBuilder: (c, child, p) => p == null ? child : const ColoredBox(color: Color(0xFFF4F5F6)));
   }
@@ -34,52 +39,52 @@ class ProductCard extends ConsumerWidget {
     final lang = ref.watch(langProvider);
     final out = !p.isQuote && !p.canOrder;
     final simple = p.variants.isEmpty && !p.isQuote;
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => context.push('/produit/${p.id}'),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          AspectRatio(aspectRatio: 1, child: Stack(fit: StackFit.expand, children: [
-            ColoredBox(color: Colors.white, child: NetImg(p.images.isEmpty ? '' : p.images.first)),
-            if (out || p.isNew || p.badge.isNotEmpty)
-              PositionedDirectional(top: 8, start: 8, child: _Tag(out ? tr(lang, 'Rupture') : p.badge.isNotEmpty ? p.badge : tr(lang, 'Nouveau'), out ? kRed : kOrange)),
-          ])),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(p.title(lang), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, height: 1.25)),
-              const SizedBox(height: 4),
-              PriceText(p: p, lang: lang, size: 14),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 34,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(minimumSize: Size.zero, padding: EdgeInsets.zero, textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
-                  onPressed: out ? null : () {
-                    if (!simple) {
-                      context.push('/produit/${p.id}');
-                      return;
-                    }
-                    ref.read(cartProvider.notifier).add(CartLine(pid: p.id, q: p.minQty));
-                    onAdded?.call();
-                    showAddedSnack(context, lang);
-                  },
-                  child: Text(simple ? tr(lang, 'Ajouter au panier') : p.isQuote ? tr(lang, 'Demander un devis') : tr(lang, 'Choisir une option'), maxLines: 1),
-                ),
-              ),
-              const SizedBox(height: 6),
-              SizedBox(
-                height: 34,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: kInk, foregroundColor: Colors.white, minimumSize: Size.zero, padding: EdgeInsets.zero, textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
-                  onPressed: () => context.push('/produit/${p.id}'),
-                  child: Text(tr(lang, 'Acheter maintenant'), maxLines: 1),
-                ),
-              ),
-            ]),
+    const pill = StadiumBorder();
+    const label = TextStyle(fontSize: 12, fontWeight: FontWeight.w600);
+    // design du site (assets/theme.css) : pas de cadre, photo sur fond gris arrondi, prix en noir,
+    // « Ajouter au panier » blanc à bordure, « Acheter maintenant » orange — deux boutons pleine largeur
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () => context.push('/produit/${p.id}'),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        AspectRatio(aspectRatio: 1, child: ClipRRect(borderRadius: BorderRadius.circular(16), child: Stack(fit: StackFit.expand, children: [
+          ColoredBox(color: kWell, child: Padding(padding: const EdgeInsets.all(14), child: NetImg(p.images.isEmpty ? '' : p.images.first, blend: true))),
+          if (out || p.isNew || p.badge.isNotEmpty)
+            PositionedDirectional(top: 8, start: 8, child: _Tag(out ? tr(lang, 'Rupture') : p.badge.isNotEmpty ? p.badge : tr(lang, 'Nouveau'), out ? kRed : kInk)),
+        ]))),
+        const SizedBox(height: 8),
+        Text(p.title(lang), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13, height: 1.3)),
+        const SizedBox(height: 4),
+        PriceText(p: p, lang: lang, size: 15),
+        const Spacer(),
+        SizedBox(
+          height: 36,
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 6), shape: pill, backgroundColor: Colors.white, foregroundColor: kInk, side: const BorderSide(color: kLine), textStyle: label),
+            onPressed: out ? null : () {
+              if (!simple) {
+                context.push('/produit/${p.id}');
+                return;
+              }
+              ref.read(cartProvider.notifier).add(CartLine(pid: p.id, q: p.minQty));
+              onAdded?.call();
+              showAddedSnack(context, lang);
+            },
+            icon: const Icon(Icons.shopping_cart_outlined, size: 15),
+            label: FittedBox(fit: BoxFit.scaleDown, child: Text(simple ? tr(lang, 'Ajouter au panier') : p.isQuote ? tr(lang, 'Demander un devis') : tr(lang, 'Choisir une option'), maxLines: 1)),
           ),
-        ]),
-      ),
+        ),
+        const SizedBox(height: 6),
+        SizedBox(
+          height: 36,
+          child: FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: kOrange, foregroundColor: Colors.white, minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 6), shape: pill, textStyle: label),
+            onPressed: () => context.push('/produit/${p.id}'),
+            icon: const Icon(Icons.bolt, size: 15),
+            label: FittedBox(fit: BoxFit.scaleDown, child: Text(tr(lang, 'Acheter maintenant'), maxLines: 1)),
+          ),
+        ),
+      ]),
     );
   }
 }
@@ -100,8 +105,8 @@ class _Tag extends StatelessWidget {
   final Color color;
   @override
   Widget build(BuildContext context) => DecoratedBox(
-        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6)),
-        child: Padding(padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3), child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700))),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6), boxShadow: const [BoxShadow(color: Color(0x14111418), blurRadius: 2, offset: Offset(0, 1))]),
+        child: Padding(padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3), child: Text(text, style: TextStyle(color: color, fontSize: 10.5, fontWeight: FontWeight.w600))),
       );
 }
 
@@ -117,7 +122,7 @@ class PriceText extends StatelessWidget {
     if (p.isQuote) return Text(tr(lang, 'Prix sur devis'), style: TextStyle(fontWeight: FontWeight.w800, fontSize: size, color: kOrange));
     final price = unit ?? (p.variants.isEmpty ? p.price : p.variants.map((v) => v.price).reduce((a, b) => a < b ? a : b));
     return Wrap(crossAxisAlignment: WrapCrossAlignment.end, spacing: 6, children: [
-      Text('${p.variants.isNotEmpty && unit == null ? '${tr(lang, 'À partir de')} ' : ''}${dzd(price, lang: lang)}', style: TextStyle(fontWeight: FontWeight.w800, fontSize: size, color: kOrange)),
+      Text('${p.variants.isNotEmpty && unit == null ? '${tr(lang, 'À partir de')} ' : ''}${dzd(price, lang: lang)}', style: TextStyle(fontWeight: FontWeight.w800, fontSize: size, color: kInk)), // prix en noir, comme le site
       if (p.oldPrice > price) Text(dzd(p.oldPrice, lang: lang), style: TextStyle(fontSize: size - 3, color: kMuted, decoration: TextDecoration.lineThrough)),
     ]);
   }
@@ -162,5 +167,73 @@ class CatalogGate extends ConsumerWidget {
             ]),
           )),
         );
+  }
+}
+
+/// Photo du produit en plein écran (comme le site) : glisser pour changer de photo, pincer pour zoomer, compteur, fermer.
+void openPhotoViewer(BuildContext context, List<String> images, int start, String title) {
+  Navigator.of(context).push(PageRouteBuilder(
+    opaque: false,
+    barrierColor: const Color(0xF00A0C0E),
+    pageBuilder: (_, _, _) => _PhotoViewer(images: images, start: start, title: title),
+    transitionsBuilder: (_, a, _, child) => FadeTransition(opacity: a, child: child),
+  ));
+}
+
+class _PhotoViewer extends StatefulWidget {
+  const _PhotoViewer({required this.images, required this.start, required this.title});
+  final List<String> images;
+  final int start;
+  final String title;
+  @override
+  State<_PhotoViewer> createState() => _PhotoViewerState();
+}
+
+class _PhotoViewerState extends State<_PhotoViewer> {
+  late final _ctrl = PageController(initialPage: widget.start);
+  late int _i = widget.start;
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final n = widget.images.length;
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        child: Stack(children: [
+          PageView.builder(
+            controller: _ctrl,
+            itemCount: n,
+            onPageChanged: (i) => setState(() => _i = i),
+            itemBuilder: (_, i) => InteractiveViewer(
+              maxScale: 4,
+              child: Center(child: Semantics(label: widget.title, image: true, child: ColoredBox(color: Colors.white, child: NetImg(widget.images[i])))),
+            ),
+          ),
+          PositionedDirectional(
+            top: 8, end: 8,
+            child: IconButton.filledTonal(
+              tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+              style: IconButton.styleFrom(backgroundColor: Colors.white24, foregroundColor: Colors.white),
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close),
+            ),
+          ),
+          if (n > 1)
+            Positioned(
+              bottom: 18, left: 0, right: 0,
+              child: Center(child: DecoratedBox(
+                decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(999)),
+                child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5), child: Text('${_i + 1} / $n', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13))),
+              )),
+            ),
+        ]),
+      ),
+    );
   }
 }

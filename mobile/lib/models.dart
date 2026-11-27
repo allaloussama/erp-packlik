@@ -149,11 +149,27 @@ class Wilaya {
 }
 
 class Slide {
-  const Slide({this.badge = '', this.title = '', this.text = '', this.button = '', this.link = '', this.img = '', this.bg = '#FFE7D6', this.color = '#1B232B'});
-  factory Slide.fromJson(Map<String, dynamic> j) => Slide(
-      badge: _s(j['badge']), title: _s(j['title']), text: _s(j['text']), button: _s(j['button']), link: _s(j['link']),
-      img: _s(j['img']).isEmpty ? '' : absUrl(_s(j['img'])), bg: _s(j['bg']).isEmpty ? '#FFE7D6' : _s(j['bg']), color: _s(j['color']).isEmpty ? '#1B232B' : _s(j['color']));
+  const Slide({this.badge = '', this.title = '', this.text = '', this.button = '', this.link = '', this.img = '', this.bg = '#F4F3F0', this.color = '#1B232B', this.banner = '', this.bannerM = '', this.on = true});
+  factory Slide.fromJson(Map<String, dynamic> j) {
+    String url(String k) => _s(j[k]).isEmpty ? '' : absUrl(_s(j[k]));
+    return Slide(
+        badge: _s(j['badge']), title: _s(j['title']), text: _s(j['text']), button: _s(j['button']), link: _s(j['link']),
+        img: url('img'), bg: _s(j['bg']).isEmpty ? '#F4F3F0' : _s(j['bg']), color: _s(j['color']).isEmpty ? '#1B232B' : _s(j['color']),
+        banner: url('banner'), bannerM: url('bannerM'), on: j['on'] != false);
+  }
   final String badge, title, text, button, link, img, bg, color;
+
+  /// Bannière plein cadre (ERP › Boutique › Slides) : image ou vidéo ; [bannerM] = version téléphone facultative.
+  final String banner, bannerM;
+
+  /// Case « Affichée » de la slide.
+  final bool on;
+
+  static bool isVideo(String u) => RegExp(r'\.(mp4|webm)(\?|$)', caseSensitive: false).hasMatch(u);
+
+  /// Image de bannière à montrer dans l'application (version téléphone d'abord). Les vidéos ne sont pas lues ici :
+  /// sans image, la slide s'affiche avec son texte.
+  String get bannerImage => [bannerM, banner].firstWhere((u) => u.isNotEmpty && !isVideo(u), orElse: () => '');
 }
 
 /// Champ du formulaire de commande réglé dans ERP › Boutique › Formulaire.
@@ -194,7 +210,7 @@ class Catalog {
       products: products,
       categories: cats.isNotEmpty ? cats : defaultCategories,
       wilayas: docs('wilayas').map(Wilaya.fromJson).where((w) => w.active).toList()..sort((a, b) => a.id.compareTo(b.id)),
-      slides: _l(site['slides']).map((e) => Slide.fromJson(_m(e))).where((s) => s.title.isNotEmpty || s.img.isNotEmpty).toList(),
+      slides: _l(site['slides']).map((e) => Slide.fromJson(_m(e))).where((s) => s.on && (s.title.isNotEmpty || s.img.isNotEmpty || s.bannerImage.isNotEmpty)).toList(),
       formTitle: _s(form['title']),
       formButton: _s(form['button']),
       fields: _l(form['fields']).map((e) => OrderField.fromJson(_m(e))).toList(),

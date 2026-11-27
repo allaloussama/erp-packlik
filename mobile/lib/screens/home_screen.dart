@@ -37,24 +37,26 @@ class HomeScreen extends ConsumerWidget {
             if (c.slides.isNotEmpty) _Slides(slides: c.slides, lang: lang) else const _Hero(),
             const _Perks(),
             _Head(tr(lang, 'Catégories'), onAll: () => context.go('/boutique')),
+            // catégories en carrousel, photo sur fond gris (comme le site sur téléphone)
             SizedBox(
-              height: 116,
+              height: 150,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 itemCount: popular.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 10),
+                separatorBuilder: (_, _) => const SizedBox(width: 12),
                 itemBuilder: (context, i) {
                   final cat = popular[i];
                   final img = cat.img.isNotEmpty ? cat.img : (c.products.where((p) => p.cats.contains(cat.id) && p.images.isNotEmpty).map((p) => p.images.first).firstOrNull ?? '');
                   return InkWell(
                     key: ValueKey(cat.id),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     onTap: () => context.go('/boutique?cat=${cat.id}'),
-                    child: SizedBox(width: 84, child: Column(children: [
-                      ClipRRect(borderRadius: BorderRadius.circular(14), child: SizedBox(width: 76, height: 76, child: ColoredBox(color: Colors.white, child: NetImg(img, fit: BoxFit.cover)))),
+                    child: SizedBox(width: 104, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      ClipRRect(borderRadius: BorderRadius.circular(14), child: SizedBox(width: 104, height: 104, child: ColoredBox(color: kWell, child: Padding(padding: const EdgeInsets.all(14), child: NetImg(img, blend: true))))),
                       const SizedBox(height: 6),
-                      Text(cat.name(lang), maxLines: 2, textAlign: TextAlign.center, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600)),
+                      Text(cat.name(lang), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
+                      Text('${c.countIn(cat.id)} ${tr(lang, 'produits')}', maxLines: 1, style: const TextStyle(fontSize: 11, color: kMuted)),
                     ])),
                   );
                 },
@@ -80,7 +82,7 @@ class ProductGrid extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 14),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: cols, crossAxisSpacing: 10, mainAxisSpacing: 10, mainAxisExtent: (box.maxWidth - 28 - (cols - 1) * 10) / cols + 160),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: cols, crossAxisSpacing: 12, mainAxisSpacing: 22, mainAxisExtent: (box.maxWidth - 28 - (cols - 1) * 12) / cols + 160),
           itemCount: products.length,
           itemBuilder: (_, i) => ProductCard(key: ValueKey(products[i].id), p: products[i]),
         );
@@ -147,21 +149,31 @@ class _SlidesState extends State<_Slides> {
             child: Stack(children: [
               PageView(controller: _ctrl, onPageChanged: (i) => setState(() => _i = i), children: [
                 for (final s in widget.slides)
-                  ColoredBox(
-                    color: hexColor(s.bg, const Color(0xFFFFE7D6)),
-                    child: Row(children: [
-                      Expanded(flex: 6, child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                          if (s.badge.isNotEmpty) Text(s.badge, style: const TextStyle(color: kOrange, fontWeight: FontWeight.w800, fontSize: 11)),
-                          Text(s.title, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(color: hexColor(s.color, kInk), fontWeight: FontWeight.w800, fontSize: 18, height: 1.15)),
-                          if (s.text.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 6), child: Text(s.text, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: hexColor(s.color, kInk).withValues(alpha: .8), fontSize: 12))),
-                          if (s.button.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 10), child: FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(0, 36)), onPressed: () => _open(s.link), child: Text(s.button))),
-                        ]),
-                      )),
-                      if (s.img.isNotEmpty) Expanded(flex: 4, child: Padding(padding: const EdgeInsets.all(8), child: NetImg(s.img))),
-                    ]),
-                  ),
+                  if (s.bannerImage.isNotEmpty)
+                    // bannière plein cadre : toute l'image est cliquable si un lien est réglé
+                    GestureDetector(onTap: s.link.isEmpty ? null : () => _open(s.link), child: ColoredBox(color: kWell, child: NetImg(s.bannerImage, fit: BoxFit.cover)))
+                  else
+                    ColoredBox(
+                      color: hexColor(s.bg, kWell),
+                      child: Row(children: [
+                        Expanded(flex: 6, child: Padding(
+                          padding: const EdgeInsets.fromLTRB(18, 16, 10, 22),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+                            if (s.badge.isNotEmpty)
+                              DecoratedBox(
+                                decoration: BoxDecoration(color: Colors.white.withValues(alpha: .75), borderRadius: BorderRadius.circular(6)),
+                                child: Padding(padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3), child: Text(s.badge.toUpperCase(), style: const TextStyle(color: kInk, fontWeight: FontWeight.w700, fontSize: 9.5, letterSpacing: .8))),
+                              ),
+                            const SizedBox(height: 6),
+                            Text(s.title, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(color: hexColor(s.color, kInk), fontWeight: FontWeight.w800, fontSize: 19, height: 1.12, letterSpacing: -.3)),
+                            if (s.text.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 6), child: Text(s.text, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: hexColor(s.color, kInk).withValues(alpha: .8), fontSize: 12))),
+                            if (s.button.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 10), child: FilledButton(style: FilledButton.styleFrom(minimumSize: const Size(0, 36), backgroundColor: kInk, foregroundColor: Colors.white, shape: const StadiumBorder(), padding: const EdgeInsets.symmetric(horizontal: 16)), onPressed: () => _open(s.link), child: Text(s.button))),
+                          ]),
+                        )),
+                        // photo de la slide : carré blanc arrondi, photo entière (comme le site)
+                        if (s.img.isNotEmpty) Expanded(flex: 4, child: Padding(padding: const EdgeInsets.fromLTRB(0, 14, 14, 22), child: Center(child: AspectRatio(aspectRatio: 1, child: ClipRRect(borderRadius: BorderRadius.circular(14), child: ColoredBox(color: Colors.white, child: NetImg(s.img))))))),
+                      ]),
+                    ),
               ]),
               if (widget.slides.length > 1)
                 Positioned(bottom: 8, left: 0, right: 0, child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [

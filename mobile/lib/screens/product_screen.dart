@@ -24,6 +24,13 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
   String? _v;
   int? _q;
   int _img = 0;
+  final _gal = PageController();
+
+  @override
+  void dispose() {
+    _gal.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,17 +45,29 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
         final tiers = p.variants.isEmpty && p.tiers.isNotEmpty ? [Tier(min: p.minQty, price: p.price), ...p.tiers] : <Tier>[];
         final related = c.products.where((x) => x.id != p.id && x.status == 'actif' && x.cats.any((k) => k != 'tout' && p.cats.contains(k))).take(6).toList();
         return ListView(padding: const EdgeInsets.only(bottom: 30), children: [
-          AspectRatio(
-            aspectRatio: 1,
-            child: ColoredBox(color: Colors.white, child: p.images.isEmpty ? const NetImg('') : PageView.builder(
-              itemCount: p.images.length, onPageChanged: (i) => setState(() => _img = i),
-              itemBuilder: (_, i) => InteractiveViewer(child: NetImg(p.images[i])),
-            )),
+          // photos sur fond gris ; un appui ouvre la photo en plein écran (comme le site)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: ClipRRect(borderRadius: BorderRadius.circular(18), child: ColoredBox(color: kWell, child: p.images.isEmpty ? const NetImg('') : PageView.builder(
+                controller: _gal,
+                itemCount: p.images.length, onPageChanged: (i) => setState(() => _img = i),
+                itemBuilder: (_, i) => GestureDetector(
+                  onTap: () => openPhotoViewer(context, p.images, i, p.title(lang)),
+                  child: Padding(padding: const EdgeInsets.all(18), child: NetImg(p.images[i], blend: true)),
+                ),
+              ))),
+            ),
           ),
           if (p.images.length > 1)
-            SizedBox(height: 62, child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.fromLTRB(14, 8, 14, 0), children: [
+            SizedBox(height: 66, child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.fromLTRB(14, 8, 14, 0), children: [
               for (var i = 0; i < p.images.length; i++)
-                Container(key: ValueKey(i), width: 54, margin: const EdgeInsetsDirectional.only(end: 6), decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: i == _img ? kOrange : kLine, width: i == _img ? 2 : 1)), clipBehavior: Clip.antiAlias, child: NetImg(p.images[i], fit: BoxFit.cover)),
+                GestureDetector(
+                  key: ValueKey(i),
+                  onTap: () => _gal.animateToPage(i, duration: const Duration(milliseconds: 250), curve: Curves.easeOut),
+                  child: Container(width: 58, margin: const EdgeInsetsDirectional.only(end: 6), decoration: BoxDecoration(color: kWell, borderRadius: BorderRadius.circular(10), border: Border.all(color: i == _img ? kInk : Colors.transparent, width: 2)), clipBehavior: Clip.antiAlias, child: NetImg(p.images[i], blend: true)),
+                ),
             ])),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),

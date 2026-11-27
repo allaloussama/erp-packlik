@@ -2,6 +2,18 @@
 
 Journal des changements, du plus récent au plus ancien. La fiche agent (`AGENTS.md`) explique comment le code est construit.
 
+## 27 novembre 2026 (8) — Changements du site portés dans l'application Android
+
+| Demande (site) | Dans l'application | Où |
+| --- | --- | --- |
+| Thème moderne de la boutique | Cartes produit sans cadre : photo sur fond gris arrondi (fond blanc de la photo fondu, `BlendMode.multiply`), prix en noir, étiquette blanche, « Ajouter au panier » blanc à bordure + « Acheter maintenant » orange, boutons arrondis ; catégories de l'accueil en tuiles grises avec nombre de produits | `mobile/lib/widgets/common.dart` (`kWell`, `NetImg(blend:)`, `ProductCard`, `PriceText`), `mobile/lib/screens/home_screen.dart` |
+| Slides : bannière plein cadre | Une slide avec `banner` / `bannerM` s'affiche en image plein cadre cliquable (version téléphone d'abord). Vidéos non lues dans l'application : la slide garde alors son texte. La case « Affichée » (`on`) est maintenant respectée (avant : ignorée). Photo de slide en carré blanc arrondi | `mobile/lib/models.dart` (`Slide`), `mobile/lib/screens/home_screen.dart` |
+| Photo du produit en plein écran | Appui sur la photo : plein écran, glisser entre les photos, pincer pour zoomer, compteur. Les miniatures changent maintenant la photo affichée | `mobile/lib/screens/product_screen.dart`, `openPhotoViewer` dans `common.dart` |
+| Arabe par défaut | Déjà fait (`state.dart`) | |
+| Construction de l'APK en échec depuis le 27 nov. (12 tests) | Le logo du menu de l'espace équipe (`BrandMark`) débordait de 6,8 px dans le menu de 284 px : texte passé en `Flexible` + « … ». Le rappel « Paiement à la livraison » du formulaire de commande débordait sur petit écran : passe à la ligne. Nouveau test `test/shop_screens_test.dart` (slides, accueil et fiche produit à 360 px en arabe et français, photo plein écran). 34 tests OK | `mobile/lib/erp/erp_app.dart`, `mobile/lib/widgets/cod_form.dart`, `mobile/test/shop_screens_test.dart` |
+
+Non porté : pixel Meta (le pixel ne fonctionne que dans un navigateur ; une application demande le SDK Facebook App Events et son propre réglage chez Meta), vue « une seule page » des commandes à confirmer (l'application suit déjà le schéma liste → fiche), corrections propres au navigateur (rechargement en défilant, panneau noir).
+
 ## 27 novembre 2026 (7) — ERP sur téléphone : plus de « rechargement » en défilant ; arabe à chaque visite
 
 | Demande | Ce qui a été fait | Où |

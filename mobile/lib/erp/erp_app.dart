@@ -371,10 +371,11 @@ class BrandMark extends StatelessWidget {
           child: const Icon(Icons.inventory_2_outlined, color: Colors.white, size: 20),
         ),
         const SizedBox(width: 10),
-        Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-          Text('PackLik', style: TextStyle(color: dark ? Colors.white : kErpInk, fontWeight: FontWeight.w800, fontSize: 17, height: 1.1)),
-          Text('ERP · ESPACE ÉQUIPE', style: TextStyle(color: dark ? const Color(0xFF8996A5) : kErpMuted, fontWeight: FontWeight.w600, fontSize: 10.5, letterSpacing: .7)),
-        ]),
+        // Flexible : le sous-titre se coupe (…) au lieu de déborder du menu (284 px) avec une grande police
+        Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+          Text('PackLik', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: dark ? Colors.white : kErpInk, fontWeight: FontWeight.w800, fontSize: 17, height: 1.1)),
+          Text('ERP · ESPACE ÉQUIPE', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: dark ? const Color(0xFF8996A5) : kErpMuted, fontWeight: FontWeight.w600, fontSize: 10.5, letterSpacing: .7)),
+        ])),
       ]);
 }
 

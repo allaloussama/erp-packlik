@@ -195,7 +195,7 @@ class _CodFormState extends ConsumerState<CodForm> {
             const SizedBox(height: 10),
             Wrap(alignment: WrapAlignment.center, spacing: 14, runSpacing: 6, children: [
               for (final (i, l) in [(Icons.payments_outlined, 'Paiement à la livraison'), (Icons.local_shipping_outlined, 'Livraison 69 wilayas')])
-                Row(mainAxisSize: MainAxisSize.min, children: [Icon(i, size: 16, color: kMuted), const SizedBox(width: 4), Text(tr(lang, l), style: const TextStyle(fontSize: 12, color: kMuted))]),
+                Row(mainAxisSize: MainAxisSize.min, children: [Icon(i, size: 16, color: kMuted), const SizedBox(width: 4), Flexible(child: Text(tr(lang, l), style: const TextStyle(fontSize: 12, color: kMuted)))]), // Flexible : passe à la ligne au lieu de déborder (petit écran, grande police)
             ]),
           ]),
         ),
