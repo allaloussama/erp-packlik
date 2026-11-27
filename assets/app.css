@@ -234,6 +234,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .lang-sw.dark button.on{background:var(--ink);color:#fff}
 
 /* ================= ERP ================= */
+/* glisser vers le bas en haut de page ne recharge plus l'ERP (on perdait sa recherche et sa position) */
+html:has(.erp),html:has(.erp) body{overscroll-behavior-y:contain}
 .erp{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
 .erp.collapsed{grid-template-columns:68px 1fr}
 .side{background:#121920;color:#B4BEC9;position:sticky;top:0;height:100vh;overflow:auto;display:flex;flex-direction:column}

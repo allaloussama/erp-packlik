@@ -530,7 +530,8 @@ const NOTIFS = [];
    NOYAU : i18n, icônes, formats, état, règles métier
    ============================================================ */
 const S = {
-  lang:'fr', role:'admin', agentId:4, cart:[], favs:new Set([5,24]), compare:new Set(),
+  lang:(()=>{ try{ const l=localStorage.getItem('pk_lang'); return ['ar','fr','en'].includes(l)? l : 'ar'; }catch(e){ return 'ar'; } })(), // arabe par défaut, sinon le dernier choix du visiteur
+  role:'admin', agentId:4, cart:[], favs:new Set([5,24]), compare:new Set(),
   period:'30', drawer:null, modal:null, erpCollapsed:false, mOpen:false,
   ui:{}, heroIdx:0, lastOrderRef:null, editCart:null
 };
@@ -2344,6 +2345,8 @@ const ERP_VIEWS = {
 };
 const ROLE_HOME = {admin:'dashboard', gerant:'dashboard', manager:'dashboard', agent:'mafile', fournisseur:'dashboard'};
 let lastPath = '';
+/* chemin CSS d'un élément depuis la racine (pour le retrouver après un nouveau rendu) */
+function domPath(el, root){ const p=[]; for(; el && el!==root; el=el.parentElement){ p.unshift(el.tagName.toLowerCase()+':nth-child('+(Array.prototype.indexOf.call(el.parentElement.children, el)+1)+')'); } return ':scope > '+p.join(' > '); }
 function render(){
   const {parts, q} = route();
   document.documentElement.lang = S.lang; document.documentElement.dir = S.lang==='ar'?'rtl':'ltr';
@@ -2381,9 +2384,13 @@ function render(){
   }
   // préserver le focus d'un champ de recherche
   const ae = document.activeElement; const keep = ae && ae.dataset && ae.dataset.in ? ae.dataset.in : null; const caret = keep? ae.selectionStart : 0;
-  const sideEl = document.querySelector('.side'), sideTop = sideEl? sideEl.scrollTop : 0; // le menu garde sa position
-  document.getElementById('app').innerHTML = html;
-  const side2 = document.querySelector('.side'); if(side2) side2.scrollTop = sideTop;
+  // même page redessinée (synchronisation toutes les 10 s, clic…) : chaque zone qui défile garde sa position
+  const app = document.getElementById('app'), samePage = location.hash===lastPath, winY = window.scrollY, scrolls = [];
+  if(samePage) app.querySelectorAll('*').forEach(el=>{ if(el.scrollTop || el.scrollLeft) scrolls.push([domPath(el, app), el.scrollTop, el.scrollLeft]); });
+  else { const sd=app.querySelector('.side'); if(sd && sd.scrollTop) scrolls.push(['.side', sd.scrollTop, 0]); } // le menu garde sa position
+  app.innerHTML = html;
+  scrolls.forEach(([p, top, left])=>{ const el = p==='.side'? app.querySelector('.side') : app.querySelector(p); if(el){ el.scrollTop = top; el.scrollLeft = left; } });
+  if(samePage && window.scrollY!==winY) window.scrollTo(0, winY);
   renderOverlay();
   if(keep){ const el = document.querySelector(`[data-in="${keep}"]`); if(el){ el.focus(); try{ el.setSelectionRange(caret,caret); }catch(e){} } }
   const cur = location.hash; if(cur!==lastPath){ if(!keep) window.scrollTo(0,0); lastPath = cur; }
@@ -2423,7 +2430,7 @@ function rerender(){ render(); }
 
 /* ---------- actions (clic) ---------- */
 const A = {
-  lang:(el)=>{ S.lang = el.dataset.v; render(); },
+  lang:(el)=>{ S.lang = el.dataset.v; try{ localStorage.setItem('pk_lang', S.lang); }catch(e){} render(); },
   toggleSide:()=>{ if(window.innerWidth<=900) S.mOpen=!S.mOpen; else S.erpCollapsed=!S.erpCollapsed; render(); },
   notifs:()=>{ openModal(modalTpl(t('Notifications'), NOTIFS.length? NOTIFS.slice(0,20).map(n=>`<div class="row between" style="padding:8px 0;border-bottom:1px solid var(--line2)"><span class="small">${esc(n.txt)}</span><span class="xs muted">${ago(n.at)}</span></div>`).join('') : `<div class="empty">${ic('bell')}<div>${t('Aucune notification. Passez une commande sur la boutique pour la voir arriver ici.')}</div></div>`, `<button class="btn" data-a="clearNotifs">${t('Tout effacer')}</button>`)); },
   clearNotifs:()=>{ NOTIFS.length=0; closeModal(); render(); },

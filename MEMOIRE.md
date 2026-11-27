@@ -2,6 +2,15 @@
 
 Journal des changements, du plus récent au plus ancien. La fiche agent (`AGENTS.md`) explique comment le code est construit.
 
+## 27 novembre 2026 (5) — L'ERP ne « se recharge » plus en défilant ; arabe par défaut
+
+| Demande | Ce qui a été fait | Où |
+| --- | --- | --- |
+| En faisant défiler (produits, commandes…), la page se recharge et la recherche est perdue | Deux causes. 1) Toutes les 10 s, la synchronisation redessine la page (`softRender` → `render`) : les listes qui défilent revenaient en haut. `render()` mémorise maintenant la position de chaque zone qui défile (et de la page) et la remet quand on reste sur la même page (`domPath`). 2) Sur téléphone, glisser vers le bas en haut de page déclenchait le « tirer pour actualiser » du navigateur, qui rechargeait tout : désactivé dans l'ERP (`overscroll-behavior-y:contain`), gardé sur la boutique | `assets/app.js` (`render`, `domPath`), `assets/app.css` |
+| Langue par défaut : arabe | Premier visiteur en arabe ; le choix de langue est gardé dans le navigateur (`localStorage pk_lang`) ; `<html lang="ar" dir="rtl">` | `assets/app.js` (`S.lang`, `A.lang`), `index.php` |
+
+Non fait : l'application mobile Flutter (`mobile/`) n'est pas modifiée.
+
 ## 27 novembre 2026 (4) — ERP masqué par un panneau noir (téléphone et ordinateur)
 
 | Demande | Ce qui a été fait | Où |

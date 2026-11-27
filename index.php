@@ -25,7 +25,7 @@ try {
 $v = fn(string $f): string => $f . '?v=' . filemtime(__DIR__ . '/' . $f);
 ?>
 <!DOCTYPE html>
-<html lang="fr" dir="ltr">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
