@@ -47,8 +47,10 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
         list.sort((a, b) => b.unitPrice(null, b.minQty).compareTo(a.unitPrice(null, a.minQty)));
       case 'new':
         list.sort((a, b) => b.id.compareTo(a.id));
-      default:
-        list.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+      default: // « Pertinence » = ordre de la catégorie choisi par l'admin, puis produits mis en avant, comme « Recommandés » sur le site
+        final pids = c.categories.where((x) => x.id == _cat).firstOrNull?.pids ?? const <int>[];
+        int r(Product p) => pids.contains(p.id) ? pids.indexOf(p.id) : 1 << 30;
+        list.sort((a, b) => r(a) != r(b) ? r(a).compareTo(r(b)) : a.featured != b.featured ? (b.featured ? 1 : -1) : a.id.compareTo(b.id));
     }
     return list;
   }

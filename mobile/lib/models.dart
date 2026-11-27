@@ -116,14 +116,15 @@ class Product {
 }
 
 class Category {
-  const Category({required this.id, required this.fr, this.ar = '', this.en = '', this.img = ''});
+  const Category({required this.id, required this.fr, this.ar = '', this.en = '', this.img = '', this.pids = const []});
   factory Category.fromJson(Map<String, dynamic> j) =>
-      Category(id: _s(j['id']), fr: _s(j['fr']), ar: _s(j['ar']), en: _s(j['en']), img: _s(j['img']).isEmpty ? '' : absUrl(_s(j['img'])));
+      Category(id: _s(j['id']), fr: _s(j['fr']), ar: _s(j['ar']), en: _s(j['en']), img: _s(j['img']).isEmpty ? '' : absUrl(_s(j['img'])), pids: _l(j['pids']).map((e) => _n(e).toInt()).toList());
   final String id;
   final String fr;
   final String ar;
   final String en;
   final String img;
+  final List<int> pids; // ordre des produits choisi dans ERP › Produits › Catégories (catRank du site)
   String name(String lang) => lang == 'ar' && ar.isNotEmpty ? ar : fr;
 }
 

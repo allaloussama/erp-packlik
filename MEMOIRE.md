@@ -2,6 +2,14 @@
 
 Journal des changements, du plus récent au plus ancien. La fiche agent (`AGENTS.md`) explique comment le code est construit.
 
+## 27 novembre 2026 (9) — Produits d'une catégorie : ajout, retrait, ordre
+
+| Demande | Ce qui a été fait | Où |
+| --- | --- | --- |
+| Ajouter / retirer des produits dans n'importe quelle catégorie | ERP › Produits › Catégories : bouton « Produits » sur chaque ligne → liste des produits de la catégorie, menu « Ajouter un produit », croix pour retirer (un produit sans catégorie revient dans « Tout ») | `assets/erp-plus.js` (`catProdModal`, `A.catP*`, `CH.catPAdd`) |
+| Ranger les produits (premier, dernier) | Dans la même fenêtre : mettre en premier, monter, descendre, mettre en dernier. Ordre enregistré dans la catégorie (`c.pids`, dans `SETTINGS.cats`) | `assets/erp-plus.js` |
+| La boutique suit cet ordre | Nouveau tri « Recommandés » (par défaut) ; produits non rangés à la fin. Application : le tri « Pertinence » suit le même ordre | `assets/app.js` (`catRank`, `viewShop`), `mobile/lib/models.dart` (`Category.pids`), `mobile/lib/screens/shop_screen.dart` |
+
 ## 27 novembre 2026 (8) — Changements du site portés dans l'application Android
 
 | Demande (site) | Dans l'application | Où |

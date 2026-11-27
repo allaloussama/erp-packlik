@@ -886,7 +886,7 @@ function barsList(rows, money){ const max=Math.max(1,...rows.map(r=>r.v)); retur
 /* ============================================================
    BOUTIQUE EN LIGNE (copie de packlik.shop, branchée sur l'ERP)
    ============================================================ */
-S.ui.shop = {cat:null, min:'', max:'', sort:'pop', shown:24, q:'', tab:'new'};
+S.ui.shop = {cat:null, min:'', max:'', sort:'order', shown:24, q:'', tab:'new'};
 
 function cartCount(){ return S.cart.reduce((s,i)=>s+i.q,0); }
 function cartTotal(){ return S.cart.reduce((s,i)=>s+i.price*i.q,0); }
@@ -965,6 +965,8 @@ function viewHome(){
     <div class="pgrid">${list.map(pcard).join('')}</div>
   </div>`,'home');
 }
+// rang d'un produit dans l'ordre choisi par l'admin pour la catégorie (c.pids, ERP › Produits › Catégories) ; non rangés à la fin
+function catRank(catId){ const c=CATS.find(x=>x.id===(catId||'tout')), pos=new Map(((c&&c.pids)||[]).map((id,i)=>[id,i])); return p=>pos.has(p.id)? pos.get(p.id) : 1e9; }
 function bestScore(p){ return ORDERS.reduce((s,o)=>s+o.items.filter(i=>i.pid===p.id).reduce((a,i)=>a+i.q,0),0)*10 + (p.featured?3:0); }
 
 /* ---- Boutique / catégorie ---- */
@@ -974,6 +976,7 @@ function viewShop(){
   if(sh.q) { const q=sh.q.toLowerCase(); list = list.filter(p=>p.name.toLowerCase().includes(q)); }
   if(sh.min!=='') list = list.filter(p=>p.price>=+sh.min);
   if(sh.max!=='') list = list.filter(p=>p.price<=+sh.max);
+  if(sh.sort==='order'){ const r=catRank(sh.cat); list.sort((a,b)=>r(a)-r(b)); }
   if(sh.sort==='asc') list.sort((a,b)=>(a.price||9e9)-(b.price||9e9));
   if(sh.sort==='desc') list.sort((a,b)=>b.price-a.price);
   if(sh.sort==='new') list.sort((a,b)=>b.id-a.id);
@@ -997,7 +1000,7 @@ function viewShop(){
         <div class="toolbar">
           <h1 style="font-size:22px" class="grow">${cat? esc(catName(cat)) : sh.q? t('Résultats pour')+' « '+esc(sh.q)+' »' : t('Boutique')} <span class="muted small" style="font-weight:500">· ${list.length} ${t('produits')}</span></h1>
           <label for="fltT" class="btn sm flt-btn">${ic('layers','sm')} ${t('Filtres')}</label>
-          <label class="row small">${t('Trier')} <select class="select" style="width:auto" data-ch="shopSort">${[['pop','Popularité'],['new','Nouveautés'],['asc','Prix croissant'],['desc','Prix décroissant']].map(([k,l])=>`<option value="${k}" ${sh.sort===k?'selected':''}>${t(l)}</option>`).join('')}</select></label>
+          <label class="row small">${t('Trier')} <select class="select" style="width:auto" data-ch="shopSort">${[['order','Recommandés'],['pop','Popularité'],['new','Nouveautés'],['asc','Prix croissant'],['desc','Prix décroissant']].map(([k,l])=>`<option value="${k}" ${sh.sort===k?'selected':''}>${t(l)}</option>`).join('')}</select></label>
         </div>
         ${view.length? `<div class="pgrid">${view.map(pcard).join('')}</div>` : `<div class="card empty">${ic('search')}<div><b>${t('Aucun produit trouvé')}</b></div><div class="small">${t('Essayez une autre recherche ou une autre catégorie.')}</div><a href="#/boutique" class="btn sm" style="margin-top:10px">${t('Voir tous les produits')}</a></div>`}
         ${view.length < list.length ? `<div id="shopSentinel" style="height:1px"></div>` : ''}

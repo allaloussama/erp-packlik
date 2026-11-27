@@ -30,7 +30,7 @@ function catsTab(){
   <div class="tbl-wrap"><table class="tbl"><thead><tr><th>${t('Ordre')}</th><th>${t('Photo')}</th><th>${t('Nom FR')}</th><th>${t('Nom AR')}</th><th>${t('Nom EN')}</th><th class="r">${t('Produits')}</th><th></th></tr></thead><tbody>
   ${CATS.map((c,i)=>`<tr><td><div class="row" style="gap:2px;flex-wrap:nowrap"><button class="btn icon sm ghost" data-a="catMove" data-i="${i}" data-v="-1" ${i?'':'disabled'} aria-label="${t('Monter')}">${ic('arrowU','sm')}</button><button class="btn icon sm ghost" data-a="catMove" data-i="${i}" data-v="1" ${i<CATS.length-1?'':'disabled'} aria-label="${t('Descendre')}">${ic('arrowD','sm')}</button></div></td>
     <td>${catImg(c,40)}</td><td><b>${esc(c.fr)}</b><div class="xs muted">${esc(c.id)}</div></td><td dir="rtl">${esc(c.ar||'')}</td><td>${esc(c.en||'')}</td><td class="r num">${c.n||0}</td>
-    <td><div class="row" style="gap:2px;flex-wrap:nowrap"><button class="btn icon sm ghost" data-a="catEdit" data-id="${esc(c.id)}" aria-label="${t('Modifier')}">${ic('edit','sm')}</button>${c.id==='tout'?'':`<button class="btn icon sm ghost" data-a="catDel" data-id="${esc(c.id)}" aria-label="${t('Supprimer')}">${ic('trash','sm')}</button>`}</div></td></tr>`).join('')}
+    <td><div class="row" style="gap:2px;flex-wrap:nowrap"><button class="btn sm" data-a="catProds" data-id="${esc(c.id)}">${ic('box','sm')} ${t('Produits')}</button><button class="btn icon sm ghost" data-a="catEdit" data-id="${esc(c.id)}" aria-label="${t('Modifier')}">${ic('edit','sm')}</button>${c.id==='tout'?'':`<button class="btn icon sm ghost" data-a="catDel" data-id="${esc(c.id)}" aria-label="${t('Supprimer')}">${ic('trash','sm')}</button>`}</div></td></tr>`).join('')}
   </tbody></table></div>`;
 }
 function catModal(){
@@ -54,6 +54,35 @@ A.catSave = ()=>{
 A.catDel = el=>{ const c=CATS.find(x=>x.id===el.dataset.id); if(!c || !confirm(t('Supprimer la catégorie')+' « '+c.fr+' » ? '+t('Les produits restent, sans cette catégorie.'))) return;
   CATS.splice(CATS.indexOf(c),1); PRODUCTS.forEach(p=>{ const i=p.cats.indexOf(c.id); if(i>=0){ p.cats.splice(i,1); if(!p.cats.length) p.cats.push('tout'); } }); saveCats(); render(); };
 A.catMove = el=>{ const i=+el.dataset.i, j=i+(+el.dataset.v); if(j<0||j>=CATS.length) return; [CATS[i],CATS[j]]=[CATS[j],CATS[i]]; saveCats(); render(); };
+
+/* ---------- produits d'une catégorie : ajout, retrait, ordre d'affichage (c.pids, lu par la boutique : catRank) ---------- */
+Object.assign(AR, {'Produits de la catégorie':'منتجات الفئة', 'L\'ordre ci-dessous est celui de la boutique (tri « Recommandés ») : le premier produit s\'affiche en premier.':'هذا هو ترتيب المنتجات في المتجر (فرز «المقترحة»): المنتج الأول يظهر أولاً.', 'Ajouter un produit à cette catégorie':'إضافة منتج إلى هذه الفئة', 'Ajouter un produit':'إضافة منتج', 'Mettre en premier':'وضعه في الأول', 'Mettre en dernier':'وضعه في الأخير', 'Retirer de la catégorie':'إزالة من الفئة', 'Aucun produit dans cette catégorie':'لا توجد منتجات في هذه الفئة', 'Recommandés':'المقترحة'});
+Object.assign(EN, {'Produits de la catégorie':'Category products', 'L\'ordre ci-dessous est celui de la boutique (tri « Recommandés ») : le premier produit s\'affiche en premier.':'This is the shop order (« Recommended » sort): the first product is shown first.', 'Ajouter un produit à cette catégorie':'Add a product to this category', 'Ajouter un produit':'Add a product', 'Mettre en premier':'Move to first', 'Mettre en dernier':'Move to last', 'Retirer de la catégorie':'Remove from category', 'Aucun produit dans cette catégorie':'No product in this category', 'Recommandés':'Recommended'});
+const catMembers = c => PRODUCTS.filter(p=>p.status!=='corbeille' && (c.id==='tout' || p.cats.includes(c.id)));
+function catOrdered(c){ const r=catRank(c.id); return catMembers(c).sort((a,b)=>r(a)-r(b)); }
+function catProdModal(){
+  const c=CATS.find(x=>x.id===S.ui.catP); if(!c) return closeModal();
+  const list=catOrdered(c), all=c.id==='tout', last=list.length-1;
+  const add = PRODUCTS.filter(p=>p.status!=='corbeille' && !p.cats.includes(c.id)).sort((a,b)=>a.name.localeCompare(b.name));
+  const btn = (a,v,icon,label,off)=>`<button class="btn icon sm ghost" data-a="${a}" data-id="${v}" ${off?'disabled':''} aria-label="${t(label)}" title="${t(label)}">${icon}</button>`;
+  openModal(modalTpl(esc(t('Produits de la catégorie')+' « '+catName(c)+' »'), `<div class="col" style="gap:12px">
+    <p class="small muted" style="margin:0">${t('L\'ordre ci-dessous est celui de la boutique (tri « Recommandés ») : le premier produit s\'affiche en premier.')}</p>
+    ${all? '' : `<select class="select" data-ch="catPAdd" aria-label="${t('Ajouter un produit')}"><option value="">+ ${t('Ajouter un produit à cette catégorie')}…</option>${add.map(p=>`<option value="${p.id}">${esc(p.name)}${p.sku?' · '+esc(p.sku):''}</option>`).join('')}</select>`}
+    <div class="tbl-wrap" style="max-height:52vh;border:1px solid var(--line);border-radius:var(--r)"><table class="tbl"><tbody>
+    ${list.map((p,i)=>`<tr><td class="num muted small" style="width:28px">${i+1}</td><td><div class="row">${prodArt(p,32)}<div><b class="small">${esc(p.name)}</b><div class="xs muted">${esc(p.sku||'')} · ${t(p.status)}</div></div></div></td>
+      <td class="r"><div class="row" style="gap:0;flex-wrap:nowrap;justify-content:flex-end">${btn('catPFirst',p.id,ic('arrowU','sm')+ic('arrowU','sm'),'Mettre en premier',!i)}${btn('catPUp',p.id,ic('arrowU','sm'),'Monter',!i)}${btn('catPDown',p.id,ic('arrowD','sm'),'Descendre',i===last)}${btn('catPLast',p.id,ic('arrowD','sm')+ic('arrowD','sm'),'Mettre en dernier',i===last)}${all?'':btn('catPDel',p.id,ic('x','sm'),'Retirer de la catégorie')}</div></td></tr>`).join('') || `<tr><td class="muted small" style="padding:20px;text-align:center">${t('Aucun produit dans cette catégorie')}</td></tr>`}
+    </tbody></table></div></div>`, `<button class="btn primary" data-a="closeModal">${t('Fermer')}</button>`, true));
+}
+// range la catégorie : nouvel ordre complet, enregistré dans SETTINGS.cats
+function catPSet(ids){ const c=CATS.find(x=>x.id===S.ui.catP); c.pids=ids; saveCats(); catProdModal(); render(); }
+function catPMove(el, to){ const ids=catOrdered(CATS.find(x=>x.id===S.ui.catP)).map(p=>p.id), id=+el.dataset.id, i=ids.indexOf(id); ids.splice(i,1); ids.splice(to(i, ids.length),0,id); catPSet(ids); }
+A.catProds = el=>{ S.ui.catP=el.dataset.id; catProdModal(); };
+A.catPFirst = el=>catPMove(el, ()=>0);
+A.catPUp = el=>catPMove(el, i=>Math.max(0,i-1));
+A.catPDown = el=>catPMove(el, (i,n)=>Math.min(n,i+1));
+A.catPLast = el=>catPMove(el, (i,n)=>n);
+A.catPDel = el=>{ const p=PBY[+el.dataset.id], c=S.ui.catP; if(!p) return; p.cats=p.cats.filter(x=>x!==c); if(!p.cats.length) p.cats=['tout']; log('Catégorie retirée', p.sku, c); catPSet(catOrdered(CATS.find(x=>x.id===c)).map(x=>x.id)); };
+CH.catPAdd = el=>{ const p=PBY[+el.value], c=S.ui.catP; if(!p) return; if(!p.cats.includes(c)) p.cats.push(c); log('Catégorie ajoutée', p.sku, c); catPSet(catOrdered(CATS.find(x=>x.id===c)).map(x=>x.id)); };
 
 /* ---------- fournisseurs ---------- */
 const supOf = pid => (PBY[pid]||{}).supplierId || 1;
