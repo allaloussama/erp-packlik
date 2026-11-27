@@ -981,8 +981,11 @@ function viewShop(){
   const cat = CATS.find(c=>c.id===sh.cat);
   return shopShell(`<div class="container">
     <div class="row small muted" style="margin-top:16px"><a href="#/">${t('Accueil')}</a> ${ic('chevR','sm flip')} <a href="#/boutique">${t('Boutique')}</a>${cat?' '+ic('chevR','sm flip')+' '+esc(catName(cat)):''}</div>
+    <input type="checkbox" id="fltT" class="flt-t" hidden>
     <div class="shop-layout">
+      <label for="fltT" class="flt-bg" aria-hidden="true"></label>
       <aside class="filters" aria-label="${t('Filtres')}">
+        <div class="flt-h"><b>${t('Filtres')}</b><label for="fltT" class="btn icon ghost" aria-label="${t('Fermer')}">${ic('x')}</label></div>
         <h4>${t('Catégories')}</h4>
         <div class="fl"><a href="#/boutique" class="${!sh.cat?'on':''}"><span>${t('Tous les produits')}</span><span class="muted">91</span></a>${CATS.map(c=>`<a href="#/categorie/${c.id}" class="${sh.cat===c.id?'on':''}"><span>${esc(catName(c))}</span><span class="muted">${c.n}</span></a>`).join('')}</div>
         <h4>${t('Prix (DZD)')}</h4>
@@ -992,6 +995,7 @@ function viewShop(){
       <section>
         <div class="toolbar">
           <h1 style="font-size:22px" class="grow">${cat? esc(catName(cat)) : sh.q? t('Résultats pour')+' « '+esc(sh.q)+' »' : t('Boutique')} <span class="muted small" style="font-weight:500">· ${list.length} ${t('produits')}</span></h1>
+          <label for="fltT" class="btn sm flt-btn">${ic('layers','sm')} ${t('Filtres')}</label>
           <label class="row small">${t('Trier')} <select class="select" style="width:auto" data-ch="shopSort">${[['pop','Popularité'],['new','Nouveautés'],['asc','Prix croissant'],['desc','Prix décroissant']].map(([k,l])=>`<option value="${k}" ${sh.sort===k?'selected':''}>${t(l)}</option>`).join('')}</select></label>
         </div>
         ${view.length? `<div class="pgrid">${view.map(pcard).join('')}</div>` : `<div class="card empty">${ic('search')}<div><b>${t('Aucun produit trouvé')}</b></div><div class="small">${t('Essayez une autre recherche ou une autre catégorie.')}</div><a href="#/boutique" class="btn sm" style="margin-top:10px">${t('Voir tous les produits')}</a></div>`}

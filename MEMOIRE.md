@@ -2,6 +2,12 @@
 
 Journal des changements, du plus récent au plus ancien. La fiche agent (`AGENTS.md`) explique comment le code est construit.
 
+## 27 novembre 2026 (2) — Boutique optimisée pour téléphone (style WoodMart)
+
+| Demande | Ce qui a été fait | Où |
+| --- | --- | --- |
+| La boutique n'est pas adaptée au téléphone (page catégorie trop large) | Cause : la colonne de filtres (240 px) du thème s'appliquait aussi au téléphone. Sur téléphone : en-tête compact (logo, compte, panier ; puis recherche et langue), filtres dans un panneau qui glisse (bouton « Filtres », sans JS : case `#fltT`), cartes produit 2 colonnes avec panier en icône + « Acheter maintenant », catégories de l'accueil en carrousel, barre du bas (Accueil, Boutique, Panier, WhatsApp, Connexion — mêmes réglages que l'en-tête ; remplace le bouton WhatsApp flottant), champs en 16 px (pas de zoom iOS), pied de page sur une colonne | `assets/theme.css` (fin), `assets/app.js` (`viewShop`), `assets/shop-plus.js` (`shopShell` : `.mbar`) |
+
 ## 27 novembre 2026 — Thème moderne de la boutique
 
 | Demande | Ce qui a été fait | Où |

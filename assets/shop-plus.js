@@ -66,6 +66,14 @@ shopShell = function(content, active){
     <div><h4>${t('Paiement à la livraison')}</h4><p style="margin:0">${esc(t(b.payText))}</p></div>
   </div><div class="bot">${esc(t(b.copyright))}</div></footer>
   ${b.showWa && b.whatsapp? `<a class="wa-float" href="https://wa.me/${esc(String(b.whatsapp).replace(/\D/g,''))}" target="_blank" rel="noopener" aria-label="WhatsApp">${ic('wa','lg')}</a>`:''}`
+  // barre du bas sur téléphone (style WoodMart) : mêmes liens et mêmes réglages que l'en-tête
+  + `<nav class="mbar" aria-label="Navigation">
+    <a href="#/" class="${on('#/')}">${ic('home')}<span>${t('Accueil')}</span></a>
+    <a href="#/boutique" class="${route0==='boutique'||route0==='categorie'?'on':''}">${ic('grid')}<span>${t('Boutique')}</span></a>
+    <a href="#/panier" data-a="miniOpen" class="mbar-cart ${route0==='panier'?'on':''}">${ic('cart')}<i class="num">${cartCount()}</i><span>${t('Panier')}</span></a>
+    ${b.showWa && b.whatsapp? `<a href="https://wa.me/${esc(String(b.whatsapp).replace(/\D/g,''))}" target="_blank" rel="noopener">${ic('wa')}<span>WhatsApp</span></a>`:''}
+    ${b.showLogin? `<a href="#/erp">${ic('user')}<span>${staff? t('Mon espace') : t('Connexion')}</span></a>`:''}
+  </nav>`
   + miniCart() + editBar();
 };
 
