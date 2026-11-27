@@ -89,20 +89,20 @@ html:not([lang=ar]) #app:has(>.shop-h) :is(h1,h2,h3,.pdp .price,.sec-t h2,.hero 
 .hero:has(.slide.banner.on) .dots button{background:rgba(255,255,255,.55);box-shadow:0 0 0 1px rgba(17,20,24,.15)}
 .hero:has(.slide.banner.on) .dots button.on{background:#fff}
 
-/* fiche produit : photo en plein écran */
+/* fiche produit : photo en plein écran (préfixe pklb : « .lb » est déjà pris par l'entonnoir du tableau de bord ERP) */
 .tj-gal .gal img{cursor:zoom-in}
-.lb{position:fixed;inset:0;z-index:400;background:rgba(10,12,14,.94);display:flex;align-items:center;justify-content:center;touch-action:pinch-zoom}
-.lb img{max-width:92vw;max-height:86vh;object-fit:contain;border-radius:8px;background:#fff;user-select:none}
-.lb button{position:absolute;border:0;border-radius:999px;width:48px;height:48px;display:grid;place-items:center;background:rgba(255,255,255,.12);color:#fff;cursor:pointer}
-.lb button:hover{background:rgba(255,255,255,.24)}
-.lb .ico{width:22px;height:22px}
-.lb-x{top:16px;inset-inline-end:16px}
-.lb-nav{top:50%;transform:translateY(-50%)}
-.lb-prev{inset-inline-start:16px}
-.lb-next{inset-inline-end:16px}
-html:not([dir=rtl]) .lb-prev .ico,html[dir=rtl] .lb-next .ico{transform:scaleX(-1)}
-.lb-n{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:#fff;font-size:13px;font-weight:600;background:rgba(255,255,255,.12);padding:5px 12px;border-radius:999px}
-@media (max-width:640px){.lb img{max-width:100vw;border-radius:0}.lb-nav{top:auto;bottom:12px;transform:none;width:44px;height:44px}.lb-n{bottom:22px}}
+.pklb{position:fixed;inset:0;z-index:400;background:rgba(10,12,14,.94);display:flex;align-items:center;justify-content:center;touch-action:pinch-zoom}
+.pklb img{max-width:92vw;max-height:86vh;object-fit:contain;border-radius:8px;background:#fff;user-select:none}
+.pklb button{position:absolute;border:0;border-radius:999px;width:48px;height:48px;display:grid;place-items:center;background:rgba(255,255,255,.12);color:#fff;cursor:pointer}
+.pklb button:hover{background:rgba(255,255,255,.24)}
+.pklb .ico{width:22px;height:22px}
+.pklb .pklb-x{top:16px;inset-inline-end:16px}
+.pklb .pklb-nav{top:50%;transform:translateY(-50%)}
+.pklb .pklb-prev{inset-inline-start:16px}
+.pklb .pklb-next{inset-inline-end:16px}
+html:not([dir=rtl]) .pklb .pklb-prev .ico,html[dir=rtl] .pklb .pklb-next .ico{transform:scaleX(-1)}
+.pklb .pklb-n{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:#fff;font-size:13px;font-weight:600;background:rgba(255,255,255,.12);padding:5px 12px;border-radius:999px}
+@media (max-width:640px){.pklb img{max-width:100vw;border-radius:0}.pklb .pklb-nav{top:auto;bottom:12px;transform:none;width:44px;height:44px}.pklb .pklb-n{bottom:22px}}
 
 .perks{gap:0;margin:24px 0 8px;border:1px solid var(--line);border-radius:var(--rad);overflow:hidden}
 .perk{border:0;border-radius:0;padding:20px 24px;background:#fff}
@@ -167,9 +167,9 @@ html:not([dir=rtl]) .lb-prev .ico,html[dir=rtl] .lb-next .ico{transform:scaleX(-
 #app:has(>.shop-h) .pdp .badge{background:var(--well);color:var(--ink2);font-weight:500}
 #app:has(>.shop-h) .pdp .badge.green{background:#E8F5EC;color:#1E6B3A}
 #app:has(>.shop-h) .pdp .badge.red{background:#FDECEA;color:#B3261E}
-.var-opt{border:1px solid var(--line);border-radius:999px;padding:9px 18px;font-weight:500}
-.var-opt:hover{border-color:var(--ink)}
-.var-opt.on{border-color:var(--ink);background:var(--ink);color:#fff}
+#app:has(>.shop-h) .var-opt{border:1px solid var(--line);border-radius:999px;padding:9px 18px;font-weight:500}
+#app:has(>.shop-h) .var-opt:hover{border-color:var(--ink)}
+#app:has(>.shop-h) .var-opt.on{border-color:var(--ink);background:var(--ink);color:#fff}
 .tj-desc{margin-top:64px}
 .tj-desc h2{font-size:24px;font-weight:800}
 

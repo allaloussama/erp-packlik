@@ -2,6 +2,14 @@
 
 Journal des changements, du plus récent au plus ancien. La fiche agent (`AGENTS.md`) explique comment le code est construit.
 
+## 27 novembre 2026 (4) — ERP masqué par un panneau noir (téléphone et ordinateur)
+
+| Demande | Ce qui a été fait | Où |
+| --- | --- | --- |
+| Un panneau noir avec « Payées » couvrait le menu et le tableau de bord de l'ERP | Collision de nom : la visionneuse photo de la boutique utilisait la classe `.lb`, déjà prise par les libellés de l'entonnoir du tableau de bord (Reçues… Payées), qui devenaient des calques plein écran. Classes renommées `.pklb` ; `.var-opt` du thème limité à la boutique. Vérifié : aucune page ERP admin plus large qu'un téléphone (390 px), menu ☰ en tiroir | `assets/theme.css`, `assets/tajer.js` (`lbOpen`) |
+
+Règle : dans `theme.css`, toute nouvelle classe doit être unique (chercher le nom dans `assets/*.js` avant) ou préfixée `#app:has(>.shop-h)`.
+
 ## 27 novembre 2026 (3) — Bannières de slides, boutons téléphone, photo en plein écran
 
 | Demande | Ce qui a été fait | Où |

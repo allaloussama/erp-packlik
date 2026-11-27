@@ -281,17 +281,17 @@ function lbOpen(){
   const p=PBY[S.ui.pdp.id], imgs=(p && p.images)||[]; if(!imgs.length) return;
   let k=Math.min(S.ui.pdp.img||0, imgs.length-1), x0=null;
   const rtl=document.documentElement.dir==='rtl', box=document.createElement('div');
-  box.className='lb'; box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true'); box.setAttribute('aria-label',p.name);
-  box.innerHTML=`<img alt="${esc(p.name)}">${imgs.length>1? `<button class="lb-nav lb-prev" aria-label="${t('Précédent')}">${ic('chevR')}</button><button class="lb-nav lb-next" aria-label="${t('Suivant')}">${ic('chevR')}</button><div class="lb-n num"></div>`:''}<button class="lb-x" aria-label="${t('Fermer')}">${ic('x')}</button>`;
-  const img=box.querySelector('img'), n=box.querySelector('.lb-n');
+  box.className='pklb'; box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true'); box.setAttribute('aria-label',p.name);
+  box.innerHTML=`<img alt="${esc(p.name)}">${imgs.length>1? `<button class="pklb-nav pklb-prev" aria-label="${t('Précédent')}">${ic('chevR')}</button><button class="pklb-nav pklb-next" aria-label="${t('Suivant')}">${ic('chevR')}</button><div class="pklb-n num"></div>`:''}<button class="pklb-x" aria-label="${t('Fermer')}">${ic('x')}</button>`;
+  const img=box.querySelector('img'), n=box.querySelector('.pklb-n');
   const show=i=>{ k=(i+imgs.length)%imgs.length; img.src=imgs[k]; if(n) n.textContent=(k+1)+' / '+imgs.length; };
   const close=()=>{ box.remove(); document.removeEventListener('keydown', key, true); document.body.style.overflow=''; S.ui.pdp.img=k; render(); };
   const key=e=>{ e.stopPropagation(); if(e.key==='Escape') close(); if(e.key==='ArrowRight') show(k+(rtl?-1:1)); if(e.key==='ArrowLeft') show(k+(rtl?1:-1)); };
-  box.addEventListener('click', e=>{ const b=e.target.closest('button'); if(e.target===box || (b && b.classList.contains('lb-x'))) return close(); if(b) show(k+(b.classList.contains('lb-next')?1:-1)); });
+  box.addEventListener('click', e=>{ const b=e.target.closest('button'); if(e.target===box || (b && b.classList.contains('pklb-x'))) return close(); if(b) show(k+(b.classList.contains('pklb-next')?1:-1)); });
   box.addEventListener('touchstart', e=>{ x0=e.touches.length===1? e.touches[0].clientX : null; }, {passive:true});
   box.addEventListener('touchend', e=>{ if(x0==null) return; const dx=e.changedTouches[0].clientX-x0; x0=null; if(Math.abs(dx)>50 && imgs.length>1) show(k+((dx<0)!==rtl?1:-1)); });
   document.addEventListener('keydown', key, true);
-  document.body.style.overflow='hidden'; document.body.appendChild(box); show(k); box.querySelector('.lb-x').focus();
+  document.body.style.overflow='hidden'; document.body.appendChild(box); show(k); box.querySelector('.pklb-x').focus();
 }
 // pas dans l'aperçu de l'éditeur de pages
 document.addEventListener('click', e=>{ if(e.target.closest('.tj-gal .gal img') && !document.documentElement.classList.contains('pe-preview')) lbOpen(); });
