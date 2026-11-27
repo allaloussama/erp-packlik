@@ -2,6 +2,14 @@
 
 Journal des changements, du plus récent au plus ancien. La fiche agent (`AGENTS.md`) explique comment le code est construit.
 
+## 27 novembre 2026 (6) — Pixel Meta réellement relié (PageView, ViewContent, AddToCart, InitiateCheckout, Purchase)
+
+| Demande | Ce qui a été fait | Où |
+| --- | --- | --- |
+| Relier le site au pixel Meta et suivre achat et ajout au panier | Le module Pixels ne faisait que simuler (journal). Maintenant le script de Meta (`fbevents.js`) est chargé pour chaque pixel Facebook **actif** saisi dans ERP › Pixels, et les événements partent vraiment : PageView (chaque page), ViewContent (une fois par fiche), AddToCart (une fois par clic, avant : deux fois), InitiateCheckout, Purchase (montant en DZD, produits, nombre d'articles, `eventID` = `order-<réf>`). Rien n'est envoyé depuis l'ERP. La fonction interne `fbq` s'appelle maintenant `pxTrack` (« fbq » est le nom du script de Meta). CSP : `connect.facebook.net` et `www.facebook.com` autorisés | `assets/app.js` (`pxTrack`, `metaReady`, `metaSend`), `assets/backend.js`, `assets/shop-plus.js`, `assets/tajer.js`, `index.php` |
+
+À régler dans l'ERP : module Pixels activé, pixel Facebook ajouté avec son ID et « Actif », « Quand envoyer l'achat » = **À la commande sur le site** (les modes « confirmé » / « livré » se déclenchent dans l'ERP, donc rien n'est envoyé à Meta : il faudrait l'API Conversions côté serveur). TikTok : toujours simulé.
+
 ## 27 novembre 2026 (5) — L'ERP ne « se recharge » plus en défilant ; arabe par défaut
 
 | Demande | Ce qui a été fait | Où |

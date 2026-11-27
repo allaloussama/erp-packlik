@@ -81,7 +81,7 @@ SUB.cod = async(form)=>{
   try{
     const r = await api('order', {name:co.name, phone:co.phone, wilaya:+co.wilaya, commune:co.commune, address:co.address, delivery:co.delivery, note:co.note||'', website:val('coHp'), platform:AD_PLATFORM, items:items.map(i=>({pid:i.pid, v:i.v, q:i.q}))});
     S.lastOrder = r.order; if(route().parts[0]!=='produit' || co.withCart){ S.cart=[]; saveCart(); }
-    if(SETTINGS.purchaseOn==='order') fbq('Purchase', {value:orderTotal(r.order), ref:r.ref});
+    if(SETTINGS.purchaseOn==='order') pxTrack('Purchase', {value:orderTotal(r.order), ref:r.ref, ids:r.order.items.map(i=>i.pid), n:r.order.items.reduce((s,i)=>s+i.q,0)});
     location.hash = '#/confirmation/'+r.ref;
   }catch(e){ btn.disabled=false; btn.textContent=t('Commander maintenant'); toast(esc(e.message),'bad'); }
 };

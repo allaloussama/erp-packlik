@@ -3,7 +3,7 @@
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: SAMEORIGIN');
 header('Referrer-Policy: strict-origin-when-cross-origin');
-header("Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://graph.facebook.com; frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com; frame-ancestors 'self'");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://www.facebook.com; connect-src 'self' https://graph.facebook.com https://www.facebook.com https://connect.facebook.net; frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com; frame-ancestors 'self'");
 // /admin : entrée de l'administration (ERP)
 $path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 if (preg_match('#/admin/?$#', $path)) {

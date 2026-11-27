@@ -217,7 +217,7 @@ async function bootApp(){
     reindex(); SETTINGS.noDefaultDhd=true; queueSync();
   }
   if(S.role==='admin' && PRODUCTS.length && !SETTINGS.catalogFilled){ PRODUCTS.forEach(realCatalog); SETTINGS.catalogFilled=true; queueSync(); }
-  loadCart(); autoAssign(); render();
+  loadCart(); autoAssign(); render(); pxTrack('PageView');
   // toute action de l'utilisateur déclenche l'envoi de ce qu'elle a modifié
   ['click','change','submit','drop'].forEach(ev=>document.addEventListener(ev, ()=>{ saveCart(); queueSync(); }));
   document.addEventListener('input', ()=>queueSync());

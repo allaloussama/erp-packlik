@@ -786,8 +786,8 @@ function setStatus(o, st, note){
   hist(o, stName(st,o), note, color);
   if(st==='sent'){ o.feeFixed=feeOf(o); o.dhdFixed=dhdFeeOf(o); const cr=carrierOf(o); o.tracking = o.tracking || (cr.internal? 'PKL-' : cr.short)+Math.floor(10000000+Math.random()*89999999); if(o.parcels && o.parcels.length>1) o.parcels.forEach(p=>p.tracking=p.tracking||o.tracking+'-'+p.n); if(cr.internal && !o.courierId){ const cu=COURIERS.find(x=>x.active&&x.online&&x.zones.includes(o.wilaya)); if(cu) o.courierId=cu.id; } hist(o, 'Poids transmis à '+cr.name, kg(orderWeight(o))+' · '+parcelsOf(o).length+' colis','blue'); expand(o.items).forEach(i=>stockMove(i.pid,'expédition',-i.q,o.ref,'Remis à DHD')); expand(o.items).forEach(i=>{ const p=PBY[i.pid]; if(p.variants && i.v){ const v=p.variants.find(x=>x.id===i.v); if(v) v.stock-=i.q; } else p.stock-=i.q; }); }
   if(st==='returned'){ expand(o.items).forEach(i=>{ PBY[i.pid].stock+=i.q; stockMove(i.pid,'retour',i.q,o.ref,'Retour réintégré'); }); }
-  if(st==='delivered'){ expand(o.items).forEach(i=>{ PBY[i.pid].sold30 += i.q; PBY[i.pid].lastSale = Date.now(); }); if(carrierOf(o).internal) o.cashWithCourier=true; if(SETTINGS.purchaseOn==='delivered') fbq('Purchase',{value:orderTotal(o), ref:o.ref}); }
-  if(st==='toprep' && SETTINGS.purchaseOn==='confirmed') fbq('Purchase',{value:orderTotal(o), ref:o.ref});
+  if(st==='delivered'){ expand(o.items).forEach(i=>{ PBY[i.pid].sold30 += i.q; PBY[i.pid].lastSale = Date.now(); }); if(carrierOf(o).internal) o.cashWithCourier=true; if(SETTINGS.purchaseOn==='delivered') pxTrack('Purchase',{value:orderTotal(o), ref:o.ref}); }
+  if(st==='toprep' && SETTINGS.purchaseOn==='confirmed') pxTrack('Purchase',{value:orderTotal(o), ref:o.ref});
   if(st==='paid'){ distribute(o); }
   log('Statut '+t(STATUS[prev].fr)+' → '+t(STATUS[st].fr), o.ref, note);
 }
@@ -1194,15 +1194,37 @@ function addToCart(pid, q, v){
   const p = PBY[pid]; if(!canOrder(p)){ toast(t('Produit en rupture'),'bad'); return; }
   const price = v? p.variants.find(x=>x.id===v).price : p.price; const cost = v? p.variants.find(x=>x.id===v).cost : p.cost;
   const ex = S.cart.find(i=>i.pid===pid && i.v===v); if(ex) ex.q+=q; else S.cart.push({pid, v, q, price, cost});
-  toast(t('Ajouté au panier')+' · '+esc(p.name),'ok'); fbq('AddToCart',{value:price*q});
+  toast(t('Ajouté au panier')+' · '+esc(p.name),'ok'); pxTrack('AddToCart',{id:pid, value:price*q});
 }
 const TT_EVENT = {Purchase:'CompletePayment', Lead:'SubmitForm'};
-function fbq(ev, data){
+/* Pixels : journal (ERP › Pixels) + envoi réel au pixel Meta du navigateur du client.
+   Nommée pxTrack : « fbq » est le nom réservé par le script de Meta (window.fbq). */
+function pxTrack(ev, data){
   if(!SETTINGS.modules.pixels) return; S.pixel = S.pixel||[];
+  metaSend(ev, data||{});
   PIXELS.filter(p=>p.active).forEach(p=>{ const name = p.platform==='tiktok'? (TT_EVENT[ev]||ev) : ev; if(!PIXEL_EVENTS[p.platform][name]) return;
     S.pixel.unshift({at:Date.now(), platform:p.platform, pixel:p.name, pixelId:p.pixelId, ev:name, data:data||{}, server: !!p.token, test:p.testCode||''}); });
   if(S.pixel.length>200) S.pixel.length=200;
 }
+/* Meta : charge fbevents.js une seule fois pour les pixels Facebook actifs (ID saisi dans ERP › Pixels).
+   Rien n'est envoyé depuis l'ERP : un achat « confirmé » par un agent serait attribué à l'agent, pas au client. */
+function metaReady(){
+  if(window.__pkMeta) return true;
+  const ids=PIXELS.filter(p=>p.active && p.platform==='facebook' && /^\d{6,20}$/.test(p.pixelId||'')).map(p=>p.pixelId);
+  if(!ids.length) return false;
+  if(!window.fbq){ const n=window.fbq=function(){ n.callMethod? n.callMethod.apply(n,arguments) : n.queue.push(arguments); }; if(!window._fbq) window._fbq=n; n.push=n; n.loaded=true; n.version='2.0'; n.queue=[];
+    const sc=document.createElement('script'); sc.async=true; sc.src='https://connect.facebook.net/en_US/fbevents.js'; document.head.appendChild(sc); }
+  ids.forEach(id=>window.fbq('init', id));
+  window.__pkMeta=true; return true;
+}
+function metaSend(ev, d){
+  if(route().parts[0]==='erp' || !PIXEL_EVENTS.facebook[ev] || !metaReady()) return;
+  const p={currency:'DZD'}; if(d.value!=null) p.value=+d.value||0; if(d.id!=null){ p.content_ids=[String(d.id)]; p.content_type='product'; }
+  if(d.ids){ p.content_ids=d.ids.map(String); p.content_type='product'; p.num_items=d.n||d.ids.length; }
+  if(ev==='PageView') window.fbq('track', ev);
+  else window.fbq('track', ev, p, d.ref? {eventID:'order-'+d.ref} : undefined); // eventID : évite les doublons si l'API Conversions est ajoutée plus tard
+}
+window.addEventListener('hashchange', ()=>pxTrack('PageView')); // boutique sur une seule page : une vue par page visitée
 function placeOrder(){
   const co=S.ui.co; co.name=val('coName').trim(); co.phone=val('coPhone').trim(); co.commune=val('coC').trim(); co.address=val('coA').trim(); co.note=val('coN').trim(); co.wilaya=+val('coW');
   co.err={};
@@ -1226,7 +1248,7 @@ function placeOrder(){
   o.history.push({at:Date.now()+1, who:'Système', action: a.id? 'Assignée à '+UBY[a.id].name.split(' ')[0] : 'Placée dans la file commune', note:a.why, color:''});
   ACTIVITY.unshift({at:Date.now(), user:'Boutique', role:'site', action:'Nouvelle commande', entity:o.ref, details:a.why});
   NOTIFS.unshift({at:Date.now(), txt:'Nouvelle commande '+o.ref+' (Site) → '+(a.id?UBY[a.id].name:'file commune')});
-  if(SETTINGS.purchaseOn==='order') fbq('Purchase',{value:orderTotal(o), ref:o.ref});
+  if(SETTINGS.purchaseOn==='order') pxTrack('Purchase',{value:orderTotal(o), ref:o.ref, ids:o.items.map(i=>i.pid), n:o.items.reduce((s,i)=>s+i.q,0)});
   S.cart=[]; S.ui.co={name:'', phone:'', wilaya:16, commune:'', address:'', delivery:'home', note:'', err:{}};
   location.hash = '#/confirmation/'+o.ref;
 }
@@ -2369,9 +2391,9 @@ function render(){
     else if(p0==='boutique'){ if(lastPath.split('/')[1]!=='boutique' && lastPath.split('/')[1]!=='categorie'){ /* garder les filtres */ } sh.cat=null; html = viewShop(); }
     else if(p0==='categorie'){ if(sh.cat!==parts[1]){ sh.shown=24; } sh.cat=parts[1]; html = viewShop(); }
     else if(p0==='recherche'){ html = viewShop(); }
-    else if(p0==='produit'){ html = viewProduct(+parts[1]); fbq('ViewContent',{id:+parts[1]}); }
+    else if(p0==='produit'){ html = viewProduct(+parts[1]); if(location.hash!==lastPath) pxTrack('ViewContent',{id:+parts[1], value:(PBY[+parts[1]]||{}).price||0}); }
     else if(p0==='panier') html = viewCart();
-    else if(p0==='commande'){ html = viewCheckout(); fbq('InitiateCheckout',{}); }
+    else if(p0==='commande'){ html = viewCheckout(); if(location.hash!==lastPath) pxTrack('InitiateCheckout',{value:cartTotal()}); }
     else if(p0==='confirmation') html = viewConfirm(parts[1]);
     else if(p0==='suivi') html = viewTrack();
     else if(p0==='contact') html = viewContact();

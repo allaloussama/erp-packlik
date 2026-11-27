@@ -78,8 +78,8 @@ shopShell = function(content, active){
 };
 
 const openMini = ()=>{ S.ui.mini=true; render(); document.getElementById('toasts').replaceChildren(); }; // le panneau suffit comme confirmation
-A.addCart = el=>{ const p=PBY[+el.dataset.id]; if(!p) return; addToCart(p.id, p.minQty||1, null); fbq('AddToCart',{id:p.id}); openMini(); };
-A.pdpAdd = ()=>{ const p=PBY[S.ui.pdp.id]; addToCart(p.id, Math.max(p.minQty||1, +S.ui.pdp.q||1), S.ui.pdp.v); fbq('AddToCart',{id:p.id}); openMini(); };
+A.addCart = el=>{ const p=PBY[+el.dataset.id]; if(!p) return; addToCart(p.id, p.minQty||1, null); openMini(); };
+A.pdpAdd = ()=>{ const p=PBY[S.ui.pdp.id]; addToCart(p.id, Math.max(p.minQty||1, +S.ui.pdp.q||1), S.ui.pdp.v); openMini(); };
 A.miniOpen = (el, e)=>{ if(e) e.preventDefault(); openMini(); };
 A.miniClose = ()=>{ S.ui.mini=false; render(); };
 A.miniGo = ()=>{ S.ui.mini=false; };
@@ -173,7 +173,7 @@ SUB.cod = async form=>{
 };
 /* sur une fiche produit, « Ajouter au panier » d'un autre produit l'ajoute au formulaire de la page */
 const _addCartForm = A.addCart;
-A.addCart = el=>{ if(route().parts[0]!=='produit') return _addCartForm(el); const p=PBY[+el.dataset.id]; if(!p) return; addToCart(p.id, p.minQty||1, null); fbq('AddToCart',{id:p.id}); render(); document.getElementById('toasts').replaceChildren(); toast(t('Ajouté au formulaire de commande')+' : '+esc(p.name),'ok'); const f=document.querySelector('.tj-summary'); if(f) f.scrollIntoView({behavior:'smooth', block:'center'}); };
+A.addCart = el=>{ if(route().parts[0]!=='produit') return _addCartForm(el); const p=PBY[+el.dataset.id]; if(!p) return; addToCart(p.id, p.minQty||1, null); render(); document.getElementById('toasts').replaceChildren(); toast(t('Ajouté au formulaire de commande')+' : '+esc(p.name),'ok'); const f=document.querySelector('.tj-summary'); if(f) f.scrollIntoView({behavior:'smooth', block:'center'}); };
 
 /* ---------- fiche produit : ordre des blocs ---------- */
 const PDP_BLOCKS = [['badges','Badges et catégories'],['title','Nom du produit'],['price','Prix'],['short','Description courte'],['meta','Conditionnement, référence, stock'],['pack','Contenu du pack'],['form','Formulaire de commande'],['desc','Description complète']];
