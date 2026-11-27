@@ -89,6 +89,11 @@ check(!isset($r['order']['items'][0]['cost']), 'commande publique : le prix d\'a
 $orders = array_column(array_column($boot['data']['orders'], 2), null, 'id');
 check($orders[$r2['id']]['duplicate'] === true && $orders[$r['id']]['duplicate'] === false, 'anti-doublon : la 2e commande identique est signalée');
 check(call('order', ['items' => [['pid' => 2, 'q' => 1]]] + $order)[0] === 422, 'un brouillon ne se commande pas');
+[$c] = call('sync', ['since' => 0, 'up' => [
+	['c' => 'products', 'id' => '3', 'd' => ['id' => 3, 'name' => 'Stock zéro', 'price' => 500, 'cost' => 1, 'stock' => 0, 'status' => 'actif'], 'base' => 0],
+	['c' => 'products', 'id' => '4', 'd' => ['id' => 4, 'name' => 'Rupture manuelle', 'price' => 500, 'cost' => 1, 'stock' => 99, 'status' => 'rupture'], 'base' => 0],
+]], $admin, $csrf);
+check(call('order', ['items' => [['pid' => 3, 'q' => 1]], 'phone' => '0555 09 09 09'] + $order)[0] === 200 && call('order', ['items' => [['pid' => 4, 'q' => 1]]] + $order)[0] === 422, 'rupture : seulement si l\'admin l\'a choisie, jamais à cause du stock compté');
 check(call('order', ['phone' => '123'] + $order)[0] === 422, 'téléphone invalide refusé');
 check(call('order', ['website' => 'http://spam'] + $order)[0] === 400, 'champ piège rempli (robot) refusé');
 check(call('track&ref=' . $r['ref'] . '&phone=0555010203')[0] === 200 && call('track&ref=' . $r['ref'] . '&phone=0666000000')[0] === 404, 'suivi public : seulement avec le bon téléphone');

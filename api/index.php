@@ -350,8 +350,9 @@ function create_order(?array $u, array $in): array {
 			fail(422, 'Produit ou quantité invalide.');
 		}
 		if (!$staff) {
-			$stock = $v === null ? (int) ($p['stock'] ?? 0) : (int) (array_column((array) ($p['variants'] ?? []), 'stock', 'id')[$v] ?? 0);
-			if (!in_array($p['status'] ?? '', ['actif', 'rupture'], true) || (float) $p['price'] <= 0 || ($stock <= 0 && empty($p['onDemand']))) {
+			// rupture seulement si l'admin l'a choisie (statut « rupture » sans « sur commande ») : le stock compté ne bloque jamais
+			$pst = $p['status'] ?? '';
+			if (!($pst === 'actif' || ($pst === 'rupture' && !empty($p['onDemand']))) || (float) $p['price'] <= 0) {
 				fail(422, '« ' . $p['name'] . ' » n\'est pas disponible à la commande.');
 			}
 			if ($q < (int) ($p['minQty'] ?? 1)) {

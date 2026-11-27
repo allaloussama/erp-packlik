@@ -93,13 +93,14 @@ void main() {
     expect(o['lockedBy'], isNull);
   });
 
-  test('confirmation : refusée si stock insuffisant, sinon À préparer avec upsell et remise à valider', () async {
+  test('confirmation : refusée seulement si l\'admin a mis le produit en rupture (jamais à cause du stock compté), sinon À préparer avec upsell et remise à valider', () async {
     final st = await boot();
     final o = st.orderById(1);
-    st.pby[1]!['stock'] = 1;
-    expect(st.confApply(o, 'confirmed'), contains('stock insuffisant'));
+    st.pby[1]!['stock'] = 0;
+    st.pby[1]!['status'] = 'rupture';
+    expect(st.confApply(o, 'confirmed'), contains('produit en rupture'));
     expect(o['status'], 'new');
-    st.pby[1]!['stock'] = 10;
+    st.pby[1]!['status'] = 'actif'; // stock toujours à 0 : la commande se confirme quand même
     expect(st.confApply(o, 'confirmed'), isNull);
     expect(o['status'], 'toprep');
     expect(o['discountPending'], isTrue); // 10 % > 5 % permis à l'agent

@@ -85,7 +85,7 @@ class _ProductScreenState extends ConsumerState<ProductScreen> {
               Wrap(spacing: 8, runSpacing: 6, children: [
                 _info('${tr(lang, 'Conditionnement')} : ${p.pack} ${tr(lang, 'pièces')}'),
                 if (p.sku.isNotEmpty) _info(p.sku),
-                if (!p.isQuote) _info(p.available > 0 ? tr(lang, 'En stock') : p.onDemand ? tr(lang, 'Sur commande') : tr(lang, 'Rupture'), color: p.available > 0 ? kGreen : p.onDemand ? kOrange : kRed),
+                if (!p.isQuote) _info(p.status != 'rupture' ? tr(lang, 'En stock') : p.onDemand ? tr(lang, 'Sur commande') : tr(lang, 'Rupture'), color: p.status != 'rupture' ? kGreen : p.onDemand ? kOrange : kRed),
               ]),
               if (p.variants.isNotEmpty) ...[
                 const SizedBox(height: 16),

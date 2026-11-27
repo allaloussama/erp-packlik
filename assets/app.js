@@ -892,7 +892,9 @@ function cartCount(){ return S.cart.reduce((s,i)=>s+i.q,0); }
 function cartTotal(){ return S.cart.reduce((s,i)=>s+i.price*i.q,0); }
 function pName(p){ return p.name; }
 function pPrice(p){ if(p.status==='devis' || !p.price) return t('Prix sur devis'); if(p.variants) return dzd(Math.min(...p.variants.map(v=>v.price)))+' – '+dzd(Math.max(...p.variants.map(v=>v.price))); return dzd(p.price); }
-function canOrder(p){ if(p.status==='devis' || !p.price) return false; return stockInfo(p.id).available>0 || p.onDemand; }
+// rupture = choisie à la main par l'admin (statut « rupture ») ; le stock compté ne rend jamais un produit indisponible
+function isOut(p){ return p.status==='rupture' && !p.onDemand; }
+function canOrder(p){ if(p.status==='devis' || !p.price) return false; return !isOut(p); }
 
 function shopShell(content, active){
   const cats = CATS;
@@ -920,7 +922,7 @@ function shopFooter(){
   </div><div class="bot">© 2026 PackLik · packlik.shop</div></footer>`;
 }
 function pcard(p){
-  const st = stockInfo(p.id); const out = st.available<=0 && !p.onDemand && p.status!=='devis';
+  const st = stockInfo(p.id); const out = isOut(p);
   const tag = out? `<span class="badge red tag">${t('Rupture')}</span>` : p.isNew? `<span class="badge blue tag">${t('Nouveau')}</span>` : p.featured? `<span class="badge kraft tag">${t('En vedette')}</span>`:'';
   return `<article class="pcard">
     <a class="im" href="#/produit/${p.id}" aria-label="${esc(p.name)}">${prodArt(p,130)}${tag}</a>
@@ -1023,7 +1025,7 @@ function viewProduct(id){
         <div class="row wrap">${p.cats.map(c=>`<a class="badge kraft" href="#/categorie/${c}">${esc(catName(CATS.find(x=>x.id===c)))}</a>`).join('')}</div>
         <h1>${esc(p.name)}</h1>
         <div class="price num">${v? dzd(v.price) : pPrice(p)}</div>
-        <div class="row small"><span class="badge">${t('Conditionnement')} : ${p.pack} ${t('pièces')}</span><span class="badge">${t('Réf.')} ${p.sku}</span>${p.status==='devis'?'':st.available>0? `<span class="badge green">${t('En stock')}</span>` : p.onDemand? `<span class="badge amber">${t('Sur commande')}</span>` : `<span class="badge red">${t('Rupture')}</span>`}</div>
+        <div class="row small"><span class="badge">${t('Conditionnement')} : ${p.pack} ${t('pièces')}</span><span class="badge">${t('Réf.')} ${p.sku}</span>${p.status==='devis'?'':p.status!=='rupture'? `<span class="badge green">${t('En stock')}</span>` : p.onDemand? `<span class="badge amber">${t('Sur commande')}</span>` : `<span class="badge red">${t('Rupture')}</span>`}</div>
         ${p.variants? `<div><div class="small" style="font-weight:700;margin-bottom:6px">${t('Variante')}</div><div class="row">${p.variants.map(x=>`<button class="var-opt ${S.ui.pdp.v===x.id?'on':''}" data-a="pdpVar" data-v="${x.id}" aria-pressed="${S.ui.pdp.v===x.id}">${x.label} · ${dzd(x.price)}</button>`).join('')}</div></div>`:''}
         ${p.packItems? `<div class="card card-b small"><b>${t('Contenu du pack')}</b><ul style="margin:6px 0 0;padding-inline-start:18px">${p.packItems.map(c=>`<li>${c.q} × ${esc(PBY[c.pid].name)}</li>`).join('')}</ul></div>`:''}
         ${p.status==='devis'? `<div class="lock-note">${ic('phone','sm')} ${t('Ce pack est composé sur mesure : contactez-nous pour un devis.')}</div><a class="btn wa lg" href="https://wa.me/213549593160" target="_blank" rel="noopener">${ic('wa')} ${t('Demander sur WhatsApp')}</a>` : `
@@ -1184,7 +1186,7 @@ function viewList(kind){
       <tr><th>${t('Prix')}</th>${ps.map(p=>`<td style="text-align:center" class="num">${pPrice(p)}</td>`).join('')}</tr>
       <tr><th>${t('Conditionnement')}</th>${ps.map(p=>`<td style="text-align:center">${p.pack} ${t('pièces')}</td>`).join('')}</tr>
       <tr><th>${t('Prix unitaire')}</th>${ps.map(p=>`<td style="text-align:center" class="num">${p.price? (p.price/p.pack).toFixed(1).replace('.',',')+' DZD':'—'}</td>`).join('')}</tr>
-      <tr><th>${t('Disponibilité')}</th>${ps.map(p=>`<td style="text-align:center">${stockInfo(p.id).available>0? `<span class="badge green">${t('En stock')}</span>`:`<span class="badge red">${t('Rupture')}</span>`}</td>`).join('')}</tr>
+      <tr><th>${t('Disponibilité')}</th>${ps.map(p=>`<td style="text-align:center">${!isOut(p)? `<span class="badge green">${t('En stock')}</span>`:`<span class="badge red">${t('Rupture')}</span>`}</td>`).join('')}</tr>
       <tr><th></th>${ps.map(p=>`<td style="text-align:center"><button class="btn sm" data-a="cmp" data-id="${p.id}">${t('Retirer')}</button></td>`).join('')}</tr>
     </tbody></table></div></div>`,'');
   }
@@ -1571,7 +1573,7 @@ function upsellBlock(o, sugg, inCart){
   const list = cat? PRODUCTS.filter(p=>p.price && p.status!=='archivé' && p.cats.includes(cat)) : sugg.map(pid=>PBY[pid]);
   const cats = CATS.filter(c=>c.id!=='tout');
   const chips = `<div class="row wrap" style="gap:6px;padding:12px 16px 0"><button class="chipf ${!cat?'on':''}" data-a="upCat" data-v="">${ic('zap','sm')} ${t('Suggestions')}</button>${cats.map(c=>`<button class="chipf ${cat===c.id?'on':''}" data-a="upCat" data-v="${c.id}">${esc(catName(c))} <span class="xs muted">${PRODUCTS.filter(p=>p.price&&p.cats.includes(c.id)).length}</span></button>`).join('')}</div>`;
-  const grid = list.length? `<div class="card-b upsell" style="max-height:330px;overflow:auto">${list.map(p=>{ const pr=p.variants?p.variants[0].price:p.price; const av=stockInfo(p.id).available; return `<div class="u"><div class="row">${prodArt(p,34)}<b>${esc(p.name)}</b></div><div class="row between"><span class="num small">${dzd(pr)}${inCart.has(p.id)?` <span class="badge green">${t('dans le panier')}</span>`:''}${av<=0?` <span class="badge red">${t('Rupture')}</span>`:''}</span><button class="btn sm kraft" data-a="addLine" data-id="${p.id}" ${av<=0&&!p.onDemand?'disabled':''}>${ic('plus','sm')} ${t('Ajouter')}</button></div></div>`; }).join('')}</div>` : `<div class="empty">${t('Aucun produit')}</div>`;
+  const grid = list.length? `<div class="card-b upsell" style="max-height:330px;overflow:auto">${list.map(p=>{ const pr=p.variants?p.variants[0].price:p.price; const av=stockInfo(p.id).available; return `<div class="u"><div class="row">${prodArt(p,34)}<b>${esc(p.name)}</b></div><div class="row between"><span class="num small">${dzd(pr)}${inCart.has(p.id)?` <span class="badge green">${t('dans le panier')}</span>`:''}${isOut(p)?` <span class="badge red">${t('Rupture')}</span>`:''}</span><button class="btn sm kraft" data-a="addLine" data-id="${p.id}" ${isOut(p)?'disabled':''}>${ic('plus','sm')} ${t('Ajouter')}</button></div></div>`; }).join('')}</div>` : `<div class="empty">${t('Aucun produit')}</div>`;
   return card(t('Suggestions d\'upsell'), chips + grid, `<span class="small muted">${t('~70 % des commandes acceptent un upsell')}</span>`);
 }
 function shipBox(o, editable){
@@ -2082,7 +2084,7 @@ function viewExpedition(){
     ${card(t('Envoyés aujourd\'hui'), `<div class="tbl-wrap"><table class="tbl"><tbody>${sentToday.map(o=>`<tr><td><b>${o.ref}</b></td><td>${esc(t(carrierOf(o).name))}</td><td dir="ltr" class="small">${o.tracking}${parcelsOf(o).length>1?' · '+parcelsOf(o).length+' '+t('colis'):''}</td><td>${esc(wName(o.wilaya))}</td><td class="r num">${kg(orderWeight(o))}</td><td class="r num">${dzd(orderTotal(o))}</td><td><button class="btn sm" data-a="printLabel" data-id="${o.id}">${ic('print','sm')} ${t('Étiquette')}</button></td></tr>`).join('') || emptyRow(7,'Aucun envoi aujourd\'hui','truck')}</tbody></table></div>`, sentToday.length?`<button class="btn sm" data-a="bordereau">${ic('print','sm')} ${t('Bordereau de remise')}</button>`:'')}`;
   return erpShell('expedition', t('Expédition'), t('Société de livraison, poids, colis, étiquettes et bordereau'), body);
 }
-function preSendCheck(o){ const e=[]; if(needsSplit(o)) e.push('Poids trop élevé : découper la commande'); if(!carrierOf(o).connected) e.push('Société non connectée'); if(!validPhone(CBY[o.customerId].phone)) e.push('Téléphone invalide'); if(o.delivery!=='desk' && !o.commune) e.push('Commune manquante'); expand(o.items).forEach(i=>{ if(PBY[i.pid].stock < i.q) e.push('Stock insuffisant'); }); return [...new Set(e)]; }
+function preSendCheck(o){ const e=[]; if(needsSplit(o)) e.push('Poids trop élevé : découper la commande'); if(!carrierOf(o).connected) e.push('Société non connectée'); if(!validPhone(CBY[o.customerId].phone)) e.push('Téléphone invalide'); if(o.delivery!=='desk' && !o.commune) e.push('Commune manquante'); expand(o.items).forEach(i=>{ if(isOut(PBY[i.pid])) e.push('Produit en rupture'); }); return [...new Set(e)]; }
 function viewReturns(){
   const list = ORDERS.filter(o=>['returning','returned'].includes(o.status));
   const body = card(t('Retours'), `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>${t('N°')}</th><th>${t('Client')}</th><th>${t('Wilaya')}</th><th>${t('Produits')}</th><th>${t('Motif')}</th><th class="r">${t('Perte estimée')}</th><th>${t('Statut')}</th><th></th></tr></thead><tbody>${list.map(o=>{ const a=o.attempts[o.attempts.length-1]; return `<tr><td><b>${o.ref}</b></td><td>${custCell(o)}</td><td>${esc(wName(o.wilaya))}</td><td>${itemsSummary(o.items)}</td><td class="small">${a? t(FBY[a.reason].fr):'—'}</td><td class="r num down">${dzd(returnLoss(o))}</td><td>${stBadge(o)}</td><td>${o.status==='returning'?`<button class="btn sm" data-a="receiveReturn" data-id="${o.id}">${ic('undo','sm')} ${t('Réceptionner')}</button>`:''}</td></tr>`; }).join('') || emptyRow(8,'Aucun retour','check')}</tbody></table></div>`);
@@ -2521,7 +2523,7 @@ const A = {
   logCall:(el)=>{ const o=curOrder(el); o.calls++; hist(o,'Appel sortant','','blue'); setTimeout(render,50); },
   resConfirm:()=>{ const o=drawerOrder(); const c=CBY[o.customerId]; const err=[];
     if(!validPhone(c.phone)) err.push(t('téléphone invalide')); if(o.delivery!=='desk' && !o.commune) err.push(t('commune manquante'));
-    expand(o.items).forEach(i=>{ const s=stockInfo(i.pid); if(s.available<i.q && !PBY[i.pid].onDemand) err.push(t('stock insuffisant')+' : '+PBY[i.pid].name); });
+    expand(o.items).forEach(i=>{ if(isOut(PBY[i.pid])) err.push(t('Produit en rupture')+' : '+PBY[i.pid].name); });
     if(err.length){ toast(t('Impossible de confirmer')+' : '+err.join(', '),'bad'); return; }
     const limit = S.role==='agent'? SETTINGS.discountAgent : S.role==='manager'? SETTINGS.discountManager : 100;
     if(o.discount>limit){ o.discountPending=true; hist(o,'Remise à valider',o.discount+' % > '+limit+' %','amber'); }

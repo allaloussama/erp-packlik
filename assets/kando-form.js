@@ -133,7 +133,7 @@ function kPickerHtml(){
     const list = PRODUCTS.filter(p=>p.price && !['devis','archivé','masqué'].includes(p.status) && (!k.cat || p.cats.includes(k.cat)) && (!q || p.name.toLowerCase().includes(q) || (p.sku||'').toLowerCase().includes(q)));
     return modalTpl(t('Choisir un produit'), `<div class="pkbar"><div class="ksearch">${ic('search','sm')}<input class="input" id="pkQ" placeholder="${t('Rechercher un produit…')}" value="${esc(k.q||'')}" data-pk="q"></div></div>
       <div class="kchips" style="padding:8px 0">${[{id:'',fr:'Tout'}].concat(CATS.filter(c=>c.id!=='tout')).map(c=>`<button class="kchip ${k.cat===c.id?'on':''}" data-a="pkCat" data-v="${c.id}">${esc(c.id? catName(c) : t('Tout'))}</button>`).join('')}</div>
-      <div class="pkgrid kscroll">${list.map(p=>{ const s=stockInfo(p.id); return `<button class="pkcard" data-a="pkOpen" data-id="${p.id}"><span class="pkimg">${prodArt(p,130)}</span><span class="pkname">${esc(p.name)}</span><span class="pkprice">${pPrice(p)}</span><span class="badge ${s.available>0?'green':p.onDemand?'amber':'red'}">${s.available>0? t('En stock')+' · '+s.available : p.onDemand? t('Sur commande') : t('Rupture')}</span></button>`; }).join('') || `<p class="kempty">${t('Aucun produit')}</p>`}</div>`, back, true);
+      <div class="pkgrid kscroll">${list.map(p=>{ const s=stockInfo(p.id); return `<button class="pkcard" data-a="pkOpen" data-id="${p.id}"><span class="pkimg">${prodArt(p,130)}</span><span class="pkname">${esc(p.name)}</span><span class="pkprice">${pPrice(p)}</span><span class="badge ${p.status!=='rupture'?'green':p.onDemand?'amber':'red'}">${p.status!=='rupture'? t('En stock')+' · '+s.available : p.onDemand? t('Sur commande') : t('Rupture')}</span></button>`; }).join('') || `<p class="kempty">${t('Aucun produit')}</p>`}</div>`, back, true);
   }
   const p=PBY[k.pid], min=p.minQty||1; k.qty=Math.max(min, +k.qty||min); if(p.variants && !p.variants.some(v=>v.id===k.v)) k.v=p.variants[0].id;
   const unit=unitPrice(p, k.v, k.qty), base = k.v && p.variants? p.variants.find(v=>v.id===k.v).price : p.price, old=Math.max(p.oldPrice||0, base);
@@ -166,7 +166,7 @@ A.pkTier = el=>{ S.ui.pk.qty=+el.dataset.v; pkDraw(); };
 A.pkQty = el=>{ const p=PBY[S.ui.pk.pid]; S.ui.pk.qty=Math.max(p.minQty||1, (+S.ui.pk.qty||1)+(+el.dataset.v)); pkDraw(); };
 A.pkAdd = ()=>{
   const k=S.ui.pk, p=PBY[k.pid], q=Math.max(p.minQty||1, +k.qty||1), price=unitPrice(p, k.v, q);
-  if(!canOrder(p) && !p.onDemand && stockInfo(p.id).available<=0) toast(t('Attention : produit en rupture'),'bad');
+  if(!canOrder(p) && isOut(p)) toast(t('Attention : produit en rupture'),'bad');
   if(k.target==='form'){
     const d=S.ui.kf, line={pid:p.id, v:k.v||null, q, price};
     if(k.idx>=0) d.items[k.idx]=line; else { const ex=d.items.find(i=>i.pid===p.id && (i.v||null)===(k.v||null)); if(ex){ ex.q=+ex.q+q; ex.price=unitPrice(p, k.v, ex.q); } else d.items.push(line); }

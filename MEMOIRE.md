@@ -2,6 +2,12 @@
 
 Journal des changements, du plus récent au plus ancien. La fiche agent (`AGENTS.md`) explique comment le code est construit.
 
+## 28 novembre 2026 — Rupture seulement à la main
+
+| Demande | Ce qui a été fait | Où |
+| --- | --- | --- |
+| Tous les produits toujours en stock ; rupture seulement quand l'admin la choisit | Un produit n'est indisponible que si son statut est « rupture » (sauf « sur commande »). Le stock compté (même à 0 ou négatif) ne bloque plus : ni la boutique (badge, bouton, comparateur, upsell), ni la commande publique côté serveur, ni la confirmation, ni l'envoi. Le stock reste compté et les alertes « stock bas » restent dans l'ERP | `assets/app.js` (`isOut`, `canOrder`, `preSendCheck`, `resConfirm`), `assets/kando.js`, `assets/kando-form.js`, `assets/tajer.js`, `api/index.php` (commande), `mobile/lib/models.dart`, `mobile/lib/screens/product_screen.dart`, `mobile/lib/erp/rules.dart` ; tests `tests/smoke.php`, `mobile/test/erp_rules_test.dart` |
+
 ## 27 novembre 2026 (9) — Produits d'une catégorie : ajout, retrait, ordre
 
 | Demande | Ce qui a été fait | Où |

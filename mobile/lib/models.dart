@@ -98,7 +98,8 @@ class Product {
 
   bool get isQuote => status == 'devis' || (price <= 0 && variants.isEmpty);
   int get available => variants.isEmpty ? stock : variants.fold(0, (s, v) => s + v.stock);
-  bool get canOrder => !isQuote && status == 'actif' && (available > 0 || onDemand);
+  // rupture = choisie à la main par l'admin (statut « rupture ») ; le stock compté ne rend jamais un produit indisponible (isOut du site)
+  bool get canOrder => !isQuote && (status == 'actif' || (status == 'rupture' && onDemand));
   String title(String lang) => lang == 'ar' && nameAr.isNotEmpty ? nameAr : name;
 
   /// Prix d'une pièce : variante, sinon palier de quantité (le serveur recalcule de toute façon).

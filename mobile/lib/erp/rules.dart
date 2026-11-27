@@ -347,7 +347,7 @@ extension Rules on ErpStore {
     if (o['delivery'] != 'desk' && s(o['commune']).isEmpty) e.add('Commune manquante');
     for (final i in expand(l(o['items']))) {
       final p = pby[i.pid];
-      if (p != null && ni(p['stock']) < i.q && p['onDemand'] != true) e.add('Stock insuffisant');
+      if (p != null && p['status'] == 'rupture' && p['onDemand'] != true) e.add('Produit en rupture');
     }
     return e.toList();
   }
@@ -585,7 +585,7 @@ extension Actions on ErpStore {
         if (o['delivery'] != 'desk' && s(o['commune']).isEmpty) err.add('commune manquante');
         for (final i in expand(l(o['items']))) {
           final p = pby[i.pid];
-          if (p != null && stockInfo(i.pid).available < i.q && p['onDemand'] != true) err.add('stock insuffisant : ${s(p['name'])}');
+          if (p != null && p['status'] == 'rupture' && p['onDemand'] != true) err.add('produit en rupture : ${s(p['name'])}'); // rupture manuelle seulement, comme le site
         }
         if (err.isNotEmpty) return 'Impossible de confirmer : ${err.join(', ')}';
         final limit = role == 'agent' ? n(settings['discountAgent'] ?? 5) : role == 'manager' ? n(settings['discountManager'] ?? 10) : 100;

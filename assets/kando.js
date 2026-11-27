@@ -109,7 +109,7 @@ const _discountAmt = discountAmt;
 discountAmt = o => o.discountType==='amount'? Math.min(orderSub(o), Math.max(0, +o.discount||0)) : _discountAmt(o);
 const _orderWeight = orderWeight;
 orderWeight = o => +o.weightFixed > 0? +o.weightFixed : _orderWeight(o);
-preSendCheck = function(o){ const e=[]; if(!carrierOf(o).id) e.push('Choisissez une société de livraison'); else if(!carrierOf(o).connected) e.push('Société de livraison désactivée'); if(needsSplit(o)) e.push('Poids trop élevé : découper la commande'); if(!validPhone(CBY[o.customerId].phone)) e.push('Téléphone invalide'); if(!o.commune) e.push('Commune manquante'); expand(o.items).forEach(i=>{ if(PBY[i.pid] && PBY[i.pid].stock < i.q && !PBY[i.pid].onDemand) e.push('Stock insuffisant'); }); return [...new Set(e)]; };
+preSendCheck = function(o){ const e=[]; if(!carrierOf(o).id) e.push('Choisissez une société de livraison'); else if(!carrierOf(o).connected) e.push('Société de livraison désactivée'); if(needsSplit(o)) e.push('Poids trop élevé : découper la commande'); if(!validPhone(CBY[o.customerId].phone)) e.push('Téléphone invalide'); if(!o.commune) e.push('Commune manquante'); expand(o.items).forEach(i=>{ if(PBY[i.pid] && isOut(PBY[i.pid])) e.push('Produit en rupture'); }); return [...new Set(e)]; };
 
 /* ---------- fenêtres par-dessus le panneau d'une commande : le panneau n'est plus redessiné à chaque mise à jour ---------- */
 renderOverlay = function(){
