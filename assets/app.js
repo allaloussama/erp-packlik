@@ -943,7 +943,7 @@ function viewHome(){
   const heroArt2 = `<svg viewBox="0 0 440 300" aria-hidden="true"><g transform="translate(60,30) scale(1.9)">${prodSvg(PBY[45],0).replace(/^<svg[^>]*>|<\/svg>$/g,'')}</g><circle cx="360" cy="70" r="46" fill="#D99A2B"/><text x="360" y="66" text-anchor="middle" font-size="26" font-weight="800" fill="#2b1d03" font-family="Inter,sans-serif">-15%</text><text x="360" y="88" text-anchor="middle" font-size="12" font-weight="700" fill="#2b1d03" font-family="Inter,sans-serif">PACKS</text></svg>`;
   return shopShell(`<div class="container">
     <section class="hero" aria-roledescription="carrousel" style="background:var(--kraft-l)">
-      <div class="slide ${S.heroIdx===0?'on':''}" style="background:linear-gradient(0deg,#FFD8BD,#FFE7D6)">
+      <div class="slide ${S.heroIdx===0?'on':''}" style="background:#F4F3F0">
         <div style="position:relative;z-index:1"><span class="badge kraft">${t('Emballage personnalisé')}</span><h2 style="margin-top:10px">${t('Prix compétitifs – emballage personnalisé selon votre marque')}</h2><p class="muted">${t('Boîtes, barquettes, bowls, sacs craft et papier imprimés à votre logo, pour restaurants, fast-foods et pâtisseries.')}</p><a href="#/contact" class="btn primary lg">${ic('phone','sm')} ${t('Contactez-nous')}</a></div>
         <div class="art">${heroPhoto(5) || heroArt1}</div>
       </div>

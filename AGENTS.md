@@ -33,6 +33,7 @@ Les scripts se chargent dans l'ordre de `index.php` ; chaque fichier **surcharge
 | `assets/livreur.js` | Rôle Livreur (menus, vues, actions) ; côté serveur : `out_doc` et `guard_courier` dans `api/lib.php` |
 | `mobile/` | Application Flutter native : boutique + ERP de tous les rôles (voir `mobile/README.md`). Une règle métier changée dans `assets/*.js` doit l'être aussi dans `mobile/lib/erp/rules.dart` |
 | `assets/extra.css` | Styles ajoutés (dont le design des commandes) |
+| `assets/theme.css` | Thème moderne de la boutique (chargé en dernier, limité aux pages clients) |
 
 ## Règles à respecter
 

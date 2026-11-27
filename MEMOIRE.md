@@ -2,6 +2,14 @@
 
 Journal des changements, du plus récent au plus ancien. La fiche agent (`AGENTS.md`) explique comment le code est construit.
 
+## 27 novembre 2026 — Thème moderne de la boutique
+
+| Demande | Ce qui a été fait | Où |
+| --- | --- | --- |
+| Les pages où les clients commandent paraissent vieilles ; un thème moderne avec les mêmes options | Nouvelle feuille chargée en dernier, apparence seulement (aucun HTML ni réglage changé) : police Inter (arabe : Cairo), en-tête blanc translucide, recherche arrondie, panier noir, catégories en pastilles grises, slides plus grandes, cartes produit sans cadre sur fond gris (photos fondues), prix en noir, « Acheter maintenant » orange, fiche produit et formulaire de commande épurés, mini-panier et pied de page revus. Les classes partagées avec l’ERP sont limitées à la boutique (`#app:has(>.shop-h)`). Fond par défaut des slides : #F4F3F0 au lieu de la pêche (les slides déjà enregistrées gardent leur couleur) | `assets/theme.css`, `index.php`, `assets/shop-plus.js`, `assets/app.js` (slide par défaut) |
+
+Non fait : l’application mobile (`mobile/`) garde son apparence.
+
 ## 26 novembre 2026 — changements du site (20-23 nov.) portés dans l'application, APK 32 bits
 
 | Demande (site) | Dans l'application | Où |

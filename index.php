@@ -37,6 +37,7 @@ $v = fn(string $f): string => $f . '?v=' . filemtime(__DIR__ . '/' . $f);
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= $v('assets/app.css') ?>">
 <link rel="stylesheet" href="<?= $v('assets/extra.css') ?>">
+<link rel="stylesheet" href="<?= $v('assets/theme.css') ?>">
 </head>
 <body>
 <div id="app"></div>
