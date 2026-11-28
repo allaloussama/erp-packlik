@@ -127,7 +127,9 @@ viewProducts = function(){
 CH.pSel = el=>{ const s=S.ui.prod.sel, id=+el.dataset.id; el.checked? s.add(id) : s.delete(id); render(); };
 CH.pAll = el=>{ const s=S.ui.prod.sel; document.querySelectorAll('[data-ch=pSel]').forEach(x=>{ el.checked? s.add(+x.dataset.id) : s.delete(+x.dataset.id); }); render(); };
 CH.pSup = el=>{ const p=PBY[+el.dataset.id]; p.supplierId=+el.value; log('Fournisseur du produit', p.sku, supName(p.supplierId)); toast(p.name+' → '+esc(supName(p.supplierId)),'ok'); };
-CH.pWeight = el=>{ const p=PBY[+el.dataset.id]; if(!p) return; p.weight=Math.round((+el.value||0)*1000); log('Poids produit', p.sku, el.value+' kg'); toast(p.name+' → '+(p.weight/1000)+' kg','ok'); };
+// poids saisi en kg partout (stocké en grammes) ; > 100 kg par unité = sûrement des grammes tapés par erreur
+const kgToG = v=>{ const k=+v||0; if(k<0 || k>100){ toast(t('Poids invalide : saisissez le poids en kg (ex. 3,4)'),'bad'); return null; } return Math.round(k*1000); };
+CH.pWeight = el=>{ const p=PBY[+el.dataset.id]; if(!p) return; const g=kgToG(el.value); if(g===null){ el.value=p.weight? p.weight/1000 : ''; return; } p.weight=g; log('Poids produit', p.sku, el.value+' kg'); toast(p.name+' → '+(p.weight/1000)+' kg','ok'); };
 CH.pCost = el=>{ const p=PBY[+el.dataset.id]; if(!p) return; p.cost=Math.round(+el.value||0); log('Prix d\'achat', p.sku, dzd(p.cost)); toast(p.name+' → '+dzd(p.cost),'ok'); };
 const _prodTab = A.prodTab; A.prodTab = el=>{ S.ui.prod.sel.clear(); _prodTab(el); };
 /* un produit déjà vendu reste nécessaire aux anciennes commandes : il ne peut qu'aller à la corbeille */
@@ -160,13 +162,13 @@ function prodBulkEdit(ps){
   </div>`, `<button class="btn" data-a="closeModal">${t('Annuler')}</button><button class="btn primary" data-a="pbSave">${t('Appliquer')}</button>`));
 }
 A.pbSave = ()=>{
-  const st=val('pbSt'), sup=+val('pbSup'), cat=val('pbCat'), off=val('pbCatOff'), pc=val('pbPct'), w=val('pbW');
+  const st=val('pbSt'), sup=+val('pbSup'), cat=val('pbCat'), off=val('pbCatOff'), pc=val('pbPct'), w=val('pbW'), wg = w===''? null : kgToG(w); if(w!=='' && wg===null) return;
   S.ui.pbe.map(id=>PBY[id]).filter(Boolean).forEach(p=>{
     if(st) p.status=st; if(sup) p.supplierId=sup;
     if(cat && !p.cats.includes(cat)) p.cats.push(cat);
     if(off){ p.cats=p.cats.filter(c=>c!==off); if(!p.cats.length) p.cats=['tout']; }
     if(pc!=='' && +pc){ const f=1+(+pc)/100; if(p.price){ p.price=Math.round(p.price*f); p.priceHistory=(p.priceHistory||[]).concat({at:Date.now(), sale:p.price, cost:p.cost}); } (p.variants||[]).forEach(v=>v.price=Math.round(v.price*f)); }
-    if(w!=='') p.weight=(+w||0)*1000;
+    if(wg!==null) p.weight=wg;
   });
   log('Modification groupée', S.ui.pbe.length+' produits', ''); S.ui.prod.sel.clear(); closeModal(); syncCats(); toast(t('Produits modifiés'),'ok'); render();
 };
@@ -177,7 +179,7 @@ peHtml = function(){
   const d=S.ui.pe; let h=_peHtml();
   const num='type="number" min="0" inputmode="numeric"';
   if(d._tab==='gen') h = h.replace(`<fieldset class="tj-group"><legend>${t('Catégories')}</legend>`,
-    `<div class="grid2"><div class="field"><label>${t('Poids (kg) — poids d\'une unité vendue')}<input class="input" data-pe="weight" value="${+d.weight? (d.weight/1000).toFixed(3).replace(/\.?0+$/,'') : ''}" ${num} step="0.001"></label></div><div class="field"><label>${t('Fournisseur')}<select class="select" data-pe-sup>${SUPPLIERS.map(s=>`<option value="${s.id}" ${s.id===(+d.supplierId||1)?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label></div></div>
+    `<div class="grid2"><div class="field"><label>${t('Poids (kg) — poids d\'une unité vendue')}<input class="input" data-pe="weightKg" value="${d.weightKg!==undefined? d.weightKg : +d.weight? (d.weight/1000).toFixed(3).replace(/\.?0+$/,'') : ''}" ${num} step="0.001"></label></div><div class="field"><label>${t('Fournisseur')}<select class="select" data-pe-sup>${SUPPLIERS.map(s=>`<option value="${s.id}" ${s.id===(+d.supplierId||1)?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label></div></div>
     <fieldset class="tj-group"><legend>${t('Catégories')}</legend>`);
   if(d._tab==='price') h = h.replace(/<div class="field"><label>[^<]*<input class="input" data-pe="weight"[^>]*><\/label><\/div>/, '');
   if(d._tab==='desc') h = h.replace(/<div class="field"><label>[^<]*<textarea class="input" data-pe="desc"[\s\S]*?<\/textarea><\/label><\/div>/, `<div class="field"><label>${t('Description complète')}</label>${rteHtml(d.desc)}</div>`);
@@ -185,7 +187,7 @@ peHtml = function(){
 };
 document.addEventListener('change', e=>{ const el=e.target.closest('[data-pe-sup]'); if(el && S.ui.pe) S.ui.pe.supplierId=+el.value; });
 const _peSave = A.peSave;
-A.peSave = el=>{ const d=S.ui.pe; const rte=document.getElementById('rte'); if(rte) d.desc=rteClean(rte.innerHTML); d.weight=(+d.weight||0)*1000; const sup=+d.supplierId||1, id=d.id; const before=PRODUCTS.length; _peSave(el); const p = id? PBY[id] : (PRODUCTS.length>before? PRODUCTS[PRODUCTS.length-1] : null); if(p){ p.supplierId=sup; syncCats(); } };
+A.peSave = el=>{ const d=S.ui.pe; const rte=document.getElementById('rte'); if(rte) d.desc=rteClean(rte.innerHTML); if(d.weightKg!==undefined){ const g=kgToG(d.weightKg); if(g===null) return; d.weight=g; delete d.weightKg; } /* kg saisis dans leur propre clé : d.weight reste en grammes, un enregistrement ne le multiplie plus */ const sup=+d.supplierId||1, id=d.id; const before=PRODUCTS.length; _peSave(el); const p = id? PBY[id] : (PRODUCTS.length>before? PRODUCTS[PRODUCTS.length-1] : null); if(p){ p.supplierId=sup; syncCats(); } };
 const _peTab = A.peTab; A.peTab = el=>{ const rte=document.getElementById('rte'); if(rte && S.ui.pe) S.ui.pe.desc=rteClean(rte.innerHTML); _peTab(el); };
 
 /* ---------- éditeur de texte riche (description) : gras, polices, tailles, couleurs, photo, vidéo ---------- */

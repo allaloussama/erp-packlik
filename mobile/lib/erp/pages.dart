@@ -206,6 +206,10 @@ class _ProductsPageState extends State<ProductsPage> {
     w.dispose();
     c.dispose();
     if (ok != true || !mounted) return;
+    if (kg != null && kg > 100) {
+      toast(context, 'Poids invalide : saisissez le poids en kg (ex. 3,4)', bad: true);
+      return;
+    }
     if (kg != null && kg >= 0 && (kg * 1000).round() != ni(p['weight'])) st.setProductWeight(p, kg);
     if (admin && cost != null && cost >= 0 && cost != ni(p['cost'])) st.setProductCost(p, cost);
     toast(context, '${s(p['name'])} : ${kg == null ? '—' : '${kgTxt(kg)} kg'}${admin && cost != null ? ' · ${money(cost)}' : ''}');
@@ -342,7 +346,7 @@ class _ProductScreenState extends State<ProductScreen> {
                       onPressed: () {
                         final price = int.tryParse(_price.text.trim()), cost = int.tryParse(_cost.text.trim()), stock = int.tryParse(_stock.text.trim()), thr = int.tryParse(_thr.text.trim());
                         final wTxt = _weight.text.trim().replaceAll(',', '.'), kg = wTxt.isEmpty ? 0.0 : double.tryParse(wTxt);
-                        if (_name.text.trim().length < 2 || price == null || cost == null || stock == null || thr == null || kg == null || price < 0 || cost < 0 || kg < 0) {
+                        if (_name.text.trim().length < 2 || price == null || cost == null || stock == null || thr == null || kg == null || price < 0 || cost < 0 || kg < 0 || kg > 100) {
                           toast(context, 'Vérifiez le nom et les nombres saisis', bad: true);
                           return;
                         }
