@@ -215,6 +215,8 @@ function carrier_send(array $in): array {
 	$address = (string) ($o['address'] ?: $o['commune']);
 	$amount = (int) round((float) ($in['amount'] ?? 0));
 	$products = 'Emballage'; // contenu affiché sur le bordereau du transporteur, le même pour toutes les commandes
+	$kg = max(1, (int) ceil((float) ($in['weight'] ?? 1))); // poids de la commande (kg) calculé par l'ERP
+	$kgTxt = 'Poids : ' . str_replace('.', ',', (string) round((float) ($in['weight'] ?? 0), 1)) . ' kg';
 	$note = mb_substr((string) ($o['note'] ?? ''), 0, 250);
 	$commune = carrier_match_commune((string) $o['commune'], carrier_communes($slug, $cat, $acc, $wid));
 	$base = carrier_base($slug, $cat);
@@ -251,10 +253,12 @@ function carrier_send(array $in): array {
 		}
 		$data = ['reference' => (string) $o['ref'], 'telephone' => $phone, 'adresse' => $address, 'commune' => $commune, 'produit' => $products, 'montant' => $amount, 'remarque' => $note, 'stop_desk' => $desk ? 1 : 0];
 		if ($cat[1] === 'noest') {
-			$data += ['api_token' => $acc['token'], 'user_guid' => $acc['guid'] ?? '', 'client' => $name, 'wilaya_id' => $wid, 'type_id' => 1, 'poids' => max(1, (int) ceil((float) ($in['weight'] ?? 1))), 'can_open' => 1];
+			$data += ['api_token' => $acc['token'], 'user_guid' => $acc['guid'] ?? '', 'client' => $name, 'wilaya_id' => $wid, 'type_id' => 1, 'poids' => $kg, 'can_open' => 1];
 			$r = carrier_http($slug, $cat, $acc, 'POST', '/create/order', $data);
 		} else {
-			$data += ['nom_client' => $name, 'code_wilaya' => $wid, 'type' => 1, 'boutique' => 'PackLik'];
+			// shortcut: EcoTrack ne documente aucun champ poids ; « poids » est tenté et le poids est aussi écrit dans la remarque (toujours visible). Retirer l'un des deux une fois vu sur la plateforme.
+			$data['remarque'] = mb_substr($kgTxt . ($note !== '' ? ' · ' . $note : ''), 0, 255);
+			$data += ['nom_client' => $name, 'code_wilaya' => $wid, 'type' => 1, 'boutique' => 'PackLik', 'poids' => $kg];
 			$r = carrier_http($slug, $cat, $acc, 'POST', '/create/order', $data, true);
 		}
 		$tracking = (string) ($r['tracking'] ?? $r['data']['tracking'] ?? '');
