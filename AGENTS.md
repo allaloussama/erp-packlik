@@ -37,6 +37,11 @@ Les scripts se chargent dans l'ordre de `index.php` ; chaque fichier **surcharge
 
 ## Règles à respecter
 
+0. **Base de données du site en ligne : on n'y touche jamais sans la permission du propriétaire.** Aucune écriture
+   sur packlik.shop (produits, commandes, clients, tarifs, réglages), ni par l'API, ni par la session admin du
+   navigateur, ni par le gestionnaire de fichiers Hostinger, sans un accord explicite pour ce changement précis.
+   Lire pour diagnostiquer est permis. Un envoi sur `main` de `allaloussama/erp-packlik` met le code en ligne : demander avant.
+
 1. **Vue remplacée = la réenregistrer** : `ERP_VIEWS` garde l'ancienne référence. Après `viewX = function…`,
    écrire `ERP_VIEWS.admin.page = ()=>viewX();`.
 2. **Réglages** : tout ce que l'admin configure va dans `SETTINGS` (synchronisé, écrit par l'admin seul).

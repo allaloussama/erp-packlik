@@ -79,6 +79,7 @@ $p = $pub['data']['products'];
 check(count($p) === 1 && !isset($p[0][2]['cost']) && !isset($p[0][2]['supplierId']), 'boutique publique : ni prix d\'achat, ni brouillon');
 check(!isset($pub['data']['orders']) && !isset($pub['data']['customers']) && !isset($pub['data']['users']), 'boutique publique : ni commandes, ni clients, ni équipe');
 check(!isset($pub['data']['carriers'][0][2]['creds']), 'boutique publique : pas de clé API transporteur');
+check(isset($pub['data']['wilayas'][0][2]['home']) && !isset($pub['data']['wilayas'][0][2]['dhdHome']), 'boutique publique : prix client des wilayas, pas le coût de la société');
 
 $order = ['name' => 'Client Test', 'phone' => '0555 01 02 03', 'wilaya' => 16, 'commune' => 'Alger Centre', 'delivery' => 'home', 'items' => [['pid' => 1, 'q' => 3, 'price' => 1, 'cost' => 0]]];
 [$c, $r] = call('order', $order);

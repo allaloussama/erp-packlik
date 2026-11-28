@@ -7,6 +7,11 @@ const STAFF = ['admin', 'gerant', 'manager', 'agent'];
 const ROLES = ['admin', 'gerant', 'manager', 'agent', 'fournisseur', 'livreur'];
 const ROOT = __DIR__ . '/..';
 
+if (PHP_SAPI !== 'cli' && !headers_sent()) {
+	header_remove('X-Powered-By'); // ne pas annoncer la version de PHP
+	header('Strict-Transport-Security: max-age=31536000'); // HTTPS seulement (ignoré par les navigateurs en http local)
+}
+
 function cfg(): array {
 	static $c;
 	if ($c === null) {
@@ -242,7 +247,9 @@ function out_doc(string $coll, array $d, ?array $u): ?array {
 			}
 		} elseif ($coll === 'pixels') {
 			$d = array_intersect_key($d, array_flip(['id', 'platform', 'name', 'pixelId', 'active']));
-		} elseif ($coll !== 'wilayas') {
+		} elseif ($coll === 'wilayas') {
+			unset($d['dhdHome'], $d['dhdDesk']); // coût facturé par la société : réservé à l'équipe
+		} else {
 			return null;
 		}
 	}
