@@ -27,10 +27,13 @@ function codItems(){
   const main={pid:p.id, v:d.v, q:d.q, price:unitPrice(p,d.v,d.q)};
   return [main, ...(S.ui.co.withCart? S.cart.filter(i=>!(i.pid===p.id && i.v===d.v)) : [])];
 }
+// Le client voit le prix de la wilaya sans le surpoids ; le surpoids reste dans l'ERP (feeOf) pour l'appel de confirmation.
+const shopFeeOf = o=> o.freeShip? 0 : baseClientFee(o, carrierOf(o));
+const shopTotal = o=> orderTotal(o) - feeOf(o) + shopFeeOf(o);
 function codQuote(items, co){
   const o={wilaya:+co.wilaya, items, delivery:co.delivery}; o.carrier=autoCarrier(o);
   const free = items.some(i=>{ const p=PBY[i.pid]; return p && p.freeShipQty>0 && i.q>=p.freeShipQty; });
-  const feeH = free||!items.length? 0 : feeOf({...o, delivery:'home'}), feeD = free||!items.length? 0 : feeOf({...o, delivery:'desk'});
+  const feeH = free||!items.length? 0 : shopFeeOf({...o, delivery:'home'}), feeD = free||!items.length? 0 : shopFeeOf({...o, delivery:'desk'});
   return {sub:linesTotal(items), feeH, feeD, fee: co.delivery==='home'? feeH : feeD, free, desk: carrierOf(o).desk!==false && !(WBY[o.wilaya] && !(WBY[o.wilaya].desk>0))}; // prix bureau 0 = pas de bureau dans cette wilaya
 }
 function codForm(items, opts){
@@ -82,7 +85,7 @@ SUB.cod = async(form)=>{
     const r = await api('order', {name:co.name, phone:co.phone, wilaya:+co.wilaya, commune:co.commune, address:co.address, delivery:co.delivery, note:co.note||'', website:val('coHp'), platform:AD_PLATFORM, items:items.map(i=>({pid:i.pid, v:i.v, q:i.q}))});
     S.lastOrder = r.order; if(route().parts[0]!=='produit' || co.withCart){ S.cart=[]; saveCart(); }
     if(SETTINGS.purchaseOn==='order'){ const nm=co.name.toLowerCase().split(/\s+/).filter(Boolean), ph=co.phone.replace(/\D/g,'');
-      pxTrack('Purchase', {value:orderTotal(r.order), ref:r.ref, ids:r.order.items.map(i=>i.pid), n:r.order.items.reduce((s,i)=>s+i.q,0),
+      pxTrack('Purchase', {value:shopTotal(r.order), ref:r.ref, ids:r.order.items.map(i=>i.pid), n:r.order.items.reduce((s,i)=>s+i.q,0),
         user:{ph:'213'+ph.slice(1), fn:nm[0]||'', ln:nm.length>1? nm[nm.length-1] : '', ct:(co.commune||'').toLowerCase().replace(/\s+/g,''), country:'dz'}}); }
     location.hash = '#/confirmation/'+r.ref;
   }catch(e){ btn.disabled=false; btn.textContent=t('Commander maintenant'); toast(esc(e.message),'bad'); }
@@ -163,7 +166,7 @@ viewConfirm = function(ref){
     </div>
     ${o? `<div class="card card-b" style="margin-top:14px">
       ${o.items.filter(it=>PBY[it.pid]).map(it=>`<div class="row between small" style="padding:4px 0"><span>${it.q} × ${esc(PBY[it.pid].name)}</span><b class="num">${dzd(it.price*it.q)}</b></div>`).join('')}
-      <div class="sumbox" style="margin-top:8px"><div class="ln"><span>${t('Livraison')} · ${esc(wName(o.wilaya))} · ${o.delivery==='home'?t('À domicile'):t('Bureau de livraison (stop desk)')}</span><span class="num">${o.freeShip? t('Gratuite') : dzd(feeOf(o))}</span></div><div class="ln tot"><span>${t('Total à payer à la livraison')}</span><span class="num">${dzd(orderTotal(o))}</span></div></div>
+      <div class="sumbox" style="margin-top:8px"><div class="ln"><span>${t('Livraison')} · ${esc(wName(o.wilaya))} · ${o.delivery==='home'?t('À domicile'):t('Bureau de livraison (stop desk)')}</span><span class="num">${o.freeShip? t('Gratuite') : dzd(shopFeeOf(o))}</span></div><div class="ln tot"><span>${t('Total à payer à la livraison')}</span><span class="num">${dzd(shopTotal(o))}</span></div></div>
       <p class="small muted">${esc(o.customer.name)} · <span dir="ltr">${esc(o.customer.phone)}</span> · ${esc(cName(o.commune))}</p>
     </div>`:''}
     <div class="row wrap" style="margin-top:14px;justify-content:center"><a class="btn kraft" href="#/boutique">${t('Continuer mes achats')}</a></div>
