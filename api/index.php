@@ -333,6 +333,9 @@ function create_order(?array $u, array $in): array {
 	if (!$w || empty($w['active'])) {
 		fail(422, 'Wilaya non desservie.');
 	}
+	if ($delivery === 'desk' && (int) ($w['desk'] ?? 0) <= 0) {
+		$delivery = 'home'; // pas de bureau (stop desk) dans cette wilaya : prix bureau à 0
+	}
 	if ($commune === '' || mb_strlen($commune) > 80) {
 		fail(422, 'Veuillez indiquer la commune.');
 	}

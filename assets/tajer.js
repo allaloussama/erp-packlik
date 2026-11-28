@@ -31,7 +31,7 @@ function codQuote(items, co){
   const o={wilaya:+co.wilaya, items, delivery:co.delivery}; o.carrier=autoCarrier(o);
   const free = items.some(i=>{ const p=PBY[i.pid]; return p && p.freeShipQty>0 && i.q>=p.freeShipQty; });
   const feeH = free||!items.length? 0 : feeOf({...o, delivery:'home'}), feeD = free||!items.length? 0 : feeOf({...o, delivery:'desk'});
-  return {sub:linesTotal(items), feeH, feeD, fee: co.delivery==='home'? feeH : feeD, free, desk: carrierOf(o).desk!==false};
+  return {sub:linesTotal(items), feeH, feeD, fee: co.delivery==='home'? feeH : feeD, free, desk: carrierOf(o).desk!==false && !(WBY[o.wilaya] && !(WBY[o.wilaya].desk>0))}; // prix bureau 0 = pas de bureau dans cette wilaya
 }
 function codForm(items, opts){
   const co=S.ui.co; if(!WBY[co.wilaya] || !WBY[co.wilaya].active){ const w=WILAYAS.find(x=>x.active); co.wilaya = w? w.id : co.wilaya; }

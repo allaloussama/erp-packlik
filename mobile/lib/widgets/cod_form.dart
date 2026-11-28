@@ -119,7 +119,11 @@ class _CodFormState extends ConsumerState<CodForm> {
           return DropdownButtonFormField<int>(
             initialValue: _wilaya, isExpanded: true, decoration: InputDecoration(labelText: label),
             items: [for (final x in c.wilayas) DropdownMenuItem(value: x.id, child: Text('${x.code} - ${x.name(lang)}', overflow: TextOverflow.ellipsis))],
-            onChanged: (v) => setState(() { _wilaya = v ?? _wilaya; _commune = null; }),
+            onChanged: (v) => setState(() {
+              _wilaya = v ?? _wilaya;
+              _commune = null;
+              if ((c.wilayas.where((x) => x.id == _wilaya).firstOrNull?.desk ?? 1) <= 0) _delivery = 'home'; // pas de bureau dans cette wilaya
+            }),
           );
         case 'commune':
           final list = ref.watch(communesProvider).value?[_wilaya] ?? const [];
@@ -142,7 +146,7 @@ class _CodFormState extends ConsumerState<CodForm> {
             decoration: InputDecoration(labelText: label, contentPadding: const EdgeInsets.fromLTRB(8, 12, 8, 4)),
             child: RadioGroup<String>(groupValue: _delivery, onChanged: (v) => setState(() => _delivery = v ?? 'home'), child: Column(children: [
               opt('home', 'À domicile', 'Livré jusqu\'à votre porte', w?.home ?? 0),
-              opt('desk', 'Bureau de livraison (stop desk)', 'Retrait au bureau le plus proche', w?.desk ?? 0),
+              if (w == null || w.desk > 0) opt('desk', 'Bureau de livraison (stop desk)', 'Retrait au bureau le plus proche', w?.desk ?? 0), // prix bureau 0 = pas de bureau
             ])),
           );
         case 'address':
