@@ -2,6 +2,21 @@
 
 Journal des changements, du plus récent au plus ancien. La fiche agent (`AGENTS.md`) explique comment le code est construit.
 
+## 28 novembre 2026 (3) — Boutique réduite sur téléphone en arabe
+
+| Demande | Ce qui a été fait | Où |
+| --- | --- | --- |
+| Sur téléphone, en arabe (langue par défaut), la page s'affichait en tout petit dans un coin | Cause : le champ piège anti-robot du formulaire (`.tj-hp`) était caché avec `left:-9999px` ; en RTL la page peut défiler vers la gauche, elle faisait donc 10 375 px de large et le téléphone dézoomait. Le champ est maintenant caché sur place (taille 1 px, `clip-path`). Largeur de la page : 375 px sur l'accueil, la boutique, la fiche produit et le panier | `assets/extra.css` |
+
+## 28 novembre 2026 (2) — Sécurité de la plateforme
+
+| Demande | Ce qui a été fait | Où |
+| --- | --- | --- |
+| Ne jamais toucher la base de données du site sans permission | Règle 0 ajoutée à la fiche agent | `AGENTS.md` |
+| Sécuriser la plateforme | Contrôle du site en ligne (lecture seule) : base SQLite, `config.php`, `.git`, `data/`, `tests/`, fichiers de l'API → 403 ; HTTPS forcé ; cookie de session `secure`, `HttpOnly`, `SameSite=Lax`. Corrigé : la version de PHP n'est plus annoncée, en-tête HSTS ajouté, le coût facturé par la société (`dhdHome`, `dhdDesk`) n'est plus envoyé à la boutique publique | `api/lib.php`, `tests/smoke.php` |
+
+Points relevés, non corrigés (à décider) : un agent peut lire par l'API toutes les commandes et tous les clients (le filtre « mes commandes » est fait dans le navigateur) ; un fournisseur peut modifier les bons de commande et paiements fournisseur existants ; derrière le CDN Hostinger, la limite par adresse IP (connexion, commandes) risque de compter tous les visiteurs ensemble.
+
 ## 28 novembre 2026 — Rupture seulement à la main
 
 | Demande | Ce qui a été fait | Où |
