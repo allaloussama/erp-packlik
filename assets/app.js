@@ -1226,6 +1226,8 @@ function metaSend(ev, d){
   if(route().parts[0]==='erp' || !PIXEL_EVENTS.facebook[ev] || !metaReady()) return;
   const p={currency:'DZD'}; if(d.value!=null) p.value=+d.value||0; if(d.id!=null){ p.content_ids=[String(d.id)]; p.content_type='product'; }
   if(d.ids){ p.content_ids=d.ids.map(String); p.content_type='product'; p.num_items=d.n||d.ids.length; }
+  // correspondance avancée : le pixel hache lui-même (SHA-256) téléphone, nom et commune avant l'envoi ; même client que l'API de conversions du serveur
+  if(ev==='Purchase' && d.user) PIXELS.filter(x=>x.active && x.platform==='facebook' && /^\d{6,20}$/.test(x.pixelId||'')).forEach(x=>window.fbq('init', x.pixelId, d.user));
   if(ev==='PageView') window.fbq('track', ev);
   else window.fbq('track', ev, p, d.ref? {eventID:'order-'+d.ref} : undefined); // eventID : évite les doublons si l'API Conversions est ajoutée plus tard
 }

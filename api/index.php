@@ -102,7 +102,11 @@ switch ($route) {
 
 	case 'order':
 		$post || fail(405, 'POST requis');
-		out(create_order($u, $in));
+		$res = create_order($u, $in);
+		if (!$u || !in_array($u['role'], STAFF, true)) { // achat d'un client de la boutique, pas une saisie de l'équipe
+			meta_capi_purchase($res);
+		}
+		out($res);
 
 	case 'track':
 		throttle('track', 30, 600);
@@ -471,6 +475,80 @@ function auto_carrier(int $wid): string {
 		}
 	}
 	return ''; // aucune société par défaut : l'équipe la choisit à la confirmation
+}
+
+/**
+ * API de conversions Meta : l'achat part aussi du serveur, car le pixel du navigateur est souvent bloqué
+ * (bloqueurs, iPhone, navigateur intégré de Facebook). Même event_id que le pixel (« order-PK-… ») : Meta n'en garde qu'un.
+ * Données client hachées en SHA-256 comme Meta l'exige. Une erreur ici ne bloque jamais la commande.
+ */
+function meta_capi_purchase(array $res): void {
+	try {
+		$s = rec_data('kv', 'settings') ?? [];
+		$ev = rec_data('kv', 'pixel_events') ?? [];
+		if (($s['purchaseOn'] ?? 'order') !== 'order' || empty($s['modules']['pixels']) || empty($ev['facebook']['Purchase']) || !function_exists('curl_init')) {
+			return;
+		}
+		$pixels = array_filter(rec_all('pixels'), fn($p) => !empty($p['active']) && ($p['platform'] ?? '') === 'facebook'
+			&& preg_match('/^\d{6,20}$/', (string) ($p['pixelId'] ?? '')) && trim((string) ($p['token'] ?? '')) !== '');
+		if (!$pixels) {
+			return; // pas de token « API de conversions » saisi dans ERP › Pixels
+		}
+		$o = $res['order'];
+		$h = fn(string $v): string => hash('sha256', $v);
+		$phone = digits((string) ($o['customer']['phone'] ?? ''));
+		$names = preg_split('/\s+/u', mb_strtolower(trim((string) ($o['customer']['name'] ?? ''))), -1, PREG_SPLIT_NO_EMPTY);
+		$user = ['ph' => [$h('213' . substr($phone, 1))], 'country' => [$h('dz')], 'client_user_agent' => (string) ($_SERVER['HTTP_USER_AGENT'] ?? '')];
+		if ($names) {
+			$user['fn'] = [$h($names[0])];
+			if (count($names) > 1) {
+				$user['ln'] = [$h((string) end($names))];
+			}
+		}
+		$ct = mb_strtolower(preg_replace('/\s+/u', '', (string) ($o['commune'] ?? '')));
+		if ($ct !== '') {
+			$user['ct'] = [$h($ct)];
+		}
+		$fwd = trim(explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''))[0]); // derrière le CDN Hostinger
+		$user['client_ip_address'] = filter_var($fwd, FILTER_VALIDATE_IP) ? $fwd : client_ip();
+		foreach (['_fbp' => 'fbp', '_fbc' => 'fbc'] as $cookie => $k) {
+			if (!empty($_COOKIE[$cookie])) {
+				$user[$k] = (string) $_COOKIE[$cookie];
+			}
+		}
+		// valeur = même calcul que la boutique (orderTotal) : produits + livraison (prix client de la wilaya × coefficient de la société)
+		// shortcut: le supplément de poids n'est pas compté ici, à ajouter si des colis lourds sont fréquents
+		$value = array_sum(array_map(fn($i) => $i['price'] * $i['q'], $o['items']));
+		if (empty($o['freeShip'])) {
+			$w = rec_data('wilayas', (string) $o['wilaya']) ?? [];
+			$c = rec_data('carriers', (string) ($o['carrier'] ?? '')) ?? [];
+			$value += (int) round((float) ($o['delivery'] === 'desk' ? ($w['desk'] ?? 0) : ($w['home'] ?? 0)) * (float) ($c['feeFactor'] ?? 1) / 10) * 10;
+		}
+		$event = [
+			'event_name' => 'Purchase', 'event_time' => time(), 'event_id' => 'order-' . $o['ref'], 'action_source' => 'website',
+			'event_source_url' => (string) ($_SERVER['HTTP_REFERER'] ?? ('https://' . ($_SERVER['HTTP_HOST'] ?? '') . '/')),
+			'user_data' => $user,
+			'custom_data' => ['currency' => 'DZD', 'value' => $value, 'order_id' => $o['ref'], 'content_type' => 'product',
+				'content_ids' => array_map(fn($i) => (string) $i['pid'], $o['items']), 'num_items' => array_sum(array_column($o['items'], 'q'))],
+		];
+		foreach ($pixels as $p) {
+			$body = ['data' => [$event]];
+			if (trim((string) ($p['testCode'] ?? '')) !== '') {
+				$body['test_event_code'] = trim((string) $p['testCode']); // visible dans Events Manager › Tester les événements
+			}
+			$ch = curl_init('https://graph.facebook.com/v23.0/' . $p['pixelId'] . '/events?access_token=' . rawurlencode(trim((string) $p['token'])));
+			curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => json_encode($body), CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+				CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 3, CURLOPT_TIMEOUT => 5]);
+			$out = curl_exec($ch);
+			$code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+			curl_close($ch);
+			if ($code !== 200) {
+				error_log('[packlik] Meta CAPI ' . $p['pixelId'] . ' : HTTP ' . $code . ' ' . substr((string) $out, 0, 300));
+			}
+		}
+	} catch (Throwable $e) {
+		error_log('[packlik] Meta CAPI : ' . $e->getMessage());
+	}
 }
 
 /** Ce que le client final peut voir de sa commande (page merci, suivi). */

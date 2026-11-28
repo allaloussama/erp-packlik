@@ -2,6 +2,12 @@
 
 Journal des changements, du plus récent au plus ancien. La fiche agent (`AGENTS.md`) explique comment le code est construit.
 
+## 28 novembre 2026 (4) — Achat (Purchase) du pixel Facebook plus fiable
+
+| Demande | Ce qui a été fait | Où |
+| --- | --- | --- |
+| Le pixel Facebook ne comptait pas bien les achats | Le Purchase ne partait que du navigateur du client, sans données client : perdu avec les bloqueurs, l'iPhone, le navigateur de Facebook, et mal attribué. Ajouté : (1) **API de conversions** : à chaque commande de la boutique, le serveur envoie aussi le Purchase à Meta (même `event_id` « order-PK-… » que le pixel : pas de doublon), avec téléphone, prénom, nom, commune et pays hachés en SHA-256, IP, navigateur, cookies `_fbp` / `_fbc`, valeur = produits + livraison ; il faut saisir le token « API de conversions » dans ERP › Pixels. (2) **Correspondance avancée** du pixel : les mêmes données client (hachées par le pixel) avant le Purchase | `api/index.php` (`meta_capi_purchase`), `assets/app.js` (`metaSend`), `assets/tajer.js` (`SUB.cod`) |
+
 ## 28 novembre 2026 (3) — Boutique réduite sur téléphone en arabe
 
 | Demande | Ce qui a été fait | Où |
