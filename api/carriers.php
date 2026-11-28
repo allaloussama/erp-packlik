@@ -171,6 +171,32 @@ function carrier_test(string $id): array {
 }
 
 /**
+ * Tarifs de livraison de la société, par wilaya : [{wilaya, home, desk}] (desk 0 = pas de bureau).
+ * shortcut: format EcoTrack seulement (`livraison[].wilaya_id/tarif/tarif_stopdesk`), lu dans leur doc et jamais vu en vrai ;
+ * l'erreur cite les clés reçues pour adapter. Ajouter Yalidine/Noest quand une boutique les utilise.
+ */
+function carrier_fees(string $id): array {
+	[, $cat, $acc] = carrier_ctx($id);
+	if ($cat[1] !== 'ecotrack') {
+		fail(422, $cat[0] . ' : import des tarifs disponible pour les sociétés EcoTrack seulement.');
+	}
+	$j = carrier_http($id, $cat, $acc, 'GET', '/get/fees');
+	$rows = $j['livraison'] ?? $j['data']['livraison'] ?? $j['data'] ?? (array_is_list($j) ? $j : []);
+	$out = [];
+	foreach ((array) $rows as $r) {
+		$w = is_array($r) ? (int) ($r['wilaya_id'] ?? $r['wilaya'] ?? 0) : 0;
+		$home = is_array($r) ? (int) round((float) ($r['tarif'] ?? $r['tarif_domicile'] ?? 0)) : 0;
+		if ($w >= 1 && $w <= 69 && $home > 0) {
+			$out[] = ['wilaya' => $w, 'home' => $home, 'desk' => max(0, (int) round((float) ($r['tarif_stopdesk'] ?? 0)))];
+		}
+	}
+	if (!$out) {
+		fail(502, $cat[0] . ' : tarifs dans un format inattendu (clés reçues : ' . implode(', ', array_slice(array_keys($j), 0, 8)) . ').');
+	}
+	return ['fees' => $out];
+}
+
+/**
  * Crée le colis chez le transporteur et inscrit le numéro de suivi sur la commande.
  * Le montant à encaisser et le texte des produits viennent de l'écran d'expédition (rôles admin / gérant).
  */

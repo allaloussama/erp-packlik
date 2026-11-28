@@ -148,6 +148,11 @@ switch ($route) {
 		$need(['admin', 'gerant']);
 		out(carrier_test((string) ($in['id'] ?? '')));
 
+	case 'carrier.fees':
+		$post || fail(405, 'POST requis');
+		$need(['admin', 'gerant']);
+		out(carrier_fees((string) ($in['id'] ?? '')));
+
 	case 'carrier.send':
 		$post || fail(405, 'POST requis');
 		$need(['admin', 'gerant']);

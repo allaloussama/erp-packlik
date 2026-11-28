@@ -51,7 +51,7 @@ viewDelivery = function(){
     const q=(u.q||'').toLowerCase(); const list=WILAYAS.filter(w=>!q || w.fr.toLowerCase().includes(q) || w.ar.includes(u.q) || w.code.includes(q));
     const cell=(w,k)=>`<td class="r"><input class="kcell num" type="number" min="0" step="10" style="width:92px;text-align:end" value="${w[k]}" data-ch="wFee" data-id="${w.id}" data-k="${k}" aria-label="${esc(w.fr)}"></td>`;
     inner = `<div class="filters-bar"><input class="input s" placeholder="${t('Rechercher une wilaya…')}" value="${esc(u.q||'')}" data-in="livQ" aria-label="${t('Rechercher')}"><span class="small muted">${WILAYAS.filter(w=>w.active).length} / ${WILAYAS.length} ${t('wilayas desservies')}</span><span class="grow"></span>
-        <span class="small">${t('Appliquer à toutes')} :</span><input class="input num" id="wbHome" type="number" placeholder="${t('Domicile')}" style="width:96px;height:34px" aria-label="${t('Prix client domicile')}"><input class="input num" id="wbDesk" type="number" placeholder="${t('Bureau')}" style="width:96px;height:34px" aria-label="${t('Prix client bureau')}"><button class="btn sm" data-a="wBulk">${t('Appliquer')}</button></div>
+        <span class="small">${t('Appliquer à toutes')} :</span><input class="input num" id="wbHome" type="number" placeholder="${t('Domicile')}" style="width:96px;height:34px" aria-label="${t('Prix client domicile')}"><input class="input num" id="wbDesk" type="number" placeholder="${t('Bureau')}" style="width:96px;height:34px" aria-label="${t('Prix client bureau')}"><button class="btn sm" data-a="wBulk">${t('Appliquer')}</button>${feeCar()? `<button class="btn sm primary" data-a="feeImport">${ic('zap','sm')} ${t('Importer les tarifs de')} ${esc(kCarrierName(feeCar()))}</button>`:''}</div>
       <div class="card-b small muted" style="padding-top:8px;padding-bottom:8px">${t('« Prix client » est ce que paie l\'acheteur ; « Coût société » est ce que la société de livraison vous facture. Le coefficient de la société choisie s\'applique par-dessus.')}</div>
       <div class="tbl-wrap" style="max-height:600px"><table class="tbl ktbl"><thead><tr><th>${t('Desservie')}</th><th>${t('Code')}</th><th>${t('Wilaya')}</th><th class="r">${t('Prix client domicile')}</th><th class="r">${t('Prix client bureau')}</th><th class="r">${t('Coût société domicile')}</th><th class="r">${t('Coût société bureau')}</th></tr></thead><tbody>
       ${list.map(w=>`<tr style="${w.active?'':'opacity:.55'}"><td><input type="checkbox" ${w.active?'checked':''} data-ch="wActive" data-id="${w.id}" aria-label="${esc(w.fr)}"></td><td class="num">${w.code}</td><td><b>${esc(w.fr)}</b> <span class="muted" dir="rtl">${esc(w.ar)}</span></td>${cell(w,'home')}${cell(w,'desk')}${cell(w,'dhdHome')}${cell(w,'dhdDesk')}</tr>`).join('') || emptyRow(7,'Aucune wilaya ne correspond','search')}
@@ -73,6 +73,25 @@ A.carNoDefault = el=>{ const c=CRB[el.dataset.id]; if(c) c.isDefault=false; rend
 IN.livQ = (el)=>{ S.ui.liv.q=el.value; render(); };
 CH.wActive = (el)=>{ WBY[+el.dataset.id].active=el.checked; render(); };
 A.wBulk = ()=>{ const h=val('wbHome'), d=val('wbDesk'); if(h==='' && d===''){ toast(t('Saisissez un prix'),'bad'); return; } WILAYAS.forEach(w=>{ if(h!=='') w.home=+h||0; if(d!=='') w.desk=+d||0; }); toast(t('Prix appliqués aux 69 wilayas'),'ok'); render(); };
+
+/* Import des tarifs de la société (API) : aperçu ancien → nouveau, marge en DA, puis « Appliquer ».
+   Le tarif de la société devient le « Coût société », le prix client = tarif + marge. Bureau 0 = pas de bureau. */
+const feeCar = ()=>{ const l=CARRIERS.filter(c=>c.creds && c.creds.token); return l.find(c=>c.isDefault) || l[0]; };
+const feeNew = (f, m)=>({home:f.home+m, desk:f.desk>0? f.desk+m : 0});
+const feeRows = ()=>{ const u=S.ui.feeImp; return u.fees.filter(f=>WBY[f.wilaya]).map(f=>{ const w=WBY[f.wilaya], n=feeNew(f,u.margin), d=(a,b)=>a===b? `<span class="muted">${dzd(b)}</span>` : `<b>${dzd(b)}</b>`;
+  return `<tr><td class="num">${w.code}</td><td>${esc(wName(w.id))}</td><td class="r num muted">${dzd(w.home)} / ${dzd(w.desk)}</td><td class="r num">${dzd(f.home)} / ${f.desk? dzd(f.desk) : '—'}</td><td class="r num">${d(w.home,n.home)} / ${d(w.desk,n.desk)}</td></tr>`; }).join(''); };
+A.feeImport = async(el)=>{
+  const c=feeCar(); if(!c) return; el.disabled=true;
+  try{ await syncNow(); const r=await api('carrier.fees', {id:c.id}); S.ui.feeImp={car:c.id, fees:r.fees, margin:0}; }
+  catch(e){ toast(esc(e.message),'bad'); el.disabled=false; return; }
+  openModal(modalTpl(t('Tarifs de')+' '+esc(kCarrierName(c)), `<div class="row wrap" style="gap:12px;margin-bottom:10px"><label class="row small">${t('Marge ajoutée au prix client (DA)')} <input class="input num" type="number" step="10" value="0" style="width:96px;height:34px" data-in="feeMargin"></label><span class="xs muted">${S.ui.feeImp.fees.length} ${t('wilayas reçues')} · ${t('les wilayas absentes ne changent pas')}</span></div>
+    <div class="tbl-wrap" style="max-height:420px"><table class="tbl"><thead><tr><th>${t('Code')}</th><th>${t('Wilaya')}</th><th class="r">${t('Prix client actuel')}<br><span class="xs muted">${t('domicile / bureau')}</span></th><th class="r">${t('Tarif société')}</th><th class="r">${t('Nouveau prix client')}</th></tr></thead><tbody id="feeRows">${feeRows()}</tbody></table></div>`,
+    `<button class="btn" data-a="closeModal">${t('Annuler')}</button><button class="btn primary" data-a="feeApply">${t('Appliquer à la boutique')}</button>`, true), true);
+};
+IN.feeMargin = (el)=>{ S.ui.feeImp.margin=Math.round(+el.value||0); const b=document.getElementById('feeRows'); if(b) b.innerHTML=feeRows(); };
+A.feeApply = ()=>{ const u=S.ui.feeImp; let n=0;
+  u.fees.forEach(f=>{ const w=WBY[f.wilaya]; if(!w) return; const v=feeNew(f,u.margin); Object.assign(w, {home:v.home, desk:v.desk, dhdHome:f.home, dhdDesk:f.desk}); n++; });
+  log('Tarifs importés', (CRB[u.car]||{}).name||u.car,n+' wilayas, marge '+u.margin+' DA'); S.ui.feeImp=null; closeModal(); toast(n+' '+t('wilayas mises à jour — appliquées à la boutique'),'ok'); render(); };
 A.carOpen = (el)=>{ S.ui.liv.open = S.ui.liv.open===el.dataset.id? null : el.dataset.id; render(); };
 CH.carCred = (el)=>{ const c=CRB[el.dataset.id]; c.creds = c.creds||{}; c.creds[el.dataset.k]=el.value.trim(); c.apiOk=null; };
 A.carOn = (el)=>{ const c=CRB[el.dataset.id]; c.connected=true; log('Société activée', c.name); render(); };
